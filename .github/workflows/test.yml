@@ -16,6 +16,4 @@ jobs:
       - uses: julia-actions/julia-buildpkg@latest
         with: 
           project: "CondensateDynamics"
-      - uses: julia-actions/julia-runtest@latest
-        with: 
-          project: "CondensateDynamics"
+      - run: julia --project test/runtests.jl
