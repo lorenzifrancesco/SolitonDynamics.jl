@@ -1,0 +1,6 @@
+# execution-specific output files and logs
+*.pdf
+*.png
+*.txt
+*.jld2
+
