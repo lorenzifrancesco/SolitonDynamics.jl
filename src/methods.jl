@@ -1,3 +1,117 @@
+## ==== Arrays
+
+
+V(x, t) = 0.0
+V(x, y, t) = 0.0
+V(x, y, z, t) = 0.0
+
+# array methods
+# generate arrays 
+"""
+    x = xvec(λ,N)
+
+Create `x` values with correct periodicity for box specified by length `λ`, using `N` points.
+"""
+xvec(L,N) = LinRange(-L/2,L/2,N) |> collect
+
+"""
+    k = kvec(λ,N)
+
+Create `k` values with correct periodicity for box specified by length `L` for number of points `N`.
+"""
+function kvec(L,N)
+    # @assert iseven(N)
+    # nk = 0:Int(N/2)
+    # k = [nk[1:end-1];-reverse(nk[2:end])]*2*π/λ
+    k = fftfreq(N)*N*2*π/L
+    return k
+end
+
+"""
+    X = xvecs(L,N)
+
+Create a tuple containing the spatial coordinate array for each spatial dimension.
+"""
+function xvecs(L,N)
+    X = []
+    for (λ,ν) in zip(L,N)
+        x = xvec(λ,ν)
+        push!(X,x)
+    end
+    return X |> Tuple
+end
+
+"""
+    K = kvecs(L,N)
+
+Create a tuple containing the spatial coordinate array for each spatial dimension.
+"""
+function kvecs(L,N)
+    K = []
+    for (λ,ν) in zip(L,N)
+        k = kvec(λ,ν)
+        push!(K,k)
+    end
+    return K |> Tuple
+end
+
+"""
+    k² = k2(K)
+
+Create the kinetic energy array `k²` on the `k`-grid defined by the tuple `K`.
+"""
+function k2(K)
+    kind = Iterators.product(K...)
+    return map(k-> sum(abs2.(k)),kind)
+end
+
+"""
+    X,K,dX,dK = makearrays(L,N)
+
+Create all `x` and `k` arrays for box specified by tuples `L=(Lx,...)` and `N=(Nx,...)`.
+For convenience, differentials `dX`, `dK` are also reaturned. `L` and `N` must be tuples of equal length.
+"""
+function makearrays(L,N)
+    @assert length(L) == length(N)
+    X = xvecs(L,N)
+    K = kvecs(L,N)
+    dX = Float64[]; dK = Float64[]
+    for j ∈ eachindex(X)
+        x = X[j]; k = K[j]
+        dx = x[2]-x[1]; dk = k[2]-k[1]
+        push!(dX,dx)
+        push!(dK,dk)
+    end
+    dX = dX |> Tuple
+    dK = dK |> Tuple
+    return X,K,dX,dK
+end
+
+"""
+    A = crandn_array(M)
+
+Make placeholder `2x2x...` complex `randn()` array of `M` dimensions."""
+function crandn_array(N,T) 
+    a::T = rand(N...) |> complex
+    return a
+end
+
+"""
+    A = crandnpartition(D,M)
+
+Make placeholder ArrayPartition vector of length `M`, containing `2x2x...` rank D complex matrices.
+"""
+function crandnpartition(N,A)
+    a = crandn_array(N,A)
+    args = []
+    for j = 1:N
+        push!(args,a)
+    end
+    return ArrayPartition(args...)
+end
+
+## ==== Transforms
+
 """
     Dx,Dk = dfft(x,k)
 
@@ -49,8 +163,6 @@ end
 
 """
     kspace(ψ,sim)
-
-Transform from `x`- to `k`-space using transforms packed into `sim`.
 """
 function kspace(ψ,sim)
     @unpack T = sim
@@ -59,8 +171,6 @@ end
 
 """
     kspace!(ψ,sim)
-
-Mutating transform from `x`- to `k`-space using transforms packed into `sim`.
 """
 function kspace!(ψ,sim)
     @unpack T = sim
@@ -70,8 +180,6 @@ end
 
 """
     definetransforms(funcs,args,meas,kwargs)
-
-Build all transforms for simulation.
 """
 function definetransforms(funcs,args,meas,kwargs)
     trans = []
@@ -83,27 +191,19 @@ end
 
 """
     T = makeT(X,K,j)
-
-Build `FFTW` transform library for the array tuples `X`, `K`. Defaults to a measure plan.
-`j` is number of scratch fields to initialize for in-place evaluation.
 """
-function makeT(X,K,j=1;flags=FFTW.MEASURE)
+function makeT(X,K,T;flags=FFTW.MEASURE)
     FFTW.set_num_threads(Sys.CPU_THREADS)
-    dim = length(X)
+    D = length(X)
     N = length.(X)
     DX,DK = dfftall(X,K)
     dμx = prod(DX)
     dμk = prod(DK)
-    ψtest = ones(N...) |> complex
+    psi_test = ones(N...) |> complex
 
     trans = (plan_fft,plan_fft!,plan_ifft,plan_ifft!)
     meas = (dμx,dμx,dμk,dμk)
-    # flags = FFTW.MEASURE
-    args = ((ψtest,),(ψtest,),(ψtest,),(ψtest,))
-
-    # flags != FFTW.MEASURE && @info "Planning FFTs ..."
+    args = ((psi_test,),(psi_test,),(psi_test,),(psi_test,))
     Txk,Txk!,Tkx,Tkx! = definetransforms(trans,args,meas,flags)
-    # Mxk,Mxk!,Mkx,Mkx! = makeTMixed(X,K,flags=flags)
-    # @info "...Plans created."
-    return Transforms{dim,j}(Txk,Txk!,Tkx,Tkx!,crandnpartition(dim,j))
+    return Transforms{D,N, T}(Txk,Txk!,Tkx,Tkx!)#,crandnpartition(dim,N,A))
 end

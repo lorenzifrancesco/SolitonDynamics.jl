@@ -1,14 +1,27 @@
-@warn "Test unimplemented"
-@test isapprox(1, 1)
-
+import CondensateDynamics: V, GPE_1D, GPE_3D, NPSE 
+using CUDA
 ## Solve the 1D harmonic oscillator
-# problem with NPSE and 1D-GPE 
+# problem with 1D-GPE 
+L = (4.0,)
+N = (256,)
+sim = Sim{length(L), Array{Complex{Float64}}}(L=L, N=N)
 
-# Params
+@unpack_Sim sim
 
-# Launch
+g = 0.0
+V(x, t) = 1/2 * (x^2)
+equation = GPE_1D
+x = X[1]
+@pack_Sim
 
+# Analytical solution: Gaussian
 
+@. analytical_gs = 1/(pi^1/4) * exp(-x^2/2)
 
-## Solve the 3D harmonic oscillator
-# problem with NPSE and 1D-GPE
+sol, err = testsim(sim)
+@test err==false
+
+print(sol)
+numerical_gs = xspace(sol)
+
+@test isapprox(numerical_gs, analytical_gs, rtol=1e-4)

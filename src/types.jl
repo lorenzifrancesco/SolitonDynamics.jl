@@ -1,5 +1,4 @@
-abstract type Params end
-abstract type TransformLibrary end
+abstract type TransformLibrary{A <: AbstractArray} end
 abstract type Space end
 # abstract parameter type: can also be a function of simulation time
 
@@ -18,9 +17,13 @@ const GPE_3D = EquationType(3, false)
 
 abstract type Simulation{D} end
 
-abstract type Solver end
-abstract type SplitStep <: Solver end
-abstract type CrankNicholson <: Solver end
+struct Solver
+    spectral::Bool;
+end
+
+const SplitStep = Solver(true)
+const CrankNicholson = Solver(false)
+
 abstract type UserParams end
 abstract type Method end
 
@@ -38,28 +41,21 @@ struct KSpace{D} <: Space
     K2::Array{Float64,D}
 end
 
-function crandn_array(D, N, t)
-    if t == CuArray
-        return 
-    else
-    return rand(N...)
+@with_kw mutable struct Params <: UserParams
+    κ = 0.0 # a placeholder
 end
 
-function Params() <: UserParams
-    return 0.0
+@with_kw mutable struct Transforms{D,N,A} <: TransformLibrary{A}
+    Txk::AbstractFFTs.ScaledPlan{Complex{Float64},FFTW.cFFTWPlan{Complex{Float64},-1,false,D,UnitRange{Int64}},Float64} = 0.1* plan_fft(crandn_array(N, A))
+    Txk!::AbstractFFTs.ScaledPlan{Complex{Float64},FFTW.cFFTWPlan{Complex{Float64},-1,true,D,UnitRange{Int64}},Float64} = 0.1*plan_fft!(crandn_array(N, A))
+    Tkx::AbstractFFTs.ScaledPlan{Complex{Float64},FFTW.cFFTWPlan{Complex{Float64},1,false,D,UnitRange{Int64}},Float64} = 0.1* plan_ifft(crandn_array(N, A))
+    Tkx!::AbstractFFTs.ScaledPlan{Complex{Float64},FFTW.cFFTWPlan{Complex{Float64},1,true,D,UnitRange{Int64}},Float64} = 0.1*plan_ifft!(crandn_array(N, A))
+    #psi::ArrayPartition = crandnpartition(D,N,A)
 end
 
-@with_kw mutable struct Transforms{D,N} <: TransformLibrary
-    Txk::AbstractFFTs.ScaledPlan{Complex{Float64},FFTW.cFFTWPlan{Complex{Float64},-1,false,D,UnitRange{Int64}},Float64} = 0.1* plan_fft(crandn_array(D, N, t))
-    Txk!::AbstractFFTs.ScaledPlan{Complex{Float64},FFTW.cFFTWPlan{Complex{Float64},-1,true,D,UnitRange{Int64}},Float64} = 0.1*plan_fft!(crandn_array(D, N, t))
-    Tkx::AbstractFFTs.ScaledPlan{Complex{Float64},FFTW.cFFTWPlan{Complex{Float64},1,false,D,UnitRange{Int64}},Float64} = 0.1* plan_ifft(crandn_array(D, N, t))
-    Tkx!::AbstractFFTs.ScaledPlan{Complex{Float64},FFTW.cFFTWPlan{Complex{Float64},1,true,D,UnitRange{Int64}},Float64} = 0.1*plan_ifft!(crandn_array(D, N, t))
-    #psi::ArrayPartition = crandnpartition(D,N)
-end
-
-@with_kw mutable struct Sim{D} <: Simulation{D}
-    # === solver and algorithms
-    equation::EquationType
+@with_kw mutable struct Sim{D, A <: AbstractArray}
+    # === solver and algorithm
+    equation::EquationType = GPE_1D
     solver::Solver = SplitStep
     graphics::Bool = false
     alg::OrdinaryDiffEq.OrdinaryDiffEqAdaptiveAlgorithm = Tsit5() # default solver
@@ -70,23 +66,24 @@ end
     N::NTuple{D,Int64}  # grid points in each dimensions
     g = 0.1
     γ = 0.0; @assert γ >= 0.0 # three body losses param
+    
     ti = 0.0    # initial time
     tf = 2    # final time
     Nt::Int64 = 200     # number of saves over (ti,tf)
     params::UserParams = Params() # optional user parameterss
-    V0::AbstractArray{Float64,D}
+    V0::A = zeros(N)
     t::LinRange{Float64} = LinRange(ti,tf,Nt) # time of saves
-    psi_0::AbstractArray{Complex{Float64},D} # initial condition
+    psi_0::A = zeros(N) |> complex # initial condition
 
     # === saving
     nfiles::Bool = false
     path::String = nfiles ? joinpath(@__DIR__,"data") : @__DIR__
     filename::String = "save"
     # === arrays, transforms, spectral operators
-    X::NTuple{D,AbstractArray{Float64,1}} = xvecs(L,N)
-    K::NTuple{D,AbstractArray{Float64,1}} = kvecs(L,N)
-    T::TransformLibrary = makeT(X,K,flags=flags)
+    X::NTuple{D,A} = xvecs(L,N)
+    K::NTuple{D,A} = kvecs(L,N)
+    T::TransformLibrary{A} = makeT(X,K,A,flags=flags)
 end
 
-InitSim(L,N,par) = Sim{length(L)}(L=L,N=N,params=par)
-InitSim(L,N) = Sim{length(L)}(L=L,N=N,params=Params())
+InitSim(L,N,A,par) = Sim{length(L), A}(L=L,N=N,params=par)
+InitSim(L,N,A) = Sim{length(L), A}(L=L,N=N,params=Params())

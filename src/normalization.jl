@@ -37,3 +37,4 @@ function normalize(sisim::SISim)
         N = N
         )
     return sim
+end
