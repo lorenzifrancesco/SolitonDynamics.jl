@@ -61,6 +61,7 @@ end
     alg::OrdinaryDiffEq.OrdinaryDiffEqAdaptiveAlgorithm = Tsit5() # default solver
     reltol::Float64 = 1e-6 # default tolerance; may need to use 1e-7 for corner cases
     flags::UInt32 = FFTW.MEASURE # choose a plan. PATIENT, NO_TIMELIMIT, EXHAUSTIVE
+    iswitch::ComplexF64 = 1.0 # 1.0 for real time, -im for imaginary time
     # === dimensions and physics
     L::NTuple{D,Float64} # length scales
     N::NTuple{D,Int64}  # grid points in each dimensions
@@ -69,12 +70,14 @@ end
     
     ti = 0.0    # initial time
     tf = 2    # final time
+    tspan = [ti, tf]
     Nt::Int64 = 200     # number of saves over (ti,tf)
     params::UserParams = Params() # optional user parameterss
     V0::A = zeros(N)
     t::LinRange{Float64} = LinRange(ti,tf,Nt) # time of saves
     psi_0::A = zeros(N) |> complex # initial condition
-
+    dV = volume_element(L, N)
+    V = prod(L)
     # === saving
     nfiles::Bool = false
     path::String = nfiles ? joinpath(@__DIR__,"data") : @__DIR__
@@ -83,6 +86,7 @@ end
     X::NTuple{D,A} = xvecs(L,N)
     K::NTuple{D,A} = kvecs(L,N)
     T::TransformLibrary{A} = makeT(X,K,A,flags=flags)
+    ksquared::A = 0.5*k2(K, A)
 end
 
 InitSim(L,N,A,par) = Sim{length(L), A}(L=L,N=N,params=par)

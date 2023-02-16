@@ -60,9 +60,29 @@ end
 
 Create the kinetic energy array `k²` on the `k`-grid defined by the tuple `K`.
 """
-function k2(K)
+function k2(K, A)
     kind = Iterators.product(K...)
-    return map(k-> sum(abs2.(k)),kind)
+    tmp::A = map(k-> sum(abs2.(k)),kind)
+    return tmp
+end
+
+"""
+return spatial volume element
+"""
+function volume_element(L, N)
+    dV=1
+    for i in eachindex(L)
+        dV *= L[i]/N[i]
+    end
+    return dV
+end
+
+
+"""
+compute normalization
+"""
+function norm_squared(psi, sim)
+    return sum(abs2.(psi) * sim.dV)
 end
 
 """
