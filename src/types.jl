@@ -69,15 +69,15 @@ end
     γ = 0.0; @assert γ >= 0.0 # three body losses param
     
     ti = 0.0    # initial time
-    tf = 2    # final time
+    tf = 1.0    # final time
     tspan = [ti, tf]
-    Nt::Int64 = 200     # number of saves over (ti,tf)
+    Nt::Int64 = 5     # number of saves over (ti,tf)
     params::UserParams = Params() # optional user parameterss
     V0::A = zeros(N)
     t::LinRange{Float64} = LinRange(ti,tf,Nt) # time of saves
     psi_0::A = zeros(N) |> complex # initial condition
     dV = volume_element(L, N)
-    V = prod(L)
+    Vol = prod(L)
     # === saving
     nfiles::Bool = false
     path::String = nfiles ? joinpath(@__DIR__,"data") : @__DIR__
