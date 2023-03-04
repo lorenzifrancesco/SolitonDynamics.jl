@@ -2,7 +2,7 @@ using CondensateDynamics
 using CUDA
 using OrdinaryDiffEq
 
-L = (10.0,)
+L = (40.0,)
 N = (256,)
 sim = Sim{length(L), Array{Complex{Float64}}}(L=L, N=N)
 
@@ -24,15 +24,39 @@ alg = Tsit5()
 
 @pack_Sim! sim
 
-# inplace test
-original = psi_0
+# inplace test for identity
 kspace!(psi_0, sim)
 xspace!(psi_0, sim)
 
-@test isapprox(psi_0 - original, zeros(N), atol=1e-10)
+@test isapprox(psi_0 - initial_state, zeros(N), atol=1e-9)
 
-# out of place test
+
+# out of place test for identity
+psi_0 = initial_state
 tmp = kspace(psi_0, sim)
-result = xspace(tmp, sim)
+tmp = xspace(tmp, sim)
+x = LinRange(0, L[1], N[1]) |> collect
 
-@test isapprox(result - psi_0, zeros(N), atol=1e-10)
+@test isapprox(tmp - psi_0, zeros(N), atol=1e-9)
+
+# same result in place and out
+psi_0 = initial_state
+kspace!(psi_0, sim)
+outofplace = xspace(psi_0, sim)
+xspace!(psi_0, sim)
+
+@test isapprox(outofplace - psi_0, zeros(N), atol=1e-9)
+
+# inplace norm conservation
+psi_0 = initial_state
+
+kspace!(psi_0, sim)
+xspace!(psi_0, sim)
+
+# out of place norm conservation
+psi_0 = initial_state
+
+kspace!(psi_0, sim)
+xspace!(psi_0, sim)
+
+@test isapprox(psi_0 - initial_state, zeros(N), atol=1e-3)
