@@ -71,11 +71,11 @@ end
     ti = 0.0    # initial time
     tf = 1.0    # final time
     tspan = [ti, tf]
-    Nt::Int64 = 5     # number of saves over (ti,tf)
+    Nt::Int64 = 5    # number of saves over (ti,tf)
     params::UserParams = Params() # optional user parameterss
     V0::A = zeros(N)
     t::LinRange{Float64} = LinRange(ti,tf,Nt) # time of saves
-    psi_0::A = zeros(N) |> complex # initial condition
+    psi_0::A = ones(N) |> complex # initial condition
     dV = volume_element(L, N)
     Vol = prod(L)
     # === saving
@@ -86,7 +86,7 @@ end
     X::NTuple{D,A} = xvecs(L,N)
     K::NTuple{D,A} = kvecs(L,N)
     T::TransformLibrary{A} = makeT(X,K,A,flags=flags)
-    ksquared::A = 0.5*k2(K, A)
+    ksquared::A = k2(K, A)
 end
 
 InitSim(L,N,A,par) = Sim{length(L), A}(L=L,N=N,params=par)
