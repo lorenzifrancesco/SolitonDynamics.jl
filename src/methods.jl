@@ -81,7 +81,7 @@ end
 """
 compute normalization
 """
-function norm_squared(psi, sim)
+function ns(psi, sim)
     return sum(abs2.(psi) * sim.dV)
 end
 
@@ -139,9 +139,9 @@ Measures that make `fft`, `ifft` 2-norm preserving.
 Correct measures for mapping between `x`- and `k`-space.
 """
 function dfft(x,k)
-    dx = x[2]-x[1]; dk = k[2]-k[1]
+    dx = x[2]-x[1]
     Dx = dx/sqrt(2*pi)
-    Dk = length(k)*dk/sqrt(2*pi)
+    Dk = 1/Dx
     return Dx, Dk
 end
 
@@ -225,5 +225,5 @@ function makeT(X,K,T;flags=FFTW.MEASURE)
     meas = (dμx,dμx,dμk,dμk)
     args = ((psi_test,),(psi_test,),(psi_test,),(psi_test,))
     Txk,Txk!,Tkx,Tkx! = definetransforms(trans,args,meas,flags)
-    return Transforms{D,N, T}(Txk,Txk!,Tkx,Tkx!)#,crandnpartition(dim,N,A))
+    return Transforms{D,N,T}(Txk,Txk!,Tkx,Tkx!)
 end
