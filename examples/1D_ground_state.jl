@@ -1,58 +1,65 @@
-using Makie, LaTeXStrings, GLMakie
+using Pkg
+Pkg.activate(".")
+
+using LaTeXStrings, Plots
+import GR
 using CondensateDynamics
 using OrdinaryDiffEq
 using LSODA
 import CondensateDynamics.V
-#gr(colorbar=false,size=(600,150),legend=false,grid=false)
+import FFTW
+gr()
+GR.usecolorscheme(1)
 
-function ground_state_1D()
-    ## Solve the 1D harmonic oscillator
-    # problem with 1D-GPE 
-    L = (10.0,)
-    N = (256,)
-    sim = Sim{length(L), Array{Complex{Float64}}}(L=L, N=N)
+## Solve the 1D harmonic oscillator
+# problem with 1D-GPE 
+L = (40.0,)
+N = (512,)
+sim = Sim{length(L), Array{Complex{Float64}}}(L=L, N=N)
+initial_state = zeros(N[1])
 
+@unpack_Sim sim
+iswitch = -im
+g = 0.0
+equation = GPE_1D
+x = X[1]
+k = K[1]
+dV= volume_element(L, N)
+reltol = 1e-4
+psi_0 = exp.(-x.^2/5)
+psi_0 = psi_0 / sqrt(ns(psi_0, sim))
+initial_state .= psi_0
+@info "norm squared initial state" ns(psi_0, sim)
+flags = FFTW.EXHAUSTIVE
+kspace!(psi_0, sim)
+## TODO : not getting the potential because of function
+@. V0= 1/2 * (x^2)
 
-    @unpack_Sim sim
-    g = 0.0
-    equation = GPE_1D
-    iswitch = -im
-    x = X[1]
-    dV= volume_element(L, N)
-    reltol = 1e-2
-    @. psi_0 = exp(-x^2/2/5)
-    psi_0 = psi_0 / sqrt(sum(abs2.(psi_0) * dV))
-    initial_state = psi_0
-    @info norm_squared(psi_0, sim)
-    alg = Tsit5()
+@pack_Sim! sim
 
-    ## TODO : not getting the potential because of function
-    @. V0= 1/2 * (x^2)
+# Analytical solution: Gaussian
+analytical_gs = zeros(N)
+@. analytical_gs = exp(-(x^2)/2)/(pi^(1/4))
 
-    @pack_Sim! sim
+sol = runsim(sim; info=false)
 
-    # Analytical solution: Gaussian
-    analytical_gs = zeros(N)
-    @. analytical_gs = exp(-(x^2)/2)/(pi^(1/4))
-    @info norm_squared(analytical_gs, sim)
+final = sol[1]
+p = plot(real.(k), abs2.(kspace(initial_state, sim)), color=:blue, ls=:dot, lw=3, label="initial")
+plot!(p, real.(k), abs2.(final), color=:red, label="final")
+plot!(p, real.(k), abs2.(kspace(analytical_gs, sim)), ls=:dot, lw=2, color=:grey, label="analytical")
 
-    sol = runsim(sim; info=false)
-    plot= lines(real.(x), abs.(V.(x, 0.0)),linestyle = :dash, show=true)
-    lines!(real.(x), abs2.(sol[end]), show=true)
-    lines!(real.(x), abs2.(analytical_gs), color=:red)
-    lines!(real.(x), abs2.(initial_state), color=:orange, linestyle=:dot)
-    @info "final distribution: " norm_squared(sol[end], sim)
-    display(plot)
+display(p)
+# vettor = ones(N[1])
+# vettor = xspace(vettor, sim)
+# display(vettor)
+final .= xspace(final, sim)
+@info "norm final " ns(final, sim)
 
-    # fig, ax = lines()
-    # nframes = sim.Nt
-    # framerate = 30
-    # hue_iterator = range(0, 360, length=nframes)
-    # i=1
-    # record(fig, "evolution.gif", hue_iterator;
-    #         framerate = framerate) do 
-    #             lines!(real.(x), abs2.(sol[i]))
-    #     i += 1
-    # end
-    return nothing
-end
+middle = Int(round(N[1]/2))
+reduced_x = real.(x)[middle-10:middle+10]
+p = plot(real.(x), abs2.(initial_state), color=:blue, ls=:dot, lw=3, label="initial")
+plot!(p, real.(x), abs2.(final), color=:red, label="final")
+plot!(p, real.(x), abs2.(final)/ns(final, sim), color=:red,  label="final normalized", ls=:dash)
+plot!(p, real.(x), abs2.(analytical_gs), ls=:dot, lw=2, color=:grey, label="analytical")
+
+display(p)

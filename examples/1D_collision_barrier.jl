@@ -17,7 +17,7 @@ N = (256,)
 sim = Sim{length(L), Array{Complex{Float64}}}(L=L, N=N)
 
 @unpack_Sim sim
-g = 0.0
+g = -3.0
 equation = GPE_1D
 iswitch = 1
 x = X[1]
@@ -25,13 +25,14 @@ k = K[1]
 dV= volume_element(L, N)
 reltol = 1e-4
 tf = 10.0
-@. psi_0 = exp(-x^2/2) #* exp(-im*x*10)
+x0 = -10
+@. psi_0 = exp(-(x-x0)^2/2) * exp(im*x*2)
 
 psi_0 = psi_0 / sqrt(sum(abs2.(psi_0) * dV))
 initial_state = psi_0
 kspace!(psi_0, sim)
 alg = Tsit5()
-@. V0 = 1/2 * (x^2)
+@. V0 = 4* exp(-10*x^2)
 
 @pack_Sim! sim
 
