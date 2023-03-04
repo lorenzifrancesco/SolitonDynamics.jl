@@ -1,20 +1,25 @@
-using CondensateDynamics 
-using CUDA
+using CondensateDynamics
+
+gr()
+GR.usecolorscheme(1)
 ## Solve the 1D harmonic oscillator
 # problem with 1D-GPE 
-L = (4.0,)
+L = (40.0,)
 N = (256,)
 sim = Sim{length(L), Array{Complex{Float64}}}(L=L, N=N)
 
 @unpack_Sim sim
+
 iswitch=-im
 g = 0.0
-V(x, t) = 1/2 * (x^2)
 equation = GPE_1D
 x = X[1]
-@. psi_0 = 1/(pi^1/4) * exp(-x^2/20) # very broad initial state
-psi_0 = psi_0/sqrt(norm_squared(psi_0, sim))
-reltol=1e-7
+dV= volume_element(L, N)
+psi_0 = exp.(-x.^2/5)
+psi_0 = psi_0 / sqrt(ns(psi_0, sim))
+
+kspace!(psi_0, sim)
+@. V0= 1/2 * (x^2)
 @pack_Sim! sim
 
 # Analytical solution: Gaussian
@@ -23,6 +28,6 @@ analytical_gs = zeros(N)
 
 sol, err = testsim(sim)
 @test err == false
+numerical_gs = xspace(sol[1], sim)
 
-numerical_gs = abs2.(sol[end])
-@test isapprox(numerical_gs, abs2.(analytical_gs), rtol=1e-4)
+@test isapprox(ns((numerical_gs-analytical_gs), sim), 0.0, atol=1e-5)
