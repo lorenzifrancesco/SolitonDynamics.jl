@@ -1,66 +1,115 @@
+"""
+Time evolution in xspace
+"""
 function nlin!(dpsi,psi,sim::Sim{1, Array{ComplexF64}},t)
-   @unpack g,X,V0,iswitch,dV = sim; x = X[1]
+   @unpack ksquared,g,X,V0,iswitch,dV,Vol = sim; x = X[1]
    dpsi .= psi
+   # compute the integral of mu for free
+   mu_disp = sum(1/2 * ksquared .* abs2.(dpsi))
    xspace!(dpsi,sim)
-
-   if iswitch == -im
-      @. dpsi *= -(V0 + V(x,t) + g*abs2(psi))
-      mu2 = 1/(norm_squared(psi, sim)) .* (-dV .* sum(abs2.(psi) .* (V0 .+ V(x, t) .+ g .* abs2.(psi) )))
-      @. dpsi += mu2*psi
-   else
-      @. dpsi *= -im * (V0 + V(x, t) + g*abs2(dpsi)) 
-   end
+   @. dpsi *= -im * (V0 + V(x, t) + g*abs2(dpsi)) 
    kspace!(dpsi,sim)
    return nothing
 end
 
+
 """
-Propagation routine
+Time evolution in kspace
 """
 function propagate!(dpsi, psi, sim::Sim{1, Array{ComplexF64}}, t; info=false)
    @unpack ksquared, iswitch, equation, dV, Vol = sim
    if equation == GPE_1D
-      if iswitch == -im
-         nlin!(dpsi,psi,sim,t)
-         @. dpsi = (-1/2*ksquared)*psi
-         mu1 = 1/(norm_squared(xspace(psi, sim), sim) .* Vol) .* sum(-1/2 .*ksquared .*abs2.(psi))
-         @. dpsi += mu1*psi
-      else
-         nlin!(dpsi,psi,sim,t)
-         @. dpsi += (-im*1/2*ksquared)*psi
-      end
+      nlin!(dpsi,psi,sim,t)
+      #    @. dϕ = -im*(1.0 - im*γ)*(dϕ + (espec - μ)*ϕ)
+
+      @. dpsi += -im*(1/2*ksquared)*psi
    elseif equation == NPSE
       throw("Unimplemented")
    end
    return nothing
 end
 
+"""
+Imaginary time evolution in xspace,
+including explicit normalization
+"""
+function ground_state_nlin!(psi,sim::Sim{1, Array{ComplexF64}}, dt; info=false)
+   @unpack ksquared,g,X,V0,iswitch,dV,Vol = sim; x = X[1]
+   
+   initial_norm = ns(psi, sim) 
+   ground_state_evolve!(psi, sim, dt)
+   @. psi += - dt/2 * (V0 + g*abs2(psi)) * psi
+   rel_change = abs(initial_norm - ns(psi, sim))/ns(psi, sim)
+   psi .= psi / sqrt(ns(psi, sim))
 
+   return rel_change
+end
+
+"""
+Imaginary time evolution in kspace
+"""
+function ground_state_evolve!(psi, sim::Sim{1, Array{ComplexF64}}, dt; info=false)
+      @unpack ksquared,g,X,V0,iswitch,dV,Vol = sim; x = X[1]
+      kspace!(psi, sim)
+      @. psi += -dt/2*(1/2 *ksquared) * psi
+      xspace!(psi, sim)
+   return nothing
+end
+
+"""
+Main solution routine
+"""
 function runsim(sim; info=false)
-   @unpack psi_0, dV, ti, tf, solver = sim
-   info && @info norm_squared(psi_0, sim)
-   if solver == SplitStep 
-      problem = ODEProblem(propagate!, psi_0, (ti, tf), sim)
-      sim.nfiles ?
-      (sol = solve(problem,
-                  alg=sim.alg,
-                  reltol=sim.reltol,
-                  callback=savecb,
-                  dense=false,
-                  maxiters=1e10,
-                  progress=true)) :
-      (sol = solve(problem,
-                  alg=sim.alg,
-                  reltol=sim.reltol,
-                  dense=false,
-                  maxiters=1e10,
-                  progress=true))
+   @unpack psi_0, dV, ti, tf, solver, iswitch = sim
+   info && @info ns(psi_0, sim)
 
-   elseif solver == CrankNicholson
-      throw("Unimplemented")
+   # due to normalization, ground state solution 
+   # is computed with forward Euler
+   if iswitch == -im
+      xspace!(psi_0, sim)
+      if solver == SplitStep 
+         relative_tolerance = 6e-5
+         rel_change = 1
+         dt = 0.001
+         #while rel_change > relative_tolerance
+         for i in 1:10000
+            rel_change = ground_state_nlin!(psi_0,sim,dt)
+            if rel_change > 0.2
+               @warn "too fast"
+               dt = dt / 2
+            end
+         end 
+      elseif solver == CrankNicholson
+         throw("Unimplemented") 
+      end
+      kspace!(psi_0, sim)
+      sol = [psi_0]
+      return sol
+   else
+      if solver == SplitStep 
+         problem = ODEProblem(propagate!, psi_0, (ti, tf), sim)
+         sim.nfiles ?
+         (sol = solve(problem,
+                     alg=sim.alg,
+                     reltol=sim.reltol,
+                     callback=savecb,
+                     dense=false,
+                     maxiters=1e10,
+                     progress=true)) :
+         (sol = solve(problem,
+                     alg=sim.alg,
+                     reltol=sim.reltol,
+                     dense=false,
+                     maxiters=1e10,
+                     progress=true))
+
+      elseif solver == CrankNicholson
+         throw("Unimplemented")
+      end
    end
    return sol
 end
+
 
 function testsim(sim)
    err = false
