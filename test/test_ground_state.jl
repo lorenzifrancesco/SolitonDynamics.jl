@@ -1,7 +1,5 @@
 using CondensateDynamics
 
-gr()
-GR.usecolorscheme(1)
 ## Solve the 1D harmonic oscillator
 # problem with 1D-GPE 
 L = (40.0,)
