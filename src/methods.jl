@@ -82,7 +82,35 @@ end
 compute normalization
 """
 function ns(psi, sim)
-    return sum(abs2.(psi) * sim.dV)
+    return sum(abs2.(psi)) * sim.dV
+end
+
+"""
+compute normalization in k-space
+"""
+function nsk(psi, sim)
+    return sum(abs2.(psi)) / sim.Vol
+end
+
+"""
+compute norm squared of a region
+"""
+function ns(psi, sim, mask::Array{Bool})
+    return sum(abs2.(psi).* mask) * sim.dV
+end
+
+"""
+chemical potential in a given configuration
+"""
+function chempot(psi, sim)
+    @unpack ksquared,dV,V0,Vol,g = sim 
+    @warn "vediamo Parseval" nsk(psi, sim)
+    mu = 1/Vol * sum(1/2 * ksquared .* abs2.(psi))
+    tmp = xspace(psi, sim)
+    mu += dV * sum((V0 + g*abs2.(tmp)) .* abs2.(tmp))
+    mu *= 1/ns(tmp, sim) 
+    #mu += 1 # add one transverse energy unit (1D-GPE case)
+    return mu
 end
 
 """
@@ -140,7 +168,7 @@ Correct measures for mapping between `x`- and `k`-space.
 """
 function dfft(x,k)
     dx = x[2]-x[1]
-    Dx = dx/sqrt(2*pi)
+    Dx = dx
     Dk = 1/Dx
     return Dx, Dk
 end
@@ -160,39 +188,48 @@ function dfftall(X,K)
     return DX,DK
 end
 
-"""
-    ψ = xspace(ϕ,sim)
-
-Transform from `k`- to `x`-space using transforms packed into `sim`.
-"""
-function xspace(ϕ,sim)
+function xspace(ϕ::Array,sim)
     @unpack T = sim
     return T.Tkx*ϕ
 end
 
-"""
-    xspace!(ϕ,sim)
-
-Mutating transform from `k`- to `x`-space using transforms packed into `sim`.
-"""
-function xspace!(ψ,sim)
+function xspace!(ψ::Array,sim)
     @unpack T = sim
     T.Tkx!*ψ
     return nothing
 end
 
-"""
-    kspace(ψ,sim)
-"""
-function kspace(ψ,sim)
+function kspace(ψ::Array,sim)
     @unpack T = sim
     return T.Txk*ψ
 end
 
+function kspace!(ψ::Array,sim)
+    @unpack T = sim
+    T.Txk!*ψ
+    return nothing
+end
+
 """
-    kspace!(ψ,sim)
+    CuArrays versions
 """
-function kspace!(ψ,sim)
+function xspace(ϕ::CuArray,sim)
+    @unpack T = sim
+    return CUDA.CUFFT.:(*)(T.Tkx::AbstractFFTs.Plan{T}, ϕ)
+end
+
+function xspace!(ψ::CuArray,sim)
+    @unpack T = sim
+    T.Tkx!*ψ
+    return nothing
+end
+
+function kspace(ψ::CuArray,sim)
+    @unpack T = sim
+    return T.Txk*ψ
+end
+
+function kspace!(ψ::CuArray,sim)
     @unpack T = sim
     T.Txk!*ψ
     return nothing
@@ -201,18 +238,25 @@ end
 """
     definetransforms(funcs,args,meas,kwargs)
 """
-function definetransforms(funcs,args,meas,kwargs)
+function definetransforms(funcs,args,meas;kwargs=nothing)
     trans = []
-    for (fun,arg) in zip(funcs,args)
-        push!(trans, fun(arg...,flags=kwargs))
+    if kwargs === nothing
+        for (fun,arg) in zip(funcs,args)
+            push!(trans, fun(arg...))
+        end
+    else
+        for (fun,arg) in zip(funcs,args)
+            push!(trans, fun(arg...,flags=kwargs))
+        end
     end
+    
     return meas.*trans
 end
 
 """
     T = makeT(X,K,j)
 """
-function makeT(X,K,T;flags=FFTW.MEASURE)
+function makeT(X,K,T::Type{Array{ComplexF64}};flags=FFTW.MEASURE)
     FFTW.set_num_threads(Sys.CPU_THREADS)
     D = length(X)
     N = length.(X)
@@ -224,6 +268,24 @@ function makeT(X,K,T;flags=FFTW.MEASURE)
     trans = (plan_fft,plan_fft!,plan_ifft,plan_ifft!)
     meas = (dμx,dμx,dμk,dμk)
     args = ((psi_test,),(psi_test,),(psi_test,),(psi_test,))
-    Txk,Txk!,Tkx,Tkx! = definetransforms(trans,args,meas,flags)
+    Txk,Txk!,Tkx,Tkx! = definetransforms(trans,args,meas;kwargs=flags)
+    return Transforms{D,N,T}(Txk,Txk!,Tkx,Tkx!)
+end
+
+"""
+    T = makeT(X,K,j) in CUDA
+"""
+function makeT(X,K,T::Type{CuArray{ComplexF64}};flags=FFTW.MEASURE)
+    D = length(X)
+    N = length.(X)
+    DX,DK = dfftall(X,K)
+    dμx = prod(DX)
+    dμk = prod(DK)
+    psi_test = ones(N...) |> complex
+
+    trans = (CUDA.CUFFT.plan_fft,CUDA.CUFFT.plan_fft!,CUDA.CUFFT.plan_ifft,CUDA.CUFFT.plan_ifft!)
+    meas = (dμx,dμx,dμk,dμk)
+    args = ((psi_test,),(psi_test,),(psi_test,),(psi_test,))
+    Txk,Txk!,Tkx,Tkx! = definetransforms(trans,args,meas)
     return Transforms{D,N,T}(Txk,Txk!,Tkx,Tkx!)
 end
