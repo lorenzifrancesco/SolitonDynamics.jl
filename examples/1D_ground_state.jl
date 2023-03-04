@@ -20,7 +20,7 @@ initial_state = zeros(N[1])
 
 @unpack_Sim sim
 iswitch = -im
-g = 0.0
+g = -0.0
 equation = GPE_1D
 x = X[1]
 k = K[1]
@@ -44,15 +44,16 @@ analytical_gs = zeros(N)
 sol = runsim(sim; info=false)
 
 final = sol[1]
+@info "chemical potential" chempot(final, sim)
 p = plot(real.(k), abs2.(kspace(initial_state, sim)), color=:blue, ls=:dot, lw=3, label="initial")
 plot!(p, real.(k), abs2.(final), color=:red, label="final")
 plot!(p, real.(k), abs2.(kspace(analytical_gs, sim)), ls=:dot, lw=2, color=:grey, label="analytical")
-
 display(p)
+
 # vettor = ones(N[1])
 # vettor = xspace(vettor, sim)
 # display(vettor)
-final .= xspace(final, sim)
+xspace!(final, sim)
 @info "norm final " ns(final, sim)
 
 middle = Int(round(N[1]/2))
@@ -61,5 +62,4 @@ p = plot(real.(x), abs2.(initial_state), color=:blue, ls=:dot, lw=3, label="init
 plot!(p, real.(x), abs2.(final), color=:red, label="final")
 plot!(p, real.(x), abs2.(final)/ns(final, sim), color=:red,  label="final normalized", ls=:dash)
 plot!(p, real.(x), abs2.(analytical_gs), ls=:dot, lw=2, color=:grey, label="analytical")
-
 display(p)
