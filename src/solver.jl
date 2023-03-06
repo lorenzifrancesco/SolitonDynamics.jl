@@ -43,11 +43,12 @@ Time evolution in kspace
 """
 function propagate!(dpsi, psi, sim::Sim{1, Array{ComplexF64}}, t; info=false)
    @unpack ksquared, iswitch, equation, dV, Vol = sim
+   @info nsk(psi ,sim)
    if equation == GPE_1D
       nlin!(dpsi,psi,sim,t)
       @. dpsi += -im*iswitch*(1/2*ksquared)*psi
-      #@info "norm" nsk(psi, sim)
-
+      @info "norm" nsk(psi, sim)
+      #@. dpsi += -1/(2*0.001) * log(sum(abs2.(psi)) / sim.Vol) 
    elseif equation == NPSE
       throw("Unimplemented")
    end
@@ -121,20 +122,24 @@ function runsim(sim; info=false)
                         callback=cb,
                         dense=false,
                         maxiters=1e8,
-                        progress=true)) :
+                        progress=true, 
+                        #dt = 0.001
+                        )) :
             (sol = solve(ss_problem,
                         alg=ssalg,
                         callback=cb,
                         dense=false,
                         maxiters=1e8,
-                        progress=true))
+                        progress=true, 
+                        #dt = 0.001
+                        ))
          elseif solver == CrankNicholson
             throw("Unimplemented")
          end
       else
          xspace!(psi_0, sim)
          if solver == SplitStep 
-            abstol_diff = 1e-8
+            abstol_diff = 1e-5
             norm_diff = 1
             dt = 0.001
             #for i in  1:10000
