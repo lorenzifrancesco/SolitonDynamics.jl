@@ -102,9 +102,8 @@ end
 """
 chemical potential in a given configuration
 """
-function chempot(psi, sim)
+function chempotk(psi, sim)
     @unpack ksquared,dV,V0,Vol,g = sim 
-    @warn "vediamo Parseval" nsk(psi, sim)
     mu = 1/Vol * sum(1/2 * ksquared .* abs2.(psi))
     tmp = xspace(psi, sim)
     mu += dV * sum((V0 + g*abs2.(tmp)) .* abs2.(tmp))
@@ -112,6 +111,20 @@ function chempot(psi, sim)
     #mu += 1 # add one transverse energy unit (1D-GPE case)
     return mu
 end
+
+"""
+chemical potential in a given configuration
+"""
+function chempot(psi, sim)
+    @unpack ksquared,dV,V0,Vol,g = sim 
+    mu = dV * sum((V0 + g*abs2.(psi)) .* abs2.(psi))
+    tmp = kspace(psi, sim)
+    mu += 1/Vol * sum(1/2 * ksquared .* abs2.(tmp))
+    mu *= 1/nsk(tmp, sim) 
+    #mu += 1 # add one transverse energy unit (1D-GPE case)
+    return mu
+end
+
 
 """
     X,K,dX,dK = makearrays(L,N)

@@ -9,7 +9,7 @@ using FFTW, CUDA
 using Parameters
 using Reexport
 using LinearAlgebra
-using OrdinaryDiffEq
+using OrdinaryDiffEq, DiffEqCallbacks, SteadyStateDiffEq
 using LazyArrays
 import DiffEqGPU
 using RecursiveArrayTools

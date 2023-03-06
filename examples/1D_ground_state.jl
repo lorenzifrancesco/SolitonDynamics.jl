@@ -5,6 +5,7 @@ using LaTeXStrings, Plots
 import GR
 using CondensateDynamics
 using OrdinaryDiffEq
+using DiffEqCallbacks
 using LSODA
 import CondensateDynamics.V
 import FFTW
@@ -33,17 +34,18 @@ initial_state .= psi_0
 flags = FFTW.EXHAUSTIVE
 kspace!(psi_0, sim)
 ## TODO : not getting the potential because of function
-@. V0= 1/2 * (x^2)
-
+width = 1
+@. V0= 1/2 * ((x/width)^2)
+tf = Inf
 @pack_Sim! sim
 
 # Analytical solution: Gaussian
 analytical_gs = zeros(N)
-@. analytical_gs = exp(-(x^2)/2)/(pi^(1/4))
-
+@. analytical_gs = exp(-((x/width)^2)/2)/(pi^(1/4)*sqrt(width))
+@warn ns(analytical_gs, sim)
 sol = runsim(sim; info=false)
 
-final = sol[1]
+final = sol[end] |> collect
 @info "chemical potential" chempot(final, sim)
 p = plot(real.(k), abs2.(kspace(initial_state, sim)), color=:blue, ls=:dot, lw=3, label="initial")
 plot!(p, real.(k), abs2.(final), color=:red, label="final")
@@ -63,3 +65,5 @@ plot!(p, real.(x), abs2.(final), color=:red, label="final")
 plot!(p, real.(x), abs2.(final)/ns(final, sim), color=:red,  label="final normalized", ls=:dash)
 plot!(p, real.(x), abs2.(analytical_gs), ls=:dot, lw=2, color=:grey, label="analytical")
 display(p)
+
+@warn sum(abs2.(final-analytical_gs))
