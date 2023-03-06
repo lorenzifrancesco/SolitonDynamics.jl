@@ -61,13 +61,17 @@ including explicit normalization
 function ground_state_nlin!(psi,sim::Sim{1, Array{ComplexF64}}, dt; info=false)
    @unpack ksquared,g,X,V0,iswitch,dV,Vol = sim; x = X[1]
    
-   initial_norm = ns(psi, sim) 
+   psi_i = copy(psi) 
    ground_state_evolve!(psi, sim, dt)
-   @. psi += - dt/2 * (V0 + g*abs2(psi)) * psi
-   rel_change = abs(initial_norm - ns(psi, sim))/ns(psi, sim)
-   psi .= psi / sqrt(ns(psi, sim))
+   mu = 0.0
+   if iswitch == -im
+      mu = chempot(psi, sim) # wainting for a more efficient implementation
+   end
+   @. psi += - dt/2 * (V0 + g*abs2(psi)) * psi + dt/2*mu * psi
 
-   return rel_change
+   norm_diff = ns(psi - psi_i, sim)/dt
+   psi .= psi / sqrt(ns(psi, sim))
+   return norm_diff
 end
 
 """
@@ -90,59 +94,64 @@ function runsim(sim; info=false)
 
    # due to normalization, ground state solution 
    # is computed with forward Euler
-   if iswitch == -im
-      # xspace!(psi_0, sim)
-      if solver == SplitStep 
+   boring = true
+   if iswitch == -im 
+      if boring == false
+         # xspace!(psi_0, sim)
+         if solver == SplitStep 
 
-         ssalg = DynamicSS(Tsit5(); abstol = 3e-3, 
-         reltol = sim.reltol,
-         tspan = Inf)
+            ssalg = DynamicSS(Tsit5(); abstol = 3e-3, 
+            reltol = sim.reltol,
+            tspan = Inf)
 
-         problem = ODEProblem(propagate!, psi_0, (ti, tf), sim)
-         ss_problem = SteadyStateProblem(propagate!, psi_0, sim)
+            problem = ODEProblem(propagate!, psi_0, (ti, tf), sim)
+            ss_problem = SteadyStateProblem(propagate!, psi_0, sim)
 
-         function normal!(u,t,integrator)
-            @info "norm" nsk(u, sim)
+            function normal!(u,t,integrator)
+               @info "norm" nsk(u, sim)
+            end
+            cb = FunctionCallingCallback(normal!;
+            func_everystep=true,
+            func_start = true,
+            tdir=1)
+
+            sim.nfiles ?
+            (sol = solve(ss_problem,
+                        alg=ssalg,
+                        callback=cb,
+                        dense=false,
+                        maxiters=1e8,
+                        progress=true)) :
+            (sol = solve(ss_problem,
+                        alg=ssalg,
+                        callback=cb,
+                        dense=false,
+                        maxiters=1e8,
+                        progress=true))
+         elseif solver == CrankNicholson
+            throw("Unimplemented")
          end
-         cb = FunctionCallingCallback(normal!;
-         func_everystep=true,
-         func_start = true,
-         tdir=1)
-
-         sim.nfiles ?
-         (sol = solve(ss_problem,
-                     alg=ssalg,
-                     callback=cb,
-                     dense=false,
-                     maxiters=1e8,
-                     progress=true)) :
-         (sol = solve(ss_problem,
-                     alg=ssalg,
-                     callback=cb,
-                     dense=false,
-                     maxiters=1e8,
-                     progress=true))
-      elseif solver == CrankNicholson
-         throw("Unimplemented")
+      else
+         xspace!(psi_0, sim)
+         if solver == SplitStep 
+            abstol_diff = 1e-8
+            norm_diff = 1
+            dt = 0.001
+            #for i in  1:10000
+            while norm_diff > abstol_diff
+               norm_diff = ground_state_nlin!(psi_0,sim,dt)
+               @info norm_diff
+               # if norm_diff > abstol_diff * 1e5
+               #    @warn "too fast"
+               #    dt = dt * 0.9
+               # end
+            end 
+         elseif solver == CrankNicholson
+            throw("Unimplemented") 
+         end
+         kspace!(psi_0, sim)
+         sol = psi_0
       end
-
-      # if solver == SplitStep 
-      #    relative_tolerance = 5e-5
-      #    rel_change = 1
-      #    dt = 0.005
-      #    #while rel_change > relative_tolerance
-      #    for i in 1:10000
-      #       rel_change = ground_state_nlin!(psi_0,sim,dt)
-      #       if rel_change > 0.2
-      #          @warn "too fast"
-      #          dt = dt / 2
-      #       end
-      #    end 
-      # elseif solver == CrankNicholson
-      #    throw("Unimplemented") 
-      # end
-      # kspace!(psi_0, sim)
-      # sol = [psi_0]
       return [sol]
    else
       if solver == SplitStep 
