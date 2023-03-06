@@ -21,8 +21,8 @@ initial_state = zeros(N[1])
 
 @unpack_Sim sim
 iswitch = -im
-g = -1.255 # our g corresponds to g' * (N-1)
-gamma = abs(g) / (4*pi)
+g = -1.8 # our g corresponds to g' * (N-1)
+gamma = abs(g) / (2)
 mu_analytical = 1 - gamma^2/2
 
 equation = GPE_1D
@@ -30,7 +30,7 @@ x = X[1]
 k = K[1]
 dV= volume_element(L, N)
 reltol = 1e-4
-psi_0 = exp.(-(x/6).^2)
+psi_0 = exp.(-(x/20).^2)
 psi_0 = psi_0 / sqrt(ns(psi_0, sim))
 initial_state .= psi_0
 flags = FFTW.EXHAUSTIVE
@@ -38,7 +38,7 @@ kspace!(psi_0, sim)
 
 ## TODO : not getting the potential because of function
 width = 1
-@. V0 = 1/2 * (x^2/(width^2))
+#@. V0 = 1/2 * (x^2/(width^2))
 tf = Inf
 @pack_Sim! sim
 

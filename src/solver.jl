@@ -139,7 +139,7 @@ function runsim(sim; info=false)
       else
          xspace!(psi_0, sim)
          if solver == SplitStep 
-            abstol_diff = 1e-5
+            abstol_diff = 4e-8
             norm_diff = 1
             dt = 0.001
             #for i in  1:10000
