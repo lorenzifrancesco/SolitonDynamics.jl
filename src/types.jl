@@ -18,11 +18,15 @@ const GPE_3D = EquationType(3, false)
 abstract type Simulation{D} end
 
 struct Solver
+    number::Int64
     spectral::Bool;
 end
 
-const SplitStep = Solver(true)
-const CrankNicholson = Solver(false)
+const SplitStep = Solver(1, true)
+const CrankNicholson = Solver(2, false)
+const PredictorCorrector = Solver(3, false)
+const BackwardEuler = Solver(4, false)
+
 
 abstract type UserParams end
 abstract type Method end
@@ -62,6 +66,7 @@ end
     reltol::Float64 = 1e-3  # default tolerance; may need to use 1e-7 for corner cases
     abstol::Float64 = 1e-3
     dt::Float64 = 1e-3 # used for ground state computation
+    maxiters::Int64 = 5000
     flags::UInt32 = FFTW.MEASURE # choose a plan. PATIENT, NO_TIMELIMIT, EXHAUSTIVE
     iswitch::ComplexF64 = 1.0 # 1.0 for real time, -im for imaginary time
     # === dimensions and physics
