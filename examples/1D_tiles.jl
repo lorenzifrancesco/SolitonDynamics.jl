@@ -34,7 +34,7 @@ k = K[1] |> real
 dV= volume_element(L, N)
 reltol = 1e-4
 tf = 10.0
-x0 = -10
+x0 = L[1] / 5
 alg = Tsit5()
 @pack_Sim! sim
 
@@ -49,6 +49,7 @@ for ((vx, vv), (bx, bb)) in ProgressBar(iter)
     psi_0 = psi_0 / sqrt(ns(psi_0, sim))
     kspace!(psi_0, sim)
     @. V0 = bb * exp(-(x/0.699)^2)
+    tf = 2*x0/vv
     @pack_Sim! sim
 
     sol = runsim(sim; info=false)
