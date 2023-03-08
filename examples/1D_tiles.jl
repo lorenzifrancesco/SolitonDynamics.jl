@@ -16,15 +16,17 @@ N = (256,)
 sim = Sim{length(L), Array{Complex{Float64}}}(L=L, N=N)
 
 # ====== tiling settings 
-tiles = 50
-vel_list = LinRange(0, 0.3, tiles)
-bar_list = LinRange(0, 1, tiles)
+tiles = 5
+vel_list = LinRange(0, 1.17, tiles)
+bar_list = LinRange(0, 1.685, tiles)
 tran = Array{Float64, 2}(undef, (tiles, tiles))
 refl = Array{Float64, 2}(undef, (tiles, tiles))
 
 # ====== initialization and unpacking
 @unpack_Sim sim
-g = -3.0
+g = 
+gamma = abs(g) / 2
+
 equation = GPE_1D
 iswitch = 1
 x = X[1] |> real
@@ -43,10 +45,10 @@ iter = Iterators.product(enumerate(vel_list), enumerate(bar_list))
 
 for ((vx, vv), (bx, bb)) in ProgressBar(iter)
     @unpack_Sim sim
-    @. psi_0 = exp(-(x-x0)^2/2) * exp(im*x*vv)
+    @. psi_0 = sqrt(gamma/2) * 2/(exp(gamma*x) + exp(-x*gamma)) * exp(im*x*vv)
     psi_0 = psi_0 / sqrt(ns(psi_0, sim))
     kspace!(psi_0, sim)
-    @. V0 = bb * exp(-10*x^2)
+    @. V0 = bb * exp(-(x/0.699)^2)
     @pack_Sim! sim
 
     sol = runsim(sim; info=false)
