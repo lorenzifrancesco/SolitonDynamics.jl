@@ -28,13 +28,13 @@ reltol = 1e-4
 tf = 10.0
 
 #@. psi_0 = exp(-x^2/2) * exp(-im*x*10)
-#@. psi_0 = sqrt(gamma/2) * 2/(exp(gamma*x) + exp(-x*gamma))
+@. psi_0 = sqrt(gamma/2) * 2/(exp(gamma*x) + exp(-x*gamma)) * exp(-im*x*4)
 
 psi_0 = psi_0 / sqrt(sum(abs2.(psi_0) * dV))
 initial_state = psi_0
 kspace!(psi_0, sim)
 alg = Tsit5()
-#@. V0 = 1/2 * (x^2)
+@. V0 = 70*exp(-10*x^2)
 
 @pack_Sim! sim
 

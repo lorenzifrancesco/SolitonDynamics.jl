@@ -4,6 +4,7 @@ Time evolution in xspace
 function nlin!(dpsi,psi,sim::Sim{3, CuArray{ComplexF64}},t)
    @unpack ksquared,g,X,V0,iswitch,dV,Vol = sim; x = X[1]
    dpsi .= psi
+   @warn display(typeof(dpsi))
    ifft!(dpsi)
    @. dpsi *= -im * (V0 + V(x, t) + g*abs2(dpsi)) 
    fft!(dpsi)
@@ -44,11 +45,9 @@ Time evolution in kspace
 """
 function propagate!(dpsi, psi, sim::Sim{1, Array{ComplexF64}}, t; info=false)
    @unpack ksquared, iswitch, equation, dV, Vol = sim
-   @info nsk(psi ,sim)
    if equation == GPE_1D
       nlin!(dpsi,psi,sim,t)
       @. dpsi += -im*iswitch*(1/2*ksquared)*psi
-      @info "norm" nsk(psi, sim)
       #@. dpsi += -1/(2*0.001) * log(sum(abs2.(psi)) / sim.Vol) 
    elseif equation == NPSE
       throw("Unimplemented")
@@ -120,7 +119,9 @@ function pc_ground_state!(psi,sim::Sim{1, Array{ComplexF64}}, dt, tri_fwd, tri_b
    psi_i = copy(psi) 
    nonlin = -(dt/2) * g*abs2.(psi)
    tri_fwd += - Diagonal(ones(N[1])) + Diagonal(nonlin)
-
+   for i in 1:3
+      mapslices(x -> \(x, tri_fwd[i]), psi, dims=(i))
+   end
    psi_star = tri_fwd*psi + psi
    psi .= 1/2*(tri_fwd*psi) + psi
 
@@ -152,6 +153,24 @@ function be_ground_state!(psi,sim::Sim{1, Array{ComplexF64}}, dt, tri_fwd, tri_b
    psi .= psi / sqrt(ns(psi, sim))
    return norm_diff
 end
+
+
+"""
+3D Imaginary time evolution in xspace, 
+using BKW Euler
+"""
+function be_ground_state!(psi,sim::Sim{3, CuArray{ComplexF64}}, dt, tri_fwd, tri_bkw; info=false)
+   @unpack dt,g,X,V0,iswitch,dV,Vol,N = sim; x = X[1]
+   psi_i = copy(psi) 
+   nonlin = -(dt/2) * g*abs2.(psi)
+   tri_bkw += Diagonal(nonlin)
+   psi .= transpose(\(psi, tri_bkw))
+
+   norm_diff = ns(psi - psi_i, sim)/dt
+   psi .= psi / sqrt(ns(psi, sim))
+   return norm_diff
+end
+
 
 """
 Main solution routine
@@ -216,7 +235,7 @@ function runsim(sim; info=false)
                #    @warn "too fast"
                #    dt = dt * 0.9
                # end
-            end 
+            end
          else
             solvers = [ground_state_nlin!, cn_ground_state!, pc_ground_state!, be_ground_state!]
             func = solvers[solver.number]
