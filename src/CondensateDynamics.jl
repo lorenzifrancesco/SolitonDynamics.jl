@@ -12,7 +12,7 @@ using LinearAlgebra
 using OrdinaryDiffEq, DiffEqCallbacks, SteadyStateDiffEq
 using LazyArrays
 import DiffEqGPU
-using RecursiveArrayTools
+using LinearAlgebra, RecursiveArrayTools
 
 @reexport using Parameters
 @reexport using JLD2

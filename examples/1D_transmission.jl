@@ -18,7 +18,7 @@ sim = Sim{length(L), Array{Complex{Float64}}}(L=L, N=N)
 
 @unpack_Sim sim
 g = -7.3387
-gamma = g / (4*pi)
+gamma = abs(g) / 2
 equation = GPE_1D
 iswitch = 1
 x = X[1]
@@ -27,7 +27,8 @@ dV= volume_element(L, N)
 reltol = 1e-4
 tf = 10.0
 
-@. psi_0 = exp(-x^2/2) * exp(-im*x*10)
+#@. psi_0 = exp(-x^2/2) * exp(-im*x*10)
+#@. psi_0 = sqrt(gamma/2) * 2/(exp(gamma*x) + exp(-x*gamma))
 
 psi_0 = psi_0 / sqrt(sum(abs2.(psi_0) * dV))
 initial_state = psi_0
