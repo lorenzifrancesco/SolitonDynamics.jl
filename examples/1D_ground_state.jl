@@ -12,7 +12,7 @@ import FFTW
 gr()
 GR.usecolorscheme(1)
 
-## Solve the 1D harmonic oscillator
+## Solve the 1D ground state 
 # problem with 1D-GPE 
 L = (40.0,)
 N = (512,)
@@ -22,23 +22,23 @@ initial_state = zeros(N[1])
 # =========================================================
 @unpack_Sim sim
 iswitch = -im
-solver = CrankNicholson
-g = -100 # our g corresponds to g' * (N-1)
+solver = BackwardEuler
+g = -4.0 # our g corresponds to g' * (N-1)
 gamma = abs(g) / (2)
 mu_analytical = 1 - gamma^2/2
-abstol = 1e-4
+abstol = 1e-2
 equation = GPE_1D
 x = X[1]
 k = K[1]
 dV= volume_element(L, N)
-dt = 0.001
+dt = 0.05
 psi_0 = exp.(-(x/2).^2)
 psi_0 = psi_0 / sqrt(ns(psi_0, sim))
 initial_state .= psi_0
 flags = FFTW.EXHAUSTIVE
 kspace!(psi_0, sim)
 
-width = 1
+width = 7
 #@. V0 = 1/2 * (x^2/(width^2))
 tf = Inf
 @pack_Sim! sim
