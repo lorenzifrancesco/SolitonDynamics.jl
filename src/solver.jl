@@ -21,6 +21,7 @@ function propagate!(dpsi, psi, sim::Sim{3, CuArray{ComplexF64}}, t; info=false)
    return nothing
 end
 
+
 """
 Time evolution in xspace
 """
@@ -55,6 +56,7 @@ function propagate!(dpsi, psi, sim::Sim{1, Array{ComplexF64}}, t; info=false)
    return nothing
 end
 
+
 """
 Imaginary time evolution in xspace,
 including explicit normalization
@@ -75,6 +77,7 @@ function ground_state_nlin!(psi,sim::Sim{1, Array{ComplexF64}}, dt; info=false)
    return norm_diff
 end
 
+
 """
 Imaginary time evolution in kspace
 """
@@ -86,6 +89,7 @@ function ground_state_evolve!(psi, sim::Sim{1, Array{ComplexF64}}, dt; info=fals
    return nothing
 end
 
+
 """
 Imaginary time evolution in xspace, 
 using Crank Nicholson standard scheme
@@ -93,17 +97,19 @@ using Crank Nicholson standard scheme
 function cn_ground_state!(psi,sim::Sim{1, Array{ComplexF64}}, dt, tri_fwd, tri_bkw; info=false)
    @unpack dt,g,X,V0,iswitch,dV,Vol = sim; x = X[1]
    psi_i = copy(psi) 
-   nonlin = -(dt/2) * g*abs2.(psi)
+   nonlin = (dt/2) * g*abs2.(psi)
    tri_fwd += Diagonal(nonlin)
    tri_bkw += Diagonal(-nonlin)
+   #tri_fwd *= 1/2
+   #tri_bkw *= 1/2
    psi .= tri_fwd*psi
    psi .= transpose(\(psi, tri_bkw))
-   @info display(sum(psi))
 
    norm_diff = ns(psi - psi_i, sim)/dt
    psi .= psi / sqrt(ns(psi, sim))
    return norm_diff
 end
+
 
 """
 Imaginary time evolution in xspace, 
@@ -113,13 +119,13 @@ function pc_ground_state!(psi,sim::Sim{1, Array{ComplexF64}}, dt, tri_fwd, tri_b
    @unpack dt,g,X,V0,iswitch,dV,Vol,N = sim; x = X[1]
    psi_i = copy(psi) 
    nonlin = -(dt/2) * g*abs2.(psi)
-   tri_fwd = - Diagonal(ones(N[1])) + Diagonal(nonlin)
+   tri_fwd += - Diagonal(ones(N[1])) + Diagonal(nonlin)
 
    psi_star = tri_fwd*psi + psi
    psi .= 1/2*(tri_fwd*psi) + psi
 
-   nonlin_1 = -(dt/2) * g*abs2.(psi)
-   tri_fwd = Diagonal(nonlin_1-nonlin)
+   nonlin_1 = -(dt/2) * g*abs2.(psi_star)
+   tri_fwd .= Diagonal(nonlin_1-nonlin)
    psi .+= 1/2*(tri_fwd*psi_star) 
    tri_fwd = -  Diagonal(ones(N[1])) + Diagonal(nonlin)
    psi .= 1/2*(tri_fwd*psi_i + tri_fwd*psi) + psi
@@ -130,6 +136,7 @@ function pc_ground_state!(psi,sim::Sim{1, Array{ComplexF64}}, dt, tri_fwd, tri_b
    return norm_diff
 end
 
+
 """
 Imaginary time evolution in xspace, 
 using BKW Euler
@@ -137,13 +144,12 @@ using BKW Euler
 function be_ground_state!(psi,sim::Sim{1, Array{ComplexF64}}, dt, tri_fwd, tri_bkw; info=false)
    @unpack dt,g,X,V0,iswitch,dV,Vol,N = sim; x = X[1]
    psi_i = copy(psi) 
-   nonlin = (dt/2) * g*abs2.(psi)
+   nonlin = -(dt/2) * g*abs2.(psi)
    tri_bkw += Diagonal(nonlin)
    psi .= transpose(\(psi, tri_bkw))
 
    norm_diff = ns(psi - psi_i, sim)/dt
    psi .= psi / sqrt(ns(psi, sim))
-
    return norm_diff
 end
 
@@ -151,7 +157,7 @@ end
 Main solution routine
 """
 function runsim(sim; info=false)
-   @unpack psi_0, dV, dt, ti, tf, solver, iswitch, abstol, reltol, N, V0 = sim
+   @unpack psi_0, dV, dt, ti, tf, solver, iswitch, abstol, reltol, N, V0, maxiters = sim
    info && @info ns(psi_0, sim)
 
    # due to normalization, ground state solution 
@@ -190,8 +196,7 @@ function runsim(sim; info=false)
                         alg=ssalg,
                         callback=cb,
                         dense=false,
-                        maxiters=1e8,   psi .= psi / sqrt(ns(psi, sim))
-
+                        maxiters=1e8,
                         progress=true, 
                         #dt = 0.001
                         ))
@@ -212,22 +217,24 @@ function runsim(sim; info=false)
                #    dt = dt * 0.9
                # end
             end 
-         elseif solver == CrankNicholson
+         else
+            solvers = [ground_state_nlin!, cn_ground_state!, pc_ground_state!, be_ground_state!]
+            func = solvers[solver.number]
+            @info "Solving using solver" func 
             norm_diff = 1
-            abstol_diff = abstol * dt
+            abstol_diff = abstol
             taglia = N[1]
             #for i in  1:10000
-            d_central = (dt/2) * 1/(dV^2) * ones(taglia) - V0 |> complex
-            d_lu = -(dt/2) * 1/(2*dV^2) * ones(taglia-1) |> complex
+            d_central = -(dt/2) * ( 1/(dV^2) * ones(taglia) - V0) |> complex
+            d_lu = (dt/2) * 1/(2*dV^2) * ones(taglia-1) |> complex
             tri_fwd = SymTridiagonal(d_central, d_lu) + Diagonal(ones(taglia)) # Dx
-            tri_bkw = SymTridiagonal(-d_central, -d_lu) + Diagonal(ones(taglia)) # Sx
-            maxiters = 1000
+            tri_bkw = -SymTridiagonal(d_central, d_lu) + Diagonal(ones(taglia)) # Sx
             cnt = 0 
             while norm_diff > abstol_diff && cnt < maxiters
-               norm_diff = be_ground_state!(psi_0,sim,dt, tri_fwd, tri_bkw)
+               norm_diff = func(psi_0,sim,dt, tri_fwd, tri_bkw)
                cnt +=1
-               display(cnt)
             end
+            @info "Computation ended after iterations" cnt
          end
          kspace!(psi_0, sim)
          sol = psi_0
@@ -241,13 +248,13 @@ function runsim(sim; info=false)
                      alg=sim.alg,
                      reltol=sim.reltol,
                      dense=false,
-                     maxiters=1e10,
+                     maxiters=maxiters,
                      progress=true)) :
          (sol = solve(problem,
                      alg=sim.alg,
                      reltol=sim.reltol,
                      dense=false,
-                     maxiters=1e10,
+                     maxiters=maxiters,
                      progress=true))
 
       elseif solver == CrankNicholson
