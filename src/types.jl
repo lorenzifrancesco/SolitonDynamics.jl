@@ -59,7 +59,9 @@ end
     solver::Solver = SplitStep
     graphics::Bool = false
     alg::OrdinaryDiffEq.OrdinaryDiffEqAdaptiveAlgorithm = Tsit5() # default solver
-    reltol::Float64 = 1e-6 # default tolerance; may need to use 1e-7 for corner cases
+    reltol::Float64 = 1e-3  # default tolerance; may need to use 1e-7 for corner cases
+    abstol::Float64 = 1e-3
+    dt::Float64 = 1e-3 # used for ground state computation
     flags::UInt32 = FFTW.MEASURE # choose a plan. PATIENT, NO_TIMELIMIT, EXHAUSTIVE
     iswitch::ComplexF64 = 1.0 # 1.0 for real time, -im for imaginary time
     # === dimensions and physics
