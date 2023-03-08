@@ -23,15 +23,15 @@ initial_state = zeros(N[1])
 @unpack_Sim sim
 iswitch = -im
 solver = CrankNicholson
-g = -1.8 # our g corresponds to g' * (N-1)
+g = -100 # our g corresponds to g' * (N-1)
 gamma = abs(g) / (2)
 mu_analytical = 1 - gamma^2/2
-
+abstol = 1e-4
 equation = GPE_1D
 x = X[1]
 k = K[1]
 dV= volume_element(L, N)
-dt = 0.5
+dt = 0.001
 psi_0 = exp.(-(x/2).^2)
 psi_0 = psi_0 / sqrt(ns(psi_0, sim))
 initial_state .= psi_0

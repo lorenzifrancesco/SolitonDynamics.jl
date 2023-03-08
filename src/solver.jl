@@ -93,15 +93,57 @@ using Crank Nicholson standard scheme
 function cn_ground_state!(psi,sim::Sim{1, Array{ComplexF64}}, dt, tri_fwd, tri_bkw; info=false)
    @unpack dt,g,X,V0,iswitch,dV,Vol = sim; x = X[1]
    psi_i = copy(psi) 
-   nonlin = -g*abs2.(psi)
+   nonlin = -(dt/2) * g*abs2.(psi)
    tri_fwd += Diagonal(nonlin)
    tri_bkw += Diagonal(-nonlin)
-   psi .= dt/2 * (tri_fwd*psi)
-   psi .= transpose(\(psi, dt/2 * tri_bkw))
+   psi .= tri_fwd*psi
+   psi .= transpose(\(psi, tri_bkw))
    @info display(sum(psi))
 
    norm_diff = ns(psi - psi_i, sim)/dt
    psi .= psi / sqrt(ns(psi, sim))
+   return norm_diff
+end
+
+"""
+Imaginary time evolution in xspace, 
+using predictor-corrector scheme (i FWD Euler + 1 fix point iterate)
+"""
+function pc_ground_state!(psi,sim::Sim{1, Array{ComplexF64}}, dt, tri_fwd, tri_bkw; info=false)
+   @unpack dt,g,X,V0,iswitch,dV,Vol,N = sim; x = X[1]
+   psi_i = copy(psi) 
+   nonlin = -(dt/2) * g*abs2.(psi)
+   tri_fwd = - Diagonal(ones(N[1])) + Diagonal(nonlin)
+
+   psi_star = tri_fwd*psi + psi
+   psi .= 1/2*(tri_fwd*psi) + psi
+
+   nonlin_1 = -(dt/2) * g*abs2.(psi)
+   tri_fwd = Diagonal(nonlin_1-nonlin)
+   psi .+= 1/2*(tri_fwd*psi_star) 
+   tri_fwd = -  Diagonal(ones(N[1])) + Diagonal(nonlin)
+   psi .= 1/2*(tri_fwd*psi_i + tri_fwd*psi) + psi
+   @info display(sum(psi))
+
+   norm_diff = ns(psi - psi_i, sim)/dt
+   psi .= psi / sqrt(ns(psi, sim))
+   return norm_diff
+end
+
+"""
+Imaginary time evolution in xspace, 
+using BKW Euler
+"""
+function be_ground_state!(psi,sim::Sim{1, Array{ComplexF64}}, dt, tri_fwd, tri_bkw; info=false)
+   @unpack dt,g,X,V0,iswitch,dV,Vol,N = sim; x = X[1]
+   psi_i = copy(psi) 
+   nonlin = (dt/2) * g*abs2.(psi)
+   tri_bkw += Diagonal(nonlin)
+   psi .= transpose(\(psi, tri_bkw))
+
+   norm_diff = ns(psi - psi_i, sim)/dt
+   psi .= psi / sqrt(ns(psi, sim))
+
    return norm_diff
 end
 
@@ -148,7 +190,8 @@ function runsim(sim; info=false)
                         alg=ssalg,
                         callback=cb,
                         dense=false,
-                        maxiters=1e8,
+                        maxiters=1e8,   psi .= psi / sqrt(ns(psi, sim))
+
                         progress=true, 
                         #dt = 0.001
                         ))
@@ -174,18 +217,16 @@ function runsim(sim; info=false)
             abstol_diff = abstol * dt
             taglia = N[1]
             #for i in  1:10000
-            d_central = 1/(dV^2) * ones(taglia) - V0 |> complex
-            d_lu = -1/(2*dV^2) * ones(taglia-1) |> complex
+            d_central = (dt/2) * 1/(dV^2) * ones(taglia) - V0 |> complex
+            d_lu = -(dt/2) * 1/(2*dV^2) * ones(taglia-1) |> complex
             tri_fwd = SymTridiagonal(d_central, d_lu) + Diagonal(ones(taglia)) # Dx
-            tri_bkw = SymTridiagonal(d_central, d_lu) + Diagonal(ones(taglia)) # Sx
-
-            while norm_diff > abstol_diff
-               norm_diff = cn_ground_state!(psi_0,sim,dt, tri_fwd, tri_bkw)
-               @info norm_diff
-               # if norm_diff > abstol_diff * 1e5
-               #    @warn "too fast"
-               #    dt = dt * 0.9
-               # end
+            tri_bkw = SymTridiagonal(-d_central, -d_lu) + Diagonal(ones(taglia)) # Sx
+            maxiters = 1000
+            cnt = 0 
+            while norm_diff > abstol_diff && cnt < maxiters
+               norm_diff = be_ground_state!(psi_0,sim,dt, tri_fwd, tri_bkw)
+               cnt +=1
+               display(cnt)
             end
          end
          kspace!(psi_0, sim)
