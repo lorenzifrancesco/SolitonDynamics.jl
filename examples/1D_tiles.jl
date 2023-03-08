@@ -24,7 +24,7 @@ refl = Array{Float64, 2}(undef, (tiles, tiles))
 
 # ====== initialization and unpacking
 @unpack_Sim sim
-g = 
+g = 0.587  #corresponds to gamma
 gamma = abs(g) / 2
 
 equation = GPE_1D
