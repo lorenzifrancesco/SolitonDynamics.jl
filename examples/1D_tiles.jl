@@ -11,7 +11,7 @@ using ProgressBars
 gr()
 GR.usecolorscheme(1)
 
-L = (40.0,)
+L = (50.0,)
 N = (256,)
 sim = Sim{length(L), Array{Complex{Float64}}}(L=L, N=N)
 
@@ -24,7 +24,7 @@ refl = Array{Float64, 2}(undef, (tiles, tiles))
 
 # ====== initialization and unpacking
 @unpack_Sim sim
-g = 0.587  #corresponds to gamma
+g = -0.587  #corresponds to gamma
 gamma = abs(g) / 2
 
 equation = GPE_1D
@@ -32,10 +32,11 @@ iswitch = 1
 x = X[1] |> real
 k = K[1] |> real
 dV= volume_element(L, N)
-reltol = 1e-4
-tf = 10.0
-x0 = L[1] / 5
+reltol = 1e-3
+x0 = L[1] / 4
 alg = Tsit5()
+maxiters = 20000
+
 @pack_Sim! sim
 
 mask_refl = map(xx -> xx>0, x)
