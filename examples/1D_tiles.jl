@@ -16,7 +16,7 @@ N = (256,)
 sim = Sim{length(L), Array{Complex{Float64}}}(L=L, N=N)
 
 # ====== tiling settings 
-tiles = 5
+tiles = 200
 vel_list = LinRange(0, 1.17, tiles)
 bar_list = LinRange(0, 1.685, tiles)
 tran = Array{Float64, 2}(undef, (tiles, tiles))
@@ -50,7 +50,11 @@ for ((vx, vv), (bx, bb)) in ProgressBar(iter)
     psi_0 = psi_0 / sqrt(ns(psi_0, sim))
     kspace!(psi_0, sim)
     @. V0 = bb * exp(-(x/0.699)^2)
-    tf = 2*x0/vv
+    if vv == 0.0
+        tf = 10.0
+    else
+        tf = 2*x0/vv
+    end
     @pack_Sim! sim
 
     sol = runsim(sim; info=false)
