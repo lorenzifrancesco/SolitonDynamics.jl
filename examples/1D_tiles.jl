@@ -55,6 +55,7 @@ for ((vx, vv), (bx, bb)) in ProgressBar(iter)
     else
         tf = 2*x0/vv
     end
+    @info (vv, bb)
     @pack_Sim! sim
 
     sol = runsim(sim; info=false)
