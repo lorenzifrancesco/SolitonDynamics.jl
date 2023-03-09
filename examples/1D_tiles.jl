@@ -34,7 +34,7 @@ k = K[1] |> real
 dV= volume_element(L, N)
 reltol = 1e-3
 x0 = L[1] / 4
-alg = Tsit5()
+alg = BS3()
 maxiters = 20000
 
 @pack_Sim! sim

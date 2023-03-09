@@ -26,7 +26,7 @@ k = K[1]
 dV= volume_element(L, N)
 reltol = 1e-3
 x0 = L[1] / 4
-vv = 1
+vv = 0.5
 tf = 2*x0/vv
 maxiters = 20000
 #@. psi_0 = exp(-x^2/2) * exp(-im*x*10)
@@ -35,7 +35,7 @@ maxiters = 20000
 psi_0 = psi_0 / sqrt(sum(abs2.(psi_0) * dV))
 initial_state = psi_0
 kspace!(psi_0, sim)
-alg = Tsit5()
+alg = BS3()
 @. V0 = 1*exp(-(x/0.699)^2)
 
 @pack_Sim! sim
