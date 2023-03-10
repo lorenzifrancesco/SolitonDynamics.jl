@@ -57,6 +57,14 @@ end
     #psi::ArrayPartition = crandnpartition(D,N,A)
 end
 
+@with_kw mutable struct GPUTransforms{D,N,A} <: TransformLibrary{A}
+    Txk::AbstractFFTs.ScaledPlan{Complex{Float64}, CUDA.CUFFT.cCuFFTPlan{ComplexF64, -1, false, 3},Float64} = 0.1*CUDA.CUFFT.plan_fft(  CuArray(crandn_array(N, A)))
+    Txk!::AbstractFFTs.ScaledPlan{Complex{Float64},CUDA.CUFFT.cCuFFTPlan{ComplexF64, -1, true , 3},Float64} = 0.1*CUDA.CUFFT.plan_fft!( CuArray(crandn_array(N, A)))
+    Tkx::AbstractFFTs.ScaledPlan{Complex{Float64}, CUDA.CUFFT.cCuFFTPlan{ComplexF64,  1, false, 3},Float64} = 0.1*CUDA.CUFFT.plan_ifft( CuArray(crandn_array(N, A)))
+    Tkx!::AbstractFFTs.ScaledPlan{Complex{Float64},CUDA.CUFFT.cCuFFTPlan{ComplexF64,  1, true , 3},Float64} = 0.1*CUDA.CUFFT.plan_ifft!(CuArray(crandn_array(N, A)))
+    #psi::ArrayPartition = crandnpartition(D,N,A)
+end
+
 @with_kw mutable struct Sim{D, A <: AbstractArray}
     # === solver and algorithm
     equation::EquationType = GPE_1D
