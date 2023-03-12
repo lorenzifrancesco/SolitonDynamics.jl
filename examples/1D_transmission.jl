@@ -58,9 +58,9 @@ mask_tran = map(xx -> xx<0, x)
 
 
 sol = runsim(sim; info=false)
-time = sol.t
+time_axis = sol.t
 u = reduce(hcat, sol.u)
-@info "time steps" size(time)
+@info "time steps" size(time_axis)
 final = u[:, end]
 xspace!(final, sim)
 xspace!(psi_0, sim)
@@ -74,5 +74,5 @@ plot!(p, real.(x), abs2.(final), label="final")
 u = mapslices(x->xspace(x, sim),u,dims=(1)) 
 
 #map(x -> xspace!(x, sim), sol)
-ht = heatmap(real.(x), time, abs2.(u)')
+ht = heatmap(real.(x), time_axis, abs2.(u)')
 display(ht)
