@@ -1,24 +1,29 @@
 """
-Time evolution in xspace
+Time evolution in xspace 3D
 """
 function nlin!(dpsi,psi,sim::Sim{3, CuArray{ComplexF64}},t)
-   @unpack ksquared,g,X,V0,iswitch,dV,Vol = sim; x = X[1]
+   @unpack ksquared,g,X,V0,iswitch,dV,Vol,mu = sim; x = X[1]; y = X[2]; z = X[3]
    dpsi .= psi
-   @warn display(typeof(dpsi))
-   ifft!(dpsi)
-   @. dpsi *= -im * (V0 + V(x, t) + g*abs2(dpsi)) 
-   fft!(dpsi)
+   mu_im = 0.0
+   if iswitch == -im 
+      mu_im = chempotk(psi, sim) # wainting for a more efficient implementation
+   end
+   xspace!(dpsi, sim)
+   @. dpsi *= -im * (V0 + V.(x, y, z, t) + g*abs2(dpsi)) + mu_im
+   kspace!(dpsi, sim)
    return nothing
 end
 
 
 """
-Time evolution in kspace
+Time evolution in kspace 3D 
 """
 function propagate!(dpsi, psi, sim::Sim{3, CuArray{ComplexF64}}, t; info=false)
-   @unpack ksquared, iswitch, dV, Vol = sim
+   @unpack ksquared,iswitch,X,mu,gamma = sim; x = X[1]
    nlin!(dpsi,psi,sim,t)
-   @. dpsi += -im*(1/2*ksquared)*psi
+   @. dpsi = (1.0 - im*gamma)*(-im*(1/2*ksquared - mu)*psi + dpsi)
+   @info nsk(psi, sim)
+   #@info CUDA.memory_status()
    return nothing
 end
 
@@ -27,14 +32,14 @@ end
 Time evolution in xspace
 """
 function nlin!(dpsi,psi,sim::Sim{1, Array{ComplexF64}},t)
-   @unpack ksquared,g,X,V0,iswitch,dV,Vol = sim; x = X[1]
+   @unpack ksquared,g,X,V0,iswitch,dV,Vol,mu = sim; x = X[1]
    dpsi .= psi
-   xspace!(dpsi,sim)
-   mu = 0.0
+   mu_im = 0.0
    if iswitch == -im
-      mu = chempotk(psi, sim) # wainting for a more efficient implementation
+      mu_im = chempotk(psi, sim) # wainting for a more efficient implementation
    end
-   @. dpsi *= -im *iswitch* (V0 + V(x, t) + g*abs2(dpsi)) + mu
+   xspace!(dpsi,sim)
+   @. dpsi *= -im*iswitch* (V0 + V(x, t) + g*abs2(dpsi)) + mu_im
    kspace!(dpsi,sim)
    return nothing
 end
@@ -44,11 +49,11 @@ end
 Time evolution in kspace
 """
 function propagate!(dpsi, psi, sim::Sim{1, Array{ComplexF64}}, t; info=false)
-   @unpack ksquared, iswitch, equation, dV, Vol = sim
+   @unpack ksquared, iswitch, equation, dV, Vol,mu,gamma = sim
    if equation == GPE_1D
       nlin!(dpsi,psi,sim,t)
-      @. dpsi += -im*iswitch*(1/2*ksquared)*psi
-      #@. dpsi += -1/(2*0.001) * log(sum(abs2.(psi)) / sim.Vol) 
+      #    @. dϕ = -im*(1.0 - im*γ)*(dϕ + (espec - μ)*ϕ)
+      @. dpsi = (1.0 - im*gamma)*(-im*(1/2*ksquared - mu)*psi + dpsi)
    elseif equation == NPSE
       throw("Unimplemented")
    end
@@ -179,49 +184,57 @@ function runsim(sim; info=false)
    @unpack psi_0, dV, dt, ti, tf, solver, iswitch, abstol, reltol, N, V0, maxiters = sim
    info && @info ns(psi_0, sim)
 
+   function savefunction(psi...)
+      isdir(path) || mkpath(path)
+      i = findfirst(x->x== psi[2],sim.t)
+      padi = lpad(string(i),ndigits(length(sim.t)),"0")
+      info && println("⭆ Save $i at t = $(trunc(ψ[2];digits=3))")
+      # tofile = path*"/"*filename*padi*".jld2"
+      tofile = joinpath(path,filename*padi*".jld2")
+      save(tofile,"ψ",psi[1],"t",psi[2])
+  end
+
+  savecb = FunctionCallingCallback(savefunction;
+                   funcat = sim.t, # times to save at
+                   func_everystep=false,
+                   func_start = true,
+                   tdir=1)
+
    # due to normalization, ground state solution 
    # is computed with forward Euler
-   boring = true
+   boring = false
    if iswitch == -im 
       if boring == false
-         # xspace!(psi_0, sim)
+         sim.iswitch = 1.0
          if solver == SplitStep 
 
-            ssalg = DynamicSS(Tsit5(); abstol = 3e-3, 
+            ssalg = DynamicSS(BS3(); 
             reltol = sim.reltol,
             tspan = Inf)
 
             problem = ODEProblem(propagate!, psi_0, (ti, tf), sim)
             ss_problem = SteadyStateProblem(propagate!, psi_0, sim)
 
-            function normal!(u,t,integrator)
-               @info "norm" nsk(u, sim)
-            end
-            cb = FunctionCallingCallback(normal!;
-            func_everystep=true,
-            func_start = true,
-            tdir=1)
-
             sim.nfiles ?
             (sol = solve(ss_problem,
                         alg=ssalg,
-                        callback=cb,
+                        callback=savecb,
                         dense=false,
-                        maxiters=1e8,
+                        maxiters=maxiters,
                         progress=true, 
                         #dt = 0.001
                         )) :
             (sol = solve(ss_problem,
                         alg=ssalg,
-                        callback=cb,
                         dense=false,
-                        maxiters=1e8,
+                        maxiters=maxiters,
                         progress=true, 
                         #dt = 0.001
                         ))
          elseif solver == CrankNicholson
             throw("Unimplemented")
          end
+         return sol
       else
          xspace!(psi_0, sim)
          if solver == SplitStep 
@@ -257,8 +270,8 @@ function runsim(sim; info=false)
          end
          kspace!(psi_0, sim)
          sol = psi_0
+         return [sol]
       end
-      return [sol]
    else
       if solver == SplitStep 
          problem = ODEProblem(propagate!, psi_0, (ti, tf), sim)
@@ -266,17 +279,20 @@ function runsim(sim; info=false)
          (sol = solve(problem,
                      alg=sim.alg,
                      reltol=sim.reltol,
+                     saveat=sim.t[end],
+                     callback=savecb,
                      dense=false,
                      maxiters=maxiters,
                      progress=true)) :
          (sol = solve(problem,
                      alg=sim.alg,
                      reltol=sim.reltol,
+                     saveat=sim.t,
                      dense=false,
                      maxiters=maxiters,
                      progress=true))
 
-      elseif solver == CrankNicholson
+      elseif solver != SplitStep
          throw("Unimplemented")
       end
    end

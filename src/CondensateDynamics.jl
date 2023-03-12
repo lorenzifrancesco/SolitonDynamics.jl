@@ -5,17 +5,14 @@ module CondensateDynamics
 # dev settings
 using ExportAll
 
-using FFTW, CUDA
+using FFTW, CUDA, Adapt # useful for loading sparse matrix in GPU
 using Parameters
 using Reexport
-using LinearAlgebra
-using OrdinaryDiffEq, DiffEqCallbacks, SteadyStateDiffEq
-using LazyArrays
-import DiffEqGPU
-using LinearAlgebra, RecursiveArrayTools
+using OrdinaryDiffEq, DiffEqCallbacks, SteadyStateDiffEq, DiffEqGPU
+using LinearAlgebra, RecursiveArrayTools, LazyArrays
+import JLD2 
 
 @reexport using Parameters
-@reexport using JLD2
 import FileIO
 
 export runsim, testsim

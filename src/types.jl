@@ -66,6 +66,7 @@ end
 end
 
 @with_kw mutable struct Sim{D, A <: AbstractArray}
+
     # === solver and algorithm
     equation::EquationType = GPE_1D
     solver::Solver = SplitStep
@@ -73,30 +74,40 @@ end
     alg::OrdinaryDiffEq.OrdinaryDiffEqAdaptiveAlgorithm = Tsit5() # default solver
     reltol::Float64 = 1e-3  # default tolerance; may need to use 1e-7 for corner cases
     abstol::Float64 = 1e-3
-    dt::Float64 = 1e-3 # used for ground state computation
     maxiters::Int64 = 5000
     flags::UInt32 = FFTW.MEASURE # choose a plan. PATIENT, NO_TIMELIMIT, EXHAUSTIVE
     iswitch::ComplexF64 = 1.0 # 1.0 for real time, -im for imaginary time
+
     # === dimensions and physics
     L::NTuple{D,Float64} # length scales
     N::NTuple{D,Int64}  # grid points in each dimensions
-    g = 0.1
-    γ = 0.0; @assert γ >= 0.0 # three body losses param
-    
-    ti = 0.0    # initial time
-    tf = 1.0    # final time
-    tspan = [ti, tf]
-    Nt::Int64 = 5    # number of saves over (ti,tf)
-    params::UserParams = Params() # optional user parameterss
-    V0::A = zeros(N)
-    t::LinRange{Float64} = LinRange(ti,tf,Nt) # time of saves
-    psi_0::A = ones(N) |> complex # initial condition
     dV = volume_element(L, N)
     Vol = prod(L)
+    ti::Float64 = 0.0    # initial time
+    tf::Float64 = 1.0    # final time
+    tspan = [ti, tf]
+    dt::Float64 = 1e-3 # used for ground state computation
+
+    # === nonlinearity
+    g::Float64 = 0.1
+    gamma::Float64 = 0.0; @assert gamma >= 0.0 # damping parameter
+    mu::Float64 = 0.0 # fixed chemical potential for ground state solution
+
+    # === potential
+    params::UserParams = Params() # optional user parameterss
+    V0::A = zeros(N)
+
+    # === initial value
+    psi_0::A = ones(N) |> complex # initial condition
+
+
     # === saving
     nfiles::Bool = false
+    Nt::Int64 = 5    # number of saves over (ti,tf)
+    t::LinRange{Float64} = LinRange(ti,tf,Nt) # time of saves
     path::String = nfiles ? joinpath(@__DIR__,"data") : @__DIR__
     filename::String = "save"
+
     # === arrays, transforms, spectral operators
     X::NTuple{D,A} = xvecs(L,N)
     K::NTuple{D,A} = kvecs(L,N)

@@ -201,52 +201,52 @@ function dfftall(X,K)
     return DX,DK
 end
 
-function xspace(ϕ::Array,sim)
+function xspace(ϕ,sim)
     @unpack T = sim
     return T.Tkx*ϕ
 end
 
-function xspace!(ψ::Array,sim)
+function xspace!(ψ,sim)
     @unpack T = sim
     T.Tkx!*ψ
     return nothing
 end
 
-function kspace(ψ::Array,sim)
+function kspace(ψ,sim)
     @unpack T = sim
     return T.Txk*ψ
 end
 
-function kspace!(ψ::Array,sim)
+function kspace!(ψ,sim)
     @unpack T = sim
     T.Txk!*ψ
     return nothing
 end
 
-"""
-    CuArrays versions
-"""
-function xspace(ϕ::CuArray,sim)
-    @unpack T = sim
-    return CUDA.CUFFT.:(*)(T.Tkx::AbstractFFTs.Plan{T}, ϕ)
-end
+# """
+#     CuArrays versions
+# """
+# function xspace(ϕ::CuArray,sim)
+#     @unpack T = sim
+#     return CUDA.CUFFT.:(*)(T.Tkx::AbstractFFTs.Plan{T}, ϕ)
+# end
 
-function xspace!(ψ::CuArray,sim)
-    @unpack T = sim
-    T.Tkx!*ψ
-    return nothing
-end
+# function xspace!(ψ::CuArray,sim)
+#     @unpack T = sim
+#     T.Tkx!*ψ
+#     return nothing
+# end
 
-function kspace(ψ::CuArray,sim)
-    @unpack T = sim
-    return T.Txk*ψ
-end
+# function kspace(ψ::CuArray,sim)
+#     @unpack T = sim
+#     return T.Txk*ψ
+# end
 
-function kspace!(ψ::CuArray,sim)
-    @unpack T = sim
-    T.Txk!*ψ
-    return nothing
-end
+# function kspace!(ψ::CuArray,sim)
+#     @unpack T = sim
+#     T.Txk!*ψ
+#     return nothing
+# end
 
 """
     definetransforms(funcs,args,meas,kwargs)
@@ -294,11 +294,10 @@ function makeT(X,K,T::Type{CuArray{ComplexF64}};flags=FFTW.MEASURE)
     DX,DK = dfftall(X,K)
     dμx = prod(DX)
     dμk = prod(DK)
-    psi_test = ones(N...) |> complex
-
+    psi_test = CuArray(ones(N...)) |> complex
     trans = (CUDA.CUFFT.plan_fft,CUDA.CUFFT.plan_fft!,CUDA.CUFFT.plan_ifft,CUDA.CUFFT.plan_ifft!)
     meas = (dμx,dμx,dμk,dμk)
     args = ((psi_test,),(psi_test,),(psi_test,),(psi_test,))
     Txk,Txk!,Tkx,Tkx! = definetransforms(trans,args,meas)
-    return Transforms{D,N,T}(Txk,Txk!,Tkx,Tkx!)
+    return GPUTransforms{D,N,T}(Txk,Txk!,Tkx,Tkx!)
 end

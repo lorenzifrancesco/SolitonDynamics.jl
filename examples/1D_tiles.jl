@@ -16,7 +16,7 @@ N = (256,)
 sim = Sim{length(L), Array{Complex{Float64}}}(L=L, N=N)
 
 # ====== tiling settings 
-tiles = 200
+tiles = 20
 vel_list = LinRange(0, 1.17, tiles)
 bar_list = LinRange(0, 1.685, tiles)
 tran = Array{Float64, 2}(undef, (tiles, tiles))

@@ -23,16 +23,18 @@ initial_state = zeros(N[1])
 @unpack_Sim sim
 iswitch = -im
 solver = SplitStep 
-g = -4.0 # our g corresponds to g' * (N-1)
+g = -2 # our g corresponds to g' * (N-1)
 g_param = abs(g) / (2)
+gamma = 0.03
 mu_analytical = 1 - g_param^2/2
-abstol = 1e-2
+mu = mu_analytical
+abstol = 1e-5
+reltol = 1e-5
 equation = GPE_1D
 x = X[1]
 k = K[1]
 dV= volume_element(L, N)
-dt = 0.05
-psi_0 = exp.(-(x/2).^2)
+psi_0 = exp.(-(x/6).^2)
 psi_0 = psi_0 / sqrt(ns(psi_0, sim))
 initial_state .= psi_0
 flags = FFTW.EXHAUSTIVE
@@ -63,7 +65,7 @@ final = transpose(u)[:, end] |> collect
 @info "chemical potential, analytical" mu_analytical
 p = plot(real.(k), abs2.(kspace(initial_state, sim)), color=:blue, ls=:dot, lw=3, label="initial")
 plot!(p, real.(k), abs2.(final), color=:red, label="final")
-plot!(p, real.(k), abs2.(kspace(analytical_gs, sim)), ls=:dot, lw=2, color=:grey, label="analytical")
+#plot!(p, real.(k), abs2.(kspace(analytical_gs, sim)), ls=:dot, lw=2, color=:grey, label="analytical")
 display(p)
 
 xspace!(final, sim)
