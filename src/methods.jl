@@ -100,6 +100,19 @@ function ns(psi, sim, mask::Array{Bool})
 end
 
 """
+return σ^2(ψ) of the NPSE
+"""
+function sigma(psi, sim)
+    @unpack as,  = sim
+    try
+        sigma2 = sqrt(1 + g * abs2.(psi))
+    catch 
+        sigma2 = NaN
+    end
+    return sigma2
+end
+
+"""
 chemical potential in a given configuration
 """
 function chempotk(psi, sim)
