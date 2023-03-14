@@ -7,8 +7,9 @@ import CondensateDynamics.V
 using CUDA
 using LaTeXStrings, Plots
 using CUDA.CUFFT
-import Makie, CairoMakie #GLMakie
+import Makie, GLMakie
 
+JULIA_CUDA_SOFT_MEMORY_LIMIT ="3500MiB"
 # ================ plotting functions
 function dense(phi)
     psi = xspace(phi,sim)
@@ -61,8 +62,6 @@ function isosurface(sol)
     return
 end
 
-gr()
-GR.usecolorscheme(1)
 
 # =================== simulation settings
 L = (40.0,40.0,40.0)
@@ -80,13 +79,13 @@ y = Array(X[2])
 z = Array(X[3])
 dV= volume_element(L, N)
 reltol = 1e-3
-tf = 0.01
+tf = 0.5
 Nt = 30
 t = LinRange(ti,tf,Nt)
 # nfiles = true
 maxiters = 2000
 x0 = L[1]/4
-vv = 10.0
+vv = 5.0
 
 g_param=3
 tmp = [(exp(-(y^2+z^2)/2) * sqrt(g_param/2)*2/(exp(g_param*(x-x0)) + exp(-(x-x0)*g_param))) * exp(-im*y*vv) for x in x, y in y, z in z]
@@ -110,7 +109,8 @@ final = sol[end]
 
 # =================== plotting and collect 
 #JLD2.@load "tmp.jld2" sol
-u = [xspace(sol[k], sim) for k in 1:Nt]
+# gives out of mem
+#u = [xspace(sol[k], sim) for k in 1:Nt]
 
 xspace!(final, sim)
 xspace!(psi_0, sim)
@@ -120,3 +120,8 @@ psi_0 = Array(sum(abs2.(psi_0), dims=(2, 3)))
 # @info "Building animation..."
 # isosurface_animation(sol,length(sol), sim; framerate=5)
 # @info "Completed."
+isosurface(sol[15])
+# remember to run 
+# sol = nothing
+# GC.gc(true)
+# to free up GPU mem
