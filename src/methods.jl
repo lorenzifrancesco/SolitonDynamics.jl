@@ -102,7 +102,7 @@ end
 """
 return σ^2(ψ) of the NPSE
 """
-function sigma(psi, sim)
+function sigma2(psi, sim)
     @unpack as,  = sim
     try
         sigma2 = sqrt(1 + g * abs2.(psi))
