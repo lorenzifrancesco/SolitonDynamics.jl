@@ -19,18 +19,22 @@ N = (256,)
 sim = Sim{length(L), Array{Complex{Float64}}}(L=L, N=N)
 
 # ====== tiling settings 
-tiles = 100
-max_vel = 1.17   #* 10
-max_bar = 1.685  #* 10
+tiles = 25
+
+# ====== initialization and unpacking
+@unpack_Sim sim
+g = -0.587  #corresponds to gamma
+
+
+max_vel = abs(g)   #* 10
+max_bar = abs(g)^2  #* 10
 
 vel_list = LinRange(0, max_vel, tiles)
 bar_list = LinRange(0, max_bar, tiles)
 tran = Array{Float64, 2}(undef, (tiles, tiles))
 refl = Array{Float64, 2}(undef, (tiles, tiles))
 
-# ====== initialization and unpacking
-@unpack_Sim sim
-g = -0.587  #corresponds to gamma
+
 gamma = 0.0
 g_param = abs(g) / 2
 

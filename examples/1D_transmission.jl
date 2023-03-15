@@ -22,7 +22,7 @@ gamma = 0.0
 Nt = 10
 t = LinRange(ti,tf,Nt)
 g_param = abs(g) /2
-equation = NPSE
+equation = GPE_1D
 sigma2 = init_sigma2(g)
 
 iswitch = 1
@@ -33,9 +33,9 @@ reltol = 1e-3
 x0 = L[1] / 3
 
 # ====== tiling settings 
-tiles = 100
-vel_list = LinRange(0, 1.17, tiles)
-bar_list = LinRange(0, 1.685, tiles)
+tiles = 25
+vel_list = LinRange(0, abs(g), tiles)
+bar_list = LinRange(0, abs(g)^2, tiles)
 
 vv = vel_list[20]
 bb = bar_list[1]
