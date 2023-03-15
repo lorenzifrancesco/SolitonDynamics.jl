@@ -85,7 +85,7 @@ t = LinRange(ti,tf,Nt)
 # nfiles = true
 maxiters = 2000
 x0 = L[1]/4
-vv = 5.0
+vv = 10.0
 
 g_param=3
 tmp = [(exp(-(y^2+z^2)/2) * sqrt(g_param/2)*2/(exp(g_param*(x-x0)) + exp(-(x-x0)*g_param))) * exp(-im*y*vv) for x in x, y in y, z in z]
@@ -103,24 +103,25 @@ V0 = CuArray(tmp)
 
 
 # ===================== simulation
+@info "Running solver..."
 sol = runsim(sim; info=false)
-final = sol[end]
+#final = sol[end]
 #JLD2.@save "tmp.jld2" sol
-
+@info "Run complete, plotting..."
 # =================== plotting and collect 
 #JLD2.@load "tmp.jld2" sol
 # gives out of mem
 #u = [xspace(sol[k], sim) for k in 1:Nt]
 
-xspace!(final, sim)
-xspace!(psi_0, sim)
-final = Array(sum(abs2.(sol[end]), dims=(2, 3)))
-psi_0 = Array(sum(abs2.(psi_0), dims=(2, 3)))
+# xspace!(final, sim)
+# xspace!(psi_0, sim)
+# final = Array(sum(abs2.(sol[end]), dims=(2, 3)))
+# psi_0 = Array(sum(abs2.(psi_0), dims=(2, 3)))
 
 # @info "Building animation..."
-# isosurface_animation(sol,length(sol), sim; framerate=5)
+isosurface_animation(sol,length(sol), sim; framerate=5)
 # @info "Completed."
-isosurface(sol[15])
+#isosurface(sol[15])
 # remember to run 
 # sol = nothing
 # GC.gc(true)
