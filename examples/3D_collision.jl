@@ -79,16 +79,18 @@ y = Array(X[2])
 z = Array(X[3])
 dV= volume_element(L, N)
 reltol = 1e-3
-tf = 0.5
+tf = 1
 Nt = 30
 t = LinRange(ti,tf,Nt)
 # nfiles = true
 maxiters = 2000
-x0 = L[1]/4
-vv = 10.0
+x0 = L[1]/4 * 0.0
+vv = 8.0 * 0.0
 
 g_param=3
-tmp = [(exp(-(y^2+z^2)/2) * sqrt(g_param/2)*2/(exp(g_param*(x-x0)) + exp(-(x-x0)*g_param))) * exp(-im*y*vv) for x in x, y in y, z in z]
+# tmp = [(exp(-(y^2+z^2)/2) * sqrt(g_param/2)*2/(exp(g_param*(x-x0)) + exp(-(x-x0)*g_param))) * exp(-im*x*vv) for x in x, y in y, z in z]
+tmp = [exp(-(y^2+z^2 + (2*x)^2)/2) for x in x, y in y, z in z]
+
 psi_0 = CuArray(tmp)
 
 psi_0 .= psi_0 / sqrt(sum(abs2.(psi_0) * dV))
@@ -96,7 +98,7 @@ initial_state = psi_0
 kspace!(psi_0, sim)
 alg = BS3()
 #1/2*(x^2+y^2+ 3*z^2)
-tmp = [1/2*(y^2+ z^2) + 1/2*x^2/4 + 0.0*400*exp(-100*x^2) for x in x, y in y, z in z]
+tmp = [1/2*(y^2+ z^2) + 1/2*x^2 + 0.0*400*exp(-100*x^2) for x in x, y in y, z in z]
 V0 = CuArray(tmp)
 #V(x,y,z,t) = 1/2 * (x^2+y^2+z^2)
 @pack_Sim! sim
