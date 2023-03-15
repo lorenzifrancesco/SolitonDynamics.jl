@@ -102,12 +102,17 @@ end
 """
 return σ^2(ψ) of the NPSE
 """
-function sigma2(psi, sim)
-    @unpack as,  = sim
-    try
-        sigma2 = sqrt(1 + g * abs2.(psi))
-    catch 
-        sigma2 = NaN
+function init_sigma2(g::Float64)
+    function sigma2(psi::ComplexF64)
+        result = psi
+        try
+            result = sqrt(1 + g * abs2(psi))
+        catch 
+            result = NaN
+            @warn "NPSE collapse detected"
+            throw("NPSE collapse")
+        end
+        return result
     end
     return sigma2
 end

@@ -32,7 +32,7 @@ end
 Time evolution in xspace
 """
 function nlin!(dpsi,psi,sim::Sim{1, Array{ComplexF64}},t)
-   @unpack ksquared,g,X,V0,iswitch,dV,Vol,mu,equation = sim; x = X[1]
+   @unpack ksquared,g,X,V0,iswitch,dV,Vol,mu,equation,sigma2 = sim; x = X[1]
    dpsi .= psi
    mu_im = 0.0
    if iswitch == -im
@@ -42,8 +42,9 @@ function nlin!(dpsi,psi,sim::Sim{1, Array{ComplexF64}},t)
    if equation == GPE_1D
       @. dpsi *= -im*iswitch* (V0 + V(x, t) + g*abs2(dpsi)) + mu_im
    elseif equation == NPSE
-      @. dpsi *= -im*iswitch* (V0 + V(x, t) + g*abs2(dpsi)/sigma2(dpsi, sim)
-       + (1/(2*sigma2(dpsi, sim)) + 1/2*sigma2(dpsi, sim))) + mu_im
+      nonlinear = g*abs2.(dpsi) ./sigma2.(dpsi) + (1 ./(2*sigma2.(dpsi)) + 1/2*sigma2.(dpsi))
+      @. dpsi *= -im*iswitch* (V0 + V(x, t) + nonlinear) + mu_im
+      #@info g*maximum(abs2.(dpsi))
    end
    kspace!(dpsi,sim)
    return nothing
@@ -276,6 +277,7 @@ function runsim(sim; info=false)
    else
       if solver == SplitStep 
          problem = ODEProblem(propagate!, psi_0, (ti, tf), sim)
+         try
          sim.nfiles ?
          (sol = solve(problem,
                      alg=sim.alg,
@@ -292,7 +294,11 @@ function runsim(sim; info=false)
                      dense=false,
                      maxiters=maxiters,
                      progress=true))
-
+         catch err
+            display(err)
+            @warn "Maybe NPSE collapsed"
+            return nothing
+         end
       elseif solver != SplitStep
          throw("Unimplemented")
       end
