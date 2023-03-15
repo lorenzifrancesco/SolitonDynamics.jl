@@ -45,6 +45,12 @@ struct KSpace{D} <: Space
     K2::Array{Float64,D}
 end
 
+struct NpseCollapse <: Exception
+    var::Float64
+end
+
+Base.showerror(io::IO, e::NpseCollapse) = print(io, "NPSE collapse detected, g * max(|f|^2) = ", e.var, "!")
+
 @with_kw mutable struct Params <: UserParams
     κ = 0.0 # a placeholder
 end

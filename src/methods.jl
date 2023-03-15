@@ -107,10 +107,13 @@ function init_sigma2(g::Float64)
         result = psi
         try
             result = sqrt(1 + g * abs2(psi))
-        catch 
-            result = NaN
-            @warn "NPSE collapse detected"
-            throw("NPSE collapse")
+        catch  err
+            if isa(err, DomainError)
+                result = NaN
+                throw(NpseCollapse(g * maximum(abs2.(psi))))
+            else
+                throw(err)
+            end
         end
         return result
     end

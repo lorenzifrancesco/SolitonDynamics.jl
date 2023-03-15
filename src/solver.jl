@@ -295,8 +295,11 @@ function runsim(sim; info=false)
                      maxiters=maxiters,
                      progress=true))
          catch err
-            display(err)
-            @warn "Maybe NPSE collapsed"
+            if isa(err, NpseCollapseError)
+               display("Detected NPSE collapse, with g * max(|f|^2) = ", err.var)
+            else
+               throw(err)
+            end
             return nothing
          end
       elseif solver != SplitStep
