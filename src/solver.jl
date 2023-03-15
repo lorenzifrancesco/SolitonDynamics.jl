@@ -22,7 +22,7 @@ function propagate!(dpsi, psi, sim::Sim{3, CuArray{ComplexF64}}, t; info=false)
    @unpack ksquared,iswitch,X,mu,gamma = sim; x = X[1]
    nlin!(dpsi,psi,sim,t)
    #@. dpsi = (1.0 - im*gamma)*(-im*(1/2*ksquared - mu)*psi + dpsi)
-   #@. dpsi += -im*(1/2*ksquared)*psi
+   @. dpsi += -im*(1/2*ksquared)*psi
    #@info nsk(psi, sim)
    return nothing
 end
