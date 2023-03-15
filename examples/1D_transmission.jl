@@ -12,40 +12,43 @@ GR.usecolorscheme(1)
 
 ## Solve the 1D harmonic oscillator
 # problem with 1D-GPE 
-L = (50.0,)
+L = (70.0,)
 N = (256,)
 sim = Sim{length(L), Array{Complex{Float64}}}(L=L, N=N)
 
 @unpack_Sim sim
-g = -0.587
+g = -1.0587
 gamma = 0.0
 Nt = 10
 t = LinRange(ti,tf,Nt)
-g_param = abs(g) / 2
+g_param = abs(g) /2
 equation = NPSE
+sigma2 = init_sigma2(g)
+
 iswitch = 1
 x = X[1] |> real
 k = K[1] |> real
 dV= volume_element(L, N)
-reltol = 1e-9
+reltol = 1e-3
 x0 = L[1] / 3
 
 # ====== tiling settings 
-tiles = 20
+tiles = 100
 vel_list = LinRange(0, 1.17, tiles)
 bar_list = LinRange(0, 1.685, tiles)
 
-vv = vel_list[1]
-bb = bar_list[1]
+vv = vel_list[20]
+bb = bar_list[15]
 if vv == 0.0
     tf = 2.0
 else
     tf = 2*x0/vv
 end
+Nt = 200
+t = LinRange(ti, tf, Nt)
 maxiters = 50000
 #@. psi_0 = exp(-x^2/2) * exp(-im*x*10)
-@. psi_0 = sqrt(g_param/2) * 2/(exp(g_param*(x-x0)) + exp(-(x-x0)*g_param)) * exp(-im*x*vv)
-
+@. psi_0 = sqrt(g_param/2) * 2/(exp(g_param*(x-x0)) + exp(-(x-x0)*g_param)) * exp(-im*(x-x0)*vv)
 psi_0 = psi_0 / sqrt(sum(abs2.(psi_0) * dV))
 initial_state = psi_0
 kspace!(psi_0, sim)
@@ -58,9 +61,11 @@ mask_tran = map(xx -> xx<0, x)
 
 
 sol = runsim(sim; info=false)
+if isnothing(sol)
+    throw("Collapse")
+end
 time_axis = sol.t
 u = reduce(hcat, sol.u)
-@info "time steps" size(time_axis)
 final = u[:, end]
 xspace!(final, sim)
 xspace!(psi_0, sim)
@@ -76,3 +81,4 @@ u = mapslices(x->xspace(x, sim),u,dims=(1))
 #map(x -> xspace!(x, sim), sol)
 ht = heatmap(real.(x), time_axis, abs2.(u)')
 display(ht)
+@info "max" g*maximum(abs2.(u))
