@@ -17,7 +17,7 @@ N = (256,)
 sim = Sim{length(L), Array{Complex{Float64}}}(L=L, N=N)
 
 @unpack_Sim sim
-g = -1.0587
+g = -0.587
 gamma = 0.0
 Nt = 10
 t = LinRange(ti,tf,Nt)
@@ -38,7 +38,7 @@ vel_list = LinRange(0, 1.17, tiles)
 bar_list = LinRange(0, 1.685, tiles)
 
 vv = vel_list[20]
-bb = bar_list[15]
+bb = bar_list[1]
 if vv == 0.0
     tf = 2.0
 else
@@ -62,7 +62,7 @@ mask_tran = map(xx -> xx<0, x)
 
 sol = runsim(sim; info=false)
 if isnothing(sol)
-    throw("Collapse")
+    throw("NPSE collapse detected, cannot proceed further to plots...")
 end
 time_axis = sol.t
 u = reduce(hcat, sol.u)

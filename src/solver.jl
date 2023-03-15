@@ -295,8 +295,8 @@ function runsim(sim; info=false)
                      maxiters=maxiters,
                      progress=true))
          catch err
-            if isa(err, NpseCollapseError)
-               display("Detected NPSE collapse, with g * max(|f|^2) = ", err.var)
+            if isa(err, NpseCollapse)
+               showerror(stdout, err)
             else
                throw(err)
             end
