@@ -22,24 +22,28 @@ $$
 $$
 since we want to represent the total number of particles. In the GPE, the coefficient g includes the total number of particle already, i.e.
 $$
- g = g_{GPE-1D} = gN 
+ g = g_{GPE-1D} = g_{1D}N 
 $$
 The length associated to interaction energy scale is the healing length
 $$
 \xi = \frac{\hbar}{\sqrt{2m g_{1D} n_0}}
 $$
 
-From this input we define the for a finite (localized) system, with a finite number of particles. They are: *soliton length unit*:
+From this input we define the for a finite (localized) system, with a finite number of particles. In [Helm-Gardiner] the nonlinearity is quantified as 
 $$
-\mathrm{L}_S =  \frac{\hbar^2}{mg_{1D}N}
+\tilde{g} = 2\hbar \omega_\perp |a_s| = g_{1D}
+$$
+So the corresponding units are: *soliton length unit*:
+$$
+\mathrm{L}_S =  \frac{\hbar^2}{m\tilde{g}N}
 $$
 And the *soliton time unit*:
 $$
-\mathrm{T}_S = \frac{\hbar^3}{mg_{1D}^2N^2}
+\mathrm{T}_S = \frac{\hbar^3}{m \tilde{g}^2N^2}
 $$
 and finally the *soliton energy unit*
 $$
-\mathrm{T}_S = \frac{mg^2N^2}{\hbar^2}
+\mathrm{T}_S = \frac{m\tilde{g}N^2}{\hbar^2}
 $$
 Simulation include a total maximum velocity corresponding to one soliton velocity.
 
@@ -53,7 +57,7 @@ $$
 $$
 so we have
 $$
-\mathrm{V}_S= g_{GPE}
+\mathrm{V}_S= g_{GPE}\mathrm{V}_H
 $$
 Equivalently, energy is written in harmonic units as
 $$

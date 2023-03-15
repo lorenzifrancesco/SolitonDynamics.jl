@@ -25,9 +25,13 @@ tiles = 25
 @unpack_Sim sim
 g = -0.587  #corresponds to gamma
 
+# ====== tiling parameters
+# in previous simulations:
+#   -  max velocity = 1 V_S
+#   -  max barrier  = 1.2246 E_S
 
-max_vel = abs(g)   #* 10
-max_bar = abs(g)^2  #* 10
+max_vel = abs(g)     # * 10
+max_bar = abs(g)^2 * 1.2246  #* 10
 
 vel_list = LinRange(0, max_vel, tiles)
 bar_list = LinRange(0, max_bar, tiles)
@@ -46,7 +50,7 @@ dV= volume_element(L, N)
 reltol = 1e-3
 x0 = L[1] / 4
 alg = BS3()
-maxiters = 20000
+maxiters = 50000
 
 @pack_Sim! sim
 

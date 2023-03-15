@@ -37,8 +37,8 @@ tiles = 25
 vel_list = LinRange(0, abs(g), tiles)
 bar_list = LinRange(0, abs(g)^2, tiles)
 
-vv = vel_list[20]
-bb = bar_list[1]
+vv = vel_list[2]
+bb = bar_list[5]
 if vv == 0.0
     tf = 2.0
 else
@@ -46,7 +46,8 @@ else
 end
 Nt = 200
 t = LinRange(ti, tf, Nt)
-maxiters = 50000
+maxiters = 20000
+
 #@. psi_0 = exp(-x^2/2) * exp(-im*x*10)
 @. psi_0 = sqrt(g_param/2) * 2/(exp(g_param*(x-x0)) + exp(-(x-x0)*g_param)) * exp(-im*(x-x0)*vv)
 psi_0 = psi_0 / sqrt(sum(abs2.(psi_0) * dV))
