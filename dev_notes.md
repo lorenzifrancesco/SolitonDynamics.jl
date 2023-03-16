@@ -6,11 +6,44 @@ CUFFT: in-place + planned fft is fastest
 
 ### Soliton velocity and barrier energy
 Tiling parameters are set by soliton units, described as follows
+In SolitonBEC.jl we have the barrier set by the energy
+$$
+V = E_B \exp[-\frac{x^2}{2w^2}]
+$$
+with 
+$$
+\max{E_B} \approx 7500 \ \hbar
+$$
+corresponding to $1.2246 \ g_{1D}^2$ in harmonic units with $g_{1D} = -0.587$.
+
+In [Helm-Gardiner], they use the potential 
+$$
+V = E_B \exp[-2\frac{x^2}{w'^2}]
+$$
+with a barrier parameter set by $q$ in soliton units
+$$
+ q = \sqrt{\frac{\pi}{2}} w'\frac{E_B}{gN}
+$$
+so that the integral of the potential is 
+$$
+qgN
+$$
+translated in our potential the $q$ param is inserted as
+$$
+q = \sqrt{2\pi} w\frac{E_B}{gN}
+$$
+$q$ is adimensional.
+This implies 
+$$
+E_B = q \frac{gN}{\sqrt{2\pi} w}
+$$
+in harmonic units the relation is exactly the same.
 
 
-### Units
-We work in normalized 
-##### Healing length. Scattering energy
+## Units
+We work in normalized harmonic units.
+
+### Healing length. Scattering energy
 
 Energy scale of interaction
 $$
@@ -63,3 +96,4 @@ Equivalently, energy is written in harmonic units as
 $$
 \mathrm{E}_S= g_{GPE}^2 \mathrm{E}_H 
 $$
+NB: in [Helm-Gardiner], they do not use $\mathrm{E}_S$ to set the barrier, they use the parameter $q$.

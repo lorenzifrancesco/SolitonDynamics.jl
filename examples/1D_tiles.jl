@@ -11,7 +11,10 @@ using ProgressBars
 import JLD2
 gr()
 GR.usecolorscheme(1)
+
+file = "tran.pdf"
 let sim
+saveto=joinpath("media/1D",file)
 
 L = (50.0,)
 N = (256,)
@@ -29,9 +32,10 @@ g = -0.587  #corresponds to gamma
 # in previous simulations:
 #   -  max velocity = 1 V_S
 #   -  max barrier  = 1.2246 E_S
+barrier_width = 0.699 # as in SolitonBEC.jl
 
 max_vel = abs(g)     # * 10
-max_bar = abs(g)^2 * 1.2246  #* 10
+max_bar = g/sqrt(2*pi)/barrier_width  #abs(g)^2 * 1.2246
 
 vel_list = LinRange(0, max_vel, tiles)
 bar_list = LinRange(0, max_bar, tiles)
@@ -66,7 +70,7 @@ for ((vx, vv), (bx, bb)) in ProgressBar(iter)
 
     psi_0 = psi_0 / sqrt(ns(psi_0, sim))
     kspace!(psi_0, sim)
-    @. V0 = bb * exp(-(x/0.699)^2)
+    @. V0 = bb * exp(-(x/barrier_width)^2 /2)
     if vv == 0.0
         tf = 10.0
     else
@@ -110,6 +114,7 @@ norm_bar = bar_list / max_bar
 norm_vel = vel_list / max_vel
 ht = heatmap(norm_bar, norm_vel, tran')
 display(ht)
+savefig(ht, saveto)
 end
 
 # JLD2.@load "refl.jld2" refl
