@@ -62,6 +62,9 @@ function isosurface(sol)
     return
 end
 
+file = "3Dtran.pdf"
+let sim
+saveto=joinpath("media/1D",file)
 
 # =================== simulation settings
 L = (40.0,40.0,40.0)
@@ -74,12 +77,12 @@ g = -0.587 * 2*pi
 g_param = abs(g)/(4*pi)
 equation = GPE_3D
 iswitch = 1
-x = Array(X[1])
-y = Array(X[2])
-z = Array(X[3])
+x = Array(X[1]) |> real
+y = Array(X[2]) |> real
+z = Array(X[3]) |> real
 dV= volume_element(L, N)
 reltol = 1e-3
-tf = 2
+tf = 3
 Nt = 30
 t = LinRange(ti,tf,Nt)
 # nfiles = true
@@ -104,27 +107,60 @@ V0 = CuArray(tmp)
 @pack_Sim! sim
 
 
-# ===================== simulation
-@info "Running solver..."
-sol = runsim(sim; info=false)
-#final = sol[end]
-#JLD2.@save "tmp.jld2" sol
-@info "Run complete, plotting..."
-# =================== plotting and collect 
-#JLD2.@load "tmp.jld2" sol
-# gives out of mem
-#u = [xspace(sol[k], sim) for k in 1:Nt]
+# ===================== tiling
+tiles = 25
+max_vel = abs(g)     # * 10
+max_bar = abs(g)^2 * 1.2246  #* 10
 
-# xspace!(final, sim)
-# xspace!(psi_0, sim)
-# final = Array(sum(abs2.(sol[end]), dims=(2, 3)))
-# psi_0 = Array(sum(abs2.(psi_0), dims=(2, 3)))
+vel_list = LinRange(0, max_vel, tiles)
+bar_list = LinRange(0, max_bar, tiles)
+tran = Array{Float64, 2}(undef, (tiles, tiles))
+refl = Array{Float64, 2}(undef, (tiles, tiles))
 
-# @info "Building animation..."
-isosurface_animation(sol,length(sol), sim; framerate=5)
-# @info "Completed."
-#isosurface(sol[15])
-# remember to run 
-# sol = nothing
-# GC.gc(true)
-# to free up GPU mem
+mask_refl = map(xx -> xx>0, x)
+mask_tran = map(xx -> xx<0, x)
+
+iter = Iterators.product(enumerate(vel_list), enumerate(bar_list))
+for ((vx, vv), (bx, bb)) in ProgressBar(iter)
+    @info "Computing tile" (vv, bb)
+
+    # ===================== tile simulation parameters
+    @unpack_Sim sim
+    tmp = [ (1/2*(y^2+ z^2) + 0.0*1/2*x^2 + bb*exp(-10*x^2)) for x in x, y in y, z in z]
+    V0 = CuArray(tmp)
+
+    if vv == 0.0
+        tf = 10.0
+    else
+        tf = 2*x0/vv
+    end
+    Nt = 2
+    t = LinRange(ti, tf, Nt)
+
+    tmp = [exp(-(y^2+z^2+(x-x0)^2)/2) * exp(-im*x*vv) for x in x, y in y, z in z]
+    psi_0 = CuArray(tmp)
+    psi_0 .= psi_0 / sqrt(sum(abs2.(psi_0) * dV))
+    initial_state = psi_0
+    kspace!(psi_0, sim)
+    @pack_Sim! sim
+    
+    @info "Running solver..."
+    sol = runsim(sim; info=false)
+    final = sol[end]
+    @info "Run complete, computing transmission..."
+    xspace!(final, sim)
+    tran[bx, vx] = ns(final, sim, mask_tran)
+    refl[bx, vx] = ns(final, sim, mask_refl)
+    @info "T = " tran[bx, vx]
+
+end
+
+JLD2.@save("tran.jld2", tran)
+JLD2.@save("refl.jld2", refl)
+norm_bar = bar_list / max_bar
+norm_vel = vel_list / max_vel
+ht = heatmap(norm_bar, norm_vel, tran')
+display(ht)
+savefig(ht, saveto)
+
+end
