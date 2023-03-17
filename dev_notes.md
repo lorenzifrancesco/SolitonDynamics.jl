@@ -4,6 +4,9 @@
 
 CUFFT: in-place + planned fft is fastest
 
+#### RAM saturation in plotting 
+Due to 
+
 ### Soliton velocity and barrier energy
 Tiling parameters are set by soliton units, described as follows
 In SolitonBEC.jl we have the barrier set by the energy
@@ -96,4 +99,38 @@ Equivalently, energy is written in harmonic units as
 $$
 \mathrm{E}_S= g_{GPE}^2 \mathrm{E}_H 
 $$
+
+
+## Split-step solution of the 3D problem exploiting cylindrical symmetry
+We can expand the GPE equation in cylindrical coordinates.
+Assuming axial symmetry of the wavefunction we can neglect the azhimutal equation, and focus on the solution of the radial and axial equations. This leads to a 2D problem with great simplifications.
+The normalized 3D GPE reads
+$$
+i\partial_t \psi = \left[-\dfrac{1}{2}\nabla^2 + V + g|\psi|^2\right]\psi
+$$
+Assume the decomposition
+$$
+\psi(r, x, \theta) = \phi(r, x) f(\theta)
+$$
+with 
+$$
+f(\theta) = \mathrm{const.}
+$$
+and
+$$
+V(r, x, \theta) = V(r, x)
+$$
+we have the radial-axial equation
+$$
+i\partial_t \phi = \left[-\frac{1}{2}\left(\frac{1}{r}\partial_r \left(r \partial_r \right) + \partial^2_z\right) + V + gf^2|\phi|^2\right]\phi
+$$
+
+> Remember the Laplacian in cylindrical coordinates
+$$
+    \nabla^2 = \frac{1}{r}\partial_r \left(r \partial_r \right) + \frac{1}{r^2} \partial^2_\theta + \partial^2_z
+$$
+
+How to implement a split-step approximation of this equation?
+The most difficult computation to seems to be the radial (linear) component.
+
 NB: in [Helm-Gardiner], they do not use $\mathrm{E}_S$ to set the barrier, they use the parameter $q$.
