@@ -40,10 +40,10 @@ function nlin!(dpsi,psi,sim::Sim{1, Array{ComplexF64}},t)
    end
    xspace!(dpsi,sim)
    if equation == GPE_1D
-      @. dpsi = (exp(dt/2 * -im*iswitch* (V0 + V(x, t) + g*abs2(psi)))-1) * dpsi + mu_im
+      @. dpsi *= -im*iswitch* (V0 + V(x, t) + g*abs2(dpsi)) + mu_im
    elseif equation == NPSE
       nonlinear = g*abs2.(dpsi) ./sigma2.(dpsi) + (1 ./(2*sigma2.(dpsi)) + 1/2*sigma2.(dpsi))
-      @. dpsi = (exp(dt/2*-im*iswitch* (V0 + V(x, t) + nonlinear))-1) * dpsi + mu_im
+      @. dpsi *= -im*iswitch* (V0 + V(x, t) + nonlinear) + mu_im
       #@info g*maximum(abs2.(dpsi))
    end
    kspace!(dpsi,sim)
@@ -58,7 +58,7 @@ function propagate!(dpsi, psi, sim::Sim{1, Array{ComplexF64}}, t; info=false)
    @unpack ksquared, iswitch, dV, Vol,mu,gamma = sim
       nlin!(dpsi,psi,sim,t)
       #    @. dϕ = -im*(1.0 - im*γ)*(dϕ + (espec - μ)*ϕ)
-      @. dpsi = (exp(dt/2 * (1.0 - im*gamma)*(-im*(1/2*ksquared - mu))) - 1) * psi
+      @. dpsi = (1.0 - im*gamma)*(-im*(1/2*ksquared - mu)*psi + dpsi)
    return nothing
 end
 
@@ -309,7 +309,7 @@ function runsim(sim; info=false)
          try
          sim.nfiles ?
          (sol = solve(problem,
-                     alg=Euler(),
+                     alg=sim.alg,
                      reltol=sim.reltol,
                      saveat=sim.t[end],
                      dt=dt,
@@ -318,7 +318,7 @@ function runsim(sim; info=false)
                      maxiters=maxiters,
                      progress=true)) :
          (sol = solve(problem,
-                     alg=Euler(),
+                     alg=sim.alg,
                      reltol=sim.reltol,
                      saveat=sim.t,
                      dt=dt,

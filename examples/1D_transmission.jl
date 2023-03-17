@@ -23,7 +23,7 @@ gamma = 0.0
 
 g_param = abs(g) /2
 equation = GPE_1D
-solver = ManualSplitStep 
+solver = SplitStep 
 sigma2 = init_sigma2(g)
 
 iswitch = 1
@@ -52,10 +52,10 @@ t = LinRange(ti, tf, Nt)
 
 time_steps = 200
 dt = (tf-ti)/time_steps
-maxiters = time_steps *2
+maxiters = time_steps * 2
 
 #@. psi_0 = sqrt(g_param/2) * 2/(exp(g_param*(x-x0)) + exp(-(x-x0)*g_param)) * exp(-im*(x-x0)*vv)
-@. psi_0 = exp(-(x-x0)^2/2)
+@. psi_0 = exp(-(x-x0)^2/2)*exp(-im*30*x)
 psi_0 = psi_0 / sqrt(sum(abs2.(psi_0) * dV))
 initial_state = psi_0
 kspace!(psi_0, sim)
