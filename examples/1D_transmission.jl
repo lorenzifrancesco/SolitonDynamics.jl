@@ -29,7 +29,8 @@ iswitch = 1
 x = X[1] |> real
 k = K[1] |> real
 dV= volume_element(L, N)
-reltol = 1e-3
+reltol = 1e-1
+abstol = 1e-1
 x0 = L[1] / 3
 
 # ====== tiling settings 
@@ -37,8 +38,8 @@ tiles = 25
 vel_list = LinRange(0, abs(g), tiles)
 bar_list = LinRange(0, abs(g)^2, tiles)
 
-vv = vel_list[2]
-bb = bar_list[5]
+vv = vel_list[15]
+bb = bar_list[15]
 if vv == 0.0
     tf = 2.0
 else
@@ -53,7 +54,7 @@ maxiters = 20000
 psi_0 = psi_0 / sqrt(sum(abs2.(psi_0) * dV))
 initial_state = psi_0
 kspace!(psi_0, sim)
-alg = BS5()
+alg = BS3()
 @. V0 = bb*exp(-(x/0.699)^2)
 
 @pack_Sim! sim
@@ -83,3 +84,5 @@ u = mapslices(x->xspace(x, sim),u,dims=(1))
 ht = heatmap(real.(x), time_axis, abs2.(u)')
 display(ht)
 @info "max" g*maximum(abs2.(u))
+display(sol.destats)
+display(sol.retcode)

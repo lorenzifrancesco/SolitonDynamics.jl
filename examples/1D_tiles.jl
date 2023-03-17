@@ -1,6 +1,4 @@
-using Pkg
-Pkg.activate(".")
-
+@time begin # 30s startup
 using LaTeXStrings, Plots
 import GR
 using CondensateDynamics
@@ -9,6 +7,8 @@ using LSODA
 import CondensateDynamics.V
 using ProgressBars
 import JLD2
+end
+
 gr()
 GR.usecolorscheme(1)
 
@@ -51,7 +51,9 @@ iswitch = 1
 x = X[1] |> real
 k = K[1] |> real
 dV= volume_element(L, N)
-reltol = 1e-3
+reltol = 1e-1
+abstol = 1e-1
+
 x0 = L[1] / 4
 alg = BS3()
 maxiters = 50000
@@ -64,7 +66,11 @@ mask_tran = map(xx -> xx<0, x)
 iter = Iterators.product(enumerate(vel_list), enumerate(bar_list))
 
 p = plot(x, zeros(length(x)))
-for ((vx, vv), (bx, bb)) in ProgressBar(iter)
+
+
+nth = Threads.nthreads() #print number of threads
+
+for ((vx, vv), (bx, bb)) in iter
     @unpack_Sim sim
     @. psi_0 = sqrt(g_param/2) * 2/(exp(g_param*(x-x0)) + exp(-(x-x0)*g_param)) * exp(-im*(x-x0)*vv)
 
@@ -81,13 +87,14 @@ for ((vx, vv), (bx, bb)) in ProgressBar(iter)
     @info "Computing tile" (vv, bb)
     @pack_Sim! sim
 
-    sol = runsim(sim; info=false)
+    @time sol = runsim(sim; info=false)
+    @info "total time steps: " sol.destats.nf
     #JLD2.@save("tran.jld2", tran)
 
     if isnothing(sol)
         tran[bx, vx] = NaN
         refl[bx, vx] = NaN
-        @info "Computed transmission coefficient" tran[bx, vx]
+        @info "T = " tran[bx, vx]
     else
     final = sol[end]
     # plot!(p, x, abs2.(final))
@@ -102,8 +109,9 @@ for ((vx, vv), (bx, bb)) in ProgressBar(iter)
     xspace!(final, sim)
     tran[bx, vx] = ns(final, sim, mask_tran)
     refl[bx, vx] = ns(final, sim, mask_refl)
-    @info "Computed transmission coefficient" tran[bx, vx]
+    @info "T = " tran[bx, vx]
     end
+
 end
 
 # display(p)
