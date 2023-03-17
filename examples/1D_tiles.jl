@@ -47,6 +47,8 @@ gamma = 0.0
 g_param = abs(g) / 2
 
 equation = NPSE
+solver = SplitStep 
+
 iswitch = 1
 x = X[1] |> real
 k = K[1] |> real
