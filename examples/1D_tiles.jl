@@ -26,17 +26,22 @@ tiles = 25
 
 # ====== initialization and unpacking
 @unpack_Sim sim
-g = -0.587  #corresponds to gamma
+g = -1.17  #corresponds to gamma -0.587
 
 # ====== tiling parameters
 # in previous simulations:
 #   -  max velocity = 1 V_S
 #   -  max barrier  = 1.2246 E_S
+
+# In SolitonBEC: g = -1.17
 barrier_width = 0.699 # as in SolitonBEC.jl
 
-max_vel = abs(g)     # * 10
-max_bar = g/sqrt(2*pi)/barrier_width  #abs(g)^2 * 1.2246
+max_vel = 1.17 # CALCULATED VALUE 1.17 FOR CHOOSEN NONLINEARITY
+max_bar = 1.68 # CALCULATED VALUE 1.68 FOR CHOOSEN NONLINEARITY
 
+## from other calculations
+# vel= abs(g) 
+# bar= g/sqrt(2*pi)/barrier_width
 vel_list = LinRange(0, max_vel, tiles)
 bar_list = LinRange(0, max_bar, tiles)
 tran = Array{Float64, 2}(undef, (tiles, tiles))
