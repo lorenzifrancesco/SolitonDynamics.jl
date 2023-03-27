@@ -21,47 +21,42 @@ N = (256,)
 
 sim = Sim{length(L), Array{Complex{Float64}}}(L=L, N=N)
 
-# ====== tiling settings 
-tiles = 25
 
-# ====== initialization and unpacking
-@unpack_Sim sim
-g = -1.17  #corresponds to gamma -0.587
 
 # ====== tiling parameters
 # in previous simulations:
 #   -  max velocity = 1 V_S
 #   -  max barrier  = 1.2246 E_S
-
 # In SolitonBEC: g = -1.17
-barrier_width = 0.699 # as in SolitonBEC.jl
 
+# ====== initialization and unpacking
+@unpack_Sim sim
+# ======= simulation custom parameters
+equation = NPSE # issue: not showing collapse
+solver = SplitStep 
+g = -1.17  #corresponds to gamma -0.587
+gamma = 0.0
+tiles = 8
+barrier_width = 0.699 # as in SolitonBEC.jl
 max_vel = 1.17 # CALCULATED VALUE 1.17 FOR CHOOSEN NONLINEARITY
 max_bar = 1.68 # CALCULATED VALUE 1.68 FOR CHOOSEN NONLINEARITY
+reltol = 1e-4
+abstol = 1e-4
+x0 = L[1] / 4
 
-## from other calculations
-# vel= abs(g) 
-# bar= g/sqrt(2*pi)/barrier_width
+# other computations
 vel_list = LinRange(0, max_vel, tiles)
 bar_list = LinRange(0, max_bar, tiles)
 tran = Array{Float64, 2}(undef, (tiles, tiles))
 refl = Array{Float64, 2}(undef, (tiles, tiles))
 
-
-gamma = 0.0
-g_param = abs(g) / 2
-
-equation = NPSE
-solver = SplitStep 
-
 iswitch = 1
+g_param = abs(g) / 2
+sigma2 = init_sigma2(g)
 x = X[1] |> real
 k = K[1] |> real
 dV= volume_element(L, N)
-reltol = 1e-1
-abstol = 1e-1
 
-x0 = L[1] / 4
 alg = BS3()
 maxiters = 50000
 
@@ -71,6 +66,7 @@ mask_refl = map(xx -> xx>0, x)
 mask_tran = map(xx -> xx<0, x)
 
 iter = Iterators.product(enumerate(vel_list), enumerate(bar_list))
+#iter = Iterators.product(enumerate(vel_list[7]), enumerate(bar_list[7]))
 
 p = plot(x, zeros(length(x)))
 
@@ -95,15 +91,15 @@ for ((vx, vv), (bx, bb)) in iter
     @pack_Sim! sim
 
     @time sol = runsim(sim; info=false)
-    @info "total time steps: " sol.destats.nf
-    #JLD2.@save("tran.jld2", tran)
 
     if isnothing(sol)
         tran[bx, vx] = NaN
         refl[bx, vx] = NaN
         @info "T = " tran[bx, vx]
     else
+    #JLD2.@save("tran.jld2", tran)
     final = sol[end]
+    
     # plot!(p, x, abs2.(final))
     
     # time_axis = sol.t
