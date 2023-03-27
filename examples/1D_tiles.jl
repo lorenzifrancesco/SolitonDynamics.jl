@@ -36,7 +36,7 @@ equation = NPSE # issue: not showing collapse
 solver = SplitStep 
 g = -1.17  #corresponds to gamma -0.587
 gamma = 0.0
-tiles = 8
+tiles = 25
 barrier_width = 0.699 # as in SolitonBEC.jl
 max_vel = 1.17 # CALCULATED VALUE 1.17 FOR CHOOSEN NONLINEARITY
 max_bar = 1.68 # CALCULATED VALUE 1.68 FOR CHOOSEN NONLINEARITY
@@ -73,7 +73,7 @@ p = plot(x, zeros(length(x)))
 
 nth = Threads.nthreads() #print number of threads
 
-for ((vx, vv), (bx, bb)) in iter
+for ((vx, vv), (bx, bb)) in ProgressBar(iter)
     @unpack_Sim sim
     @. psi_0 = sqrt(g_param/2) * 2/(exp(g_param*(x-x0)) + exp(-(x-x0)*g_param)) * exp(-im*(x-x0)*vv)
 
@@ -87,7 +87,7 @@ for ((vx, vv), (bx, bb)) in iter
     end
     Nt = 2
     t = LinRange(ti, tf, Nt)
-    @info "Computing tile" (vv, bb)
+    #@info "Computing tile" (vv, bb)
     @pack_Sim! sim
 
     @time sol = runsim(sim; info=false)
