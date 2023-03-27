@@ -73,22 +73,24 @@ sim = Sim{length(L), CuArray{Complex{Float64}}}(L=L, N=N)
 
 # =================== physical parameters 
 @unpack_Sim sim
-g = -0.587 * 2*pi
-g_param = abs(g)/(4*pi)
 equation = GPE_3D
-iswitch = 1
+g = -1.7 * 2*pi
+g_param = abs(g)/(4*pi)
+reltol = 1e-3
+iswitch = -im
+vv = 5.0
+
 x = Array(X[1]) |> real
 y = Array(X[2]) |> real
 z = Array(X[3]) |> real
 dV= volume_element(L, N)
-reltol = 1e-3
 tf = 3
 Nt = 30
 t = LinRange(ti,tf,Nt)
 # nfiles = true
 maxiters = 2000
 x0 = L[1]/4
-vv = 5.0
+
 
 g_param=3
 # tmp = [(exp(-(y^2+z^2)/2) * sqrt(g_param/2)*2/(exp(g_param*(x-x0)) + exp(-(x-x0)*g_param))) * exp(-im*x*vv) for x in x, y in y, z in z]
