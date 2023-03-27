@@ -1,6 +1,4 @@
-using Pkg
-Pkg.activate(".")
-
+@time begin # 30s startup
 using LaTeXStrings, Plots
 import GR
 using CondensateDynamics
@@ -9,6 +7,8 @@ using LSODA
 import CondensateDynamics.V
 using ProgressBars
 import JLD2
+end
+
 gr()
 GR.usecolorscheme(1)
 
@@ -21,38 +21,42 @@ N = (256,)
 
 sim = Sim{length(L), Array{Complex{Float64}}}(L=L, N=N)
 
-# ====== tiling settings 
-tiles = 25
 
-# ====== initialization and unpacking
-@unpack_Sim sim
-g = -0.587  #corresponds to gamma
 
 # ====== tiling parameters
 # in previous simulations:
 #   -  max velocity = 1 V_S
 #   -  max barrier  = 1.2246 E_S
+# In SolitonBEC: g = -1.17
+
+# ====== initialization and unpacking
+@unpack_Sim sim
+# ======= simulation custom parameters
+equation = NPSE # issue: not showing collapse
+solver = SplitStep 
+g = -1.17  #corresponds to gamma -0.587
+gamma = 0.0
+tiles = 8
 barrier_width = 0.699 # as in SolitonBEC.jl
+max_vel = 1.17 # CALCULATED VALUE 1.17 FOR CHOOSEN NONLINEARITY
+max_bar = 1.68 # CALCULATED VALUE 1.68 FOR CHOOSEN NONLINEARITY
+reltol = 1e-4
+abstol = 1e-4
+x0 = L[1] / 4
 
-max_vel = abs(g)     # * 10
-max_bar = g/sqrt(2*pi)/barrier_width  #abs(g)^2 * 1.2246
-
+# other computations
 vel_list = LinRange(0, max_vel, tiles)
 bar_list = LinRange(0, max_bar, tiles)
 tran = Array{Float64, 2}(undef, (tiles, tiles))
 refl = Array{Float64, 2}(undef, (tiles, tiles))
 
-
-gamma = 0.0
-g_param = abs(g) / 2
-
-equation = NPSE
 iswitch = 1
+g_param = abs(g) / 2
+sigma2 = init_sigma2(g)
 x = X[1] |> real
 k = K[1] |> real
 dV= volume_element(L, N)
-reltol = 1e-3
-x0 = L[1] / 4
+
 alg = BS3()
 maxiters = 50000
 
@@ -62,9 +66,14 @@ mask_refl = map(xx -> xx>0, x)
 mask_tran = map(xx -> xx<0, x)
 
 iter = Iterators.product(enumerate(vel_list), enumerate(bar_list))
+#iter = Iterators.product(enumerate(vel_list[7]), enumerate(bar_list[7]))
 
 p = plot(x, zeros(length(x)))
-for ((vx, vv), (bx, bb)) in ProgressBar(iter)
+
+
+nth = Threads.nthreads() #print number of threads
+
+for ((vx, vv), (bx, bb)) in iter
     @unpack_Sim sim
     @. psi_0 = sqrt(g_param/2) * 2/(exp(g_param*(x-x0)) + exp(-(x-x0)*g_param)) * exp(-im*(x-x0)*vv)
 
@@ -81,15 +90,16 @@ for ((vx, vv), (bx, bb)) in ProgressBar(iter)
     @info "Computing tile" (vv, bb)
     @pack_Sim! sim
 
-    sol = runsim(sim; info=false)
-    #JLD2.@save("tran.jld2", tran)
+    @time sol = runsim(sim; info=false)
 
     if isnothing(sol)
         tran[bx, vx] = NaN
         refl[bx, vx] = NaN
-        @info "Computed transmission coefficient" tran[bx, vx]
+        @info "T = " tran[bx, vx]
     else
+    #JLD2.@save("tran.jld2", tran)
     final = sol[end]
+    
     # plot!(p, x, abs2.(final))
     
     # time_axis = sol.t
@@ -102,8 +112,9 @@ for ((vx, vv), (bx, bb)) in ProgressBar(iter)
     xspace!(final, sim)
     tran[bx, vx] = ns(final, sim, mask_tran)
     refl[bx, vx] = ns(final, sim, mask_refl)
-    @info "Computed transmission coefficient" tran[bx, vx]
+    @info "T = " tran[bx, vx]
     end
+
 end
 
 # display(p)

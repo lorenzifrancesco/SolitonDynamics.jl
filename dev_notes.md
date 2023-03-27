@@ -134,3 +134,11 @@ How to implement a split-step approximation of this equation?
 The most difficult computation to seems to be the radial (linear) component.
 
 NB: in [Helm-Gardiner], they do not use $\mathrm{E}_S$ to set the barrier, they use the parameter $q$.
+
+## SolitonBEC.jl to CondensateDynamics.jl
+in SolitonBEC.jl
+$v = v_{\text{unit}}$
+$$
+\psi_0 \propto e^{i\frac{m}{\hbar} v x}
+$$
+

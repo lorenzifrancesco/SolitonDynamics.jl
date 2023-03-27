@@ -112,7 +112,7 @@ V0 = CuArray(tmp)
 # ===================== tiling
 tiles = 25
 max_vel = abs(g)     # * 10
-max_bar = abs(g)^2 * 1.2246  #* 10
+max_bar = g/sqrt(2*pi)/barrier_width  #* 10
 
 vel_list = LinRange(0, max_vel, tiles)
 bar_list = LinRange(0, max_bar, tiles)
@@ -154,7 +154,6 @@ for ((vx, vv), (bx, bb)) in ProgressBar(iter)
     tran[bx, vx] = ns(final, sim, mask_tran)
     refl[bx, vx] = ns(final, sim, mask_refl)
     @info "T = " tran[bx, vx]
-
 end
 
 JLD2.@save("tran.jld2", tran)

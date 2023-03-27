@@ -26,6 +26,7 @@ const SplitStep = Solver(1, true)
 const CrankNicholson = Solver(2, false)
 const PredictorCorrector = Solver(3, false)
 const BackwardEuler = Solver(4, false)
+const ManualSplitStep = Solver(5, true)
 
 
 abstract type UserParams end
@@ -72,7 +73,6 @@ end
 end
 
 @with_kw mutable struct Sim{D, A <: AbstractArray}
-
     # === solver and algorithm
     equation::EquationType = GPE_1D
     solver::Solver = SplitStep
@@ -92,8 +92,8 @@ end
     ti::Float64 = 0.0    # initial time
     tf::Float64 = 1.0    # final time
     tspan = [ti, tf]
-    dt::Float64 = 1e-3 # used for ground state computation
-
+    dt::Float64 = 1e-3  # used in manual solvers
+    time_steps = 5000   # used in manual solvers
     # === nonlinearity
     g::Float64 = 0.1
     gamma::Float64 = 0.0; @assert gamma >= 0.0 # damping parameter
@@ -119,6 +119,11 @@ end
     K::NTuple{D,A} = kvecs(L,N)
     T::TransformLibrary{A} = makeT(X,K,A,flags=flags)
     ksquared::A = k2(K, A)
+end
+
+@with_kw mutable struct CustomSolution
+    u
+    t
 end
 
 InitSim(L,N,A,par) = Sim{length(L), A}(L=L,N=N,params=par)
