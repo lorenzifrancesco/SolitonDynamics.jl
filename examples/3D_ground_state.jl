@@ -73,7 +73,7 @@ sim = Sim{length(L), CuArray{Complex{Float64}}}(L=L, N=N)
 
 # =================== physical parameters
 @unpack_Sim sim
-g = -1.7 * 2*pi
+g = -1.17 * 2*pi
 g_param = abs(g)/(4*pi)
 gamma = 0.0
 mu = 35.0

@@ -75,7 +75,7 @@ sim = Sim{length(L), CuArray{Complex{Float64}}}(L=L, N=N)
 # =================== physical parameters 
 @unpack_Sim sim
 equation = GPE_3D
-g = -1.7 * 2*pi
+g = -1.17 * 2*pi
 g_param = abs(g)/(4*pi)
 reltol = 1e-3
 iswitch = 1
@@ -89,7 +89,7 @@ tf = 3
 Nt = 30
 t = LinRange(ti,tf,Nt)
 # nfiles = true
-maxiters = 2000
+maxiters = 5000
 x0 = L[1]/4
 
 
@@ -111,7 +111,7 @@ V0 = CuArray(tmp)
 
 
 # ===================== tiling
-tiles = 25
+tiles = 4
 barrier_width = 0.699 # as in SolitonBEC.jl
 max_vel = 1.17 # CALCULATED VALUE 1.17 FOR CHOOSEN NONLINEARITY
 max_bar = 1.68 # CALCULATED VALUE 1.68 FOR CHOOSEN NONLINEARITY
@@ -121,8 +121,8 @@ bar_list = LinRange(0, max_bar, tiles)
 tran = Array{Float64, 2}(undef, (tiles, tiles))
 refl = Array{Float64, 2}(undef, (tiles, tiles))
 
-mask_refl = map(xx -> xx>0, x)
-mask_tran = map(xx -> xx<0, x)
+mask_refl = map(xx -> xx>0, CuArray(x))
+mask_tran = map(xx -> xx<0, CuArray(x))
 
 iter = Iterators.product(enumerate(vel_list), enumerate(bar_list))
 for ((vx, vv), (bx, bb)) in ProgressBar(iter)
