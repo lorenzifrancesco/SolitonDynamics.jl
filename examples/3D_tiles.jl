@@ -80,20 +80,19 @@ g_param = abs(g)/(4*pi)
 reltol = 1e-3
 iswitch = 1
 vv = 5.0
+tf = 3
+Nt = 30
 
 x = Array(X[1]) |> real
 y = Array(X[2]) |> real
 z = Array(X[3]) |> real
 dV= volume_element(L, N)
-tf = 3
-Nt = 30
+
 t = LinRange(ti,tf,Nt)
 # nfiles = true
 maxiters = 5000
 x0 = L[1]/4
 
-
-g_param=3
 # tmp = [(exp(-(y^2+z^2)/2) * sqrt(g_param/2)*2/(exp(g_param*(x-x0)) + exp(-(x-x0)*g_param))) * exp(-im*x*vv) for x in x, y in y, z in z]
 tmp = [exp(-(y^2+z^2+(x-x0)^2)/2) * exp(-im*x*vv) for x in x, y in y, z in z]
 

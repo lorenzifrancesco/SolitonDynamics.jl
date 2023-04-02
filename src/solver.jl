@@ -58,7 +58,6 @@ Time evolution in kspace
 function propagate!(dpsi, psi, sim::Sim{3, CuArray{ComplexF64}}, t; info=false)
    @unpack ksquared, iswitch, dV, Vol,mu,gamma = sim
       nlin!(dpsi,psi,sim,t)
-      #    @. dϕ = -im*(1.0 - im*γ)*(dϕ + (espec - μ)*ϕ)
       @. dpsi = (1.0 - im*gamma)*(-im*(1/2*ksquared - mu)*psi + dpsi)
    return nothing
 end
@@ -67,8 +66,9 @@ end
 """
 Time evolution in xspace
 """
-function nlin!(dpsi,psi,sim::Sim{1, Array{ComplexF64}},t)
+function nlin!(dpsi,psi,sim::Sim{1, Array{ComplexF64}}, sigma2, lambda, t)
    @unpack ksquared,g,X,V0,iswitch,dV,Vol,mu,equation,sigma2 = sim; x = X[1]
+
    dpsi .= psi
    mu_im = 0.0
    if iswitch == -im
@@ -80,7 +80,11 @@ function nlin!(dpsi,psi,sim::Sim{1, Array{ComplexF64}},t)
    elseif equation == NPSE
       nonlinear = g*abs2.(dpsi) ./sigma2.(dpsi) + (1 ./(2*sigma2.(dpsi)) + 1/2*sigma2.(dpsi))
       @. dpsi *= -im*iswitch* (V0 + V(x, t) + nonlinear) + mu_im
-      #@info g*maximum(abs2.(dpsi))
+   elseif equation == NPSE_plus
+      # 2 state variable ODE problem for sigma
+      sigma2_updated = sigma2.(dpsi, sigma2, lambda)
+      nonlinear = g*abs2.(dpsi) ./sigma2_updated + (1 ./(2*sigma2_updated) + 1/2*sigma2_updated)
+      @. dpsi *= -im*iswitch* (V0 + V(x, t) + nonlinear) + mu_im
    end
    kspace!(dpsi,sim)
    return nothing
