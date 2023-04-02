@@ -7,13 +7,14 @@ abstract type Gaussian <: PotentialType end
 abstract type Elliptical <: PotentialType end
 
 struct EquationType
+    number::Int64
     D::Int64
-    improved::Bool
 end
 
-const GPE_1D = EquationType(1, false)
-const NPSE = EquationType(1, true)
-const GPE_3D = EquationType(3, false)
+const GPE_1D =    EquationType(1, 1)
+const NPSE =      EquationType(2, 1)
+const NPSE_plus = EquationType(3, 1)
+const GPE_3D =    EquationType(4, 3)
 
 abstract type Simulation{D} end
 
