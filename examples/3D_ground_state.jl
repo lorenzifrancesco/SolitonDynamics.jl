@@ -71,26 +71,29 @@ L = (40.0,40.0,40.0)
 N = (128,128,128)
 sim = Sim{length(L), CuArray{Complex{Float64}}}(L=L, N=N)
 
-# =================== physical parameters 
+# =================== physical parameters
 @unpack_Sim sim
-g = -0.587 * 2*pi
+g = -1.7 * 2*pi
+g_param = abs(g)/(4*pi)
 gamma = 0.0
 mu = 35.0
 equation = GPE_3D
-iswitch = 1
+iswitch = -im
+reltol = 1e-3
+x0 = 0.0
+vv = 0.0
+
+
 x = Array(X[1])
 y = Array(X[2])
 z = Array(X[3])
 dV= volume_element(L, N)
-reltol = 1e-3
 tf = 2.0
 
 Nt = 30
 t = LinRange(ti,tf,Nt)
-# nfiles = true
-maxiters = 2000
-x0 = 0.0
-vv = 0.0
+maxiters = 200000
+
 tmp = [exp(-((x-x0)^2+y^2+z^2)/2) * exp(-im*x*vv) for x in x, y in y, z in z]
 psi_0 = CuArray(tmp)
 
@@ -98,8 +101,8 @@ psi_0 .= psi_0 / sqrt(sum(abs2.(psi_0) * dV))
 initial_state = psi_0
 kspace!(psi_0, sim)
 alg = BS3()
-#1/2*(x^2+y^2+ 3*z^2)
-tmp = [5*1/2*(y^2+ z^2) for x in x, y in y, z in z]
+
+tmp = [1/2*(y^2 + z^2) for x in x, y in y, z in z]
 V0 = CuArray(tmp)
 #V(x,y,z,t) = 1/2 * (x^2+y^2+z^2)
 @pack_Sim! sim
@@ -113,9 +116,10 @@ JLD2.@save "tmp.jld2" sol
 # =================== plotting and collect 
 xspace!(final, sim)
 xspace!(psi_0, sim)
-final = Array(sum(abs2.(sol[end]), dims=(2, 3)))
-psi_0 = Array(sum(abs2.(psi_0), dims=(2, 3)))
-
+final = sum(Array(abs2.(sol[end])), dims=(2, 3))
+psi_0 = sum(Array(abs2.(psi_0)), dims=(2, 3))
+p = plot(real.(x), psi_0, color=:blue, ls=:dot, lw=3, label="initial")
+plot!(p, real.(x), final, color=:red, label="final")
 
 # JLD2.@load "tmp.jld2" sol 
 isosurface(sol[2])

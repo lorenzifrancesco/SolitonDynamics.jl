@@ -8,6 +8,7 @@ using CUDA
 using LaTeXStrings, Plots
 using CUDA.CUFFT
 import Makie, GLMakie
+using ProgressBars
 
 JULIA_CUDA_SOFT_MEMORY_LIMIT ="95%"
 # ================ plotting functions
@@ -77,7 +78,7 @@ equation = GPE_3D
 g = -1.7 * 2*pi
 g_param = abs(g)/(4*pi)
 reltol = 1e-3
-iswitch = -im
+iswitch = 1
 vv = 5.0
 
 x = Array(X[1]) |> real
@@ -111,8 +112,9 @@ V0 = CuArray(tmp)
 
 # ===================== tiling
 tiles = 25
-max_vel = abs(g)     # * 10
-max_bar = g/sqrt(2*pi)/barrier_width  #* 10
+barrier_width = 0.699 # as in SolitonBEC.jl
+max_vel = 1.17 # CALCULATED VALUE 1.17 FOR CHOOSEN NONLINEARITY
+max_bar = 1.68 # CALCULATED VALUE 1.68 FOR CHOOSEN NONLINEARITY
 
 vel_list = LinRange(0, max_vel, tiles)
 bar_list = LinRange(0, max_bar, tiles)
@@ -128,7 +130,7 @@ for ((vx, vv), (bx, bb)) in ProgressBar(iter)
 
     # ===================== tile simulation parameters
     @unpack_Sim sim
-    tmp = [ (1/2*(y^2+ z^2) + 0.0*1/2*x^2 + bb*exp(-10*x^2)) for x in x, y in y, z in z]
+    tmp = [ (1/2*(y^2+ z^2) + 0.0*1/2*x^2 + bb*exp(-(x/barrier_width)^2)) for x in x, y in y, z in z]
     V0 = CuArray(tmp)
 
     if vv == 0.0
