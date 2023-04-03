@@ -20,7 +20,7 @@ function nlin!(dpsi,psi,sim::Sim{1, Array{ComplexF64}},t)
       kspace!(sigma2_0, sim)
       @. sigma2_0 *= -ksquared
       xspace!(sigma2_0, sim)
-      sigma2_plus = sqrt.(-1/2 * sigma2_0 + g*abs2.(dpsi) .+ 1) 
+      sigma2_plus = sqrt.(-1/2 * sigma2_0 * 0.01 + g*abs2.(dpsi) .+ 1) # ad-hoc coefficient
       nonlinear = g*abs2.(dpsi) ./sigma2_plus + (1 ./(2*sigma2_plus) + 1/2*sigma2_plus)
       @. dpsi *= -im*iswitch* (V0 + V(x, t) + nonlinear) + mu_im
    end
