@@ -32,7 +32,7 @@ sim = Sim{length(L), Array{Complex{Float64}}}(L=L, N=N)
 # ====== initialization and unpacking
 @unpack_Sim sim
 # ======= simulation custom parameters
-equation = NPSE # issue: not showing collapse
+equation = NPSE_plus
 solver = SplitStep 
 g = -1.17  #corresponds to gamma -0.587
 gamma = 0.0
@@ -52,10 +52,11 @@ refl = Array{Float64, 2}(undef, (tiles, tiles))
 
 iswitch = 1
 g_param = abs(g) / 2
-sigma2 = init_sigma2(g)
+
 x = X[1] |> real
 k = K[1] |> real
 dV= volume_element(L, N)
+sigma2 = init_sigma2_ode(g, x)
 
 alg = BS3()
 maxiters = 50000

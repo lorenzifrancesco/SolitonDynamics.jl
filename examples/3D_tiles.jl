@@ -8,6 +8,7 @@ using CUDA
 using LaTeXStrings, Plots
 using CUDA.CUFFT
 import Makie, GLMakie
+using ProgressBars
 
 JULIA_CUDA_SOFT_MEMORY_LIMIT ="95%"
 # ================ plotting functions
@@ -74,25 +75,24 @@ sim = Sim{length(L), CuArray{Complex{Float64}}}(L=L, N=N)
 # =================== physical parameters 
 @unpack_Sim sim
 equation = GPE_3D
-g = -1.7 * 2*pi
+g = -1.17 * 2*pi
 g_param = abs(g)/(4*pi)
 reltol = 1e-3
-iswitch = -im
+iswitch = 1
 vv = 5.0
+tf = 3
+Nt = 30
 
 x = Array(X[1]) |> real
 y = Array(X[2]) |> real
 z = Array(X[3]) |> real
 dV= volume_element(L, N)
-tf = 3
-Nt = 30
+
 t = LinRange(ti,tf,Nt)
 # nfiles = true
-maxiters = 2000
+maxiters = 5000
 x0 = L[1]/4
 
-
-g_param=3
 # tmp = [(exp(-(y^2+z^2)/2) * sqrt(g_param/2)*2/(exp(g_param*(x-x0)) + exp(-(x-x0)*g_param))) * exp(-im*x*vv) for x in x, y in y, z in z]
 tmp = [exp(-(y^2+z^2+(x-x0)^2)/2) * exp(-im*x*vv) for x in x, y in y, z in z]
 
@@ -110,17 +110,18 @@ V0 = CuArray(tmp)
 
 
 # ===================== tiling
-tiles = 25
-max_vel = abs(g)     # * 10
-max_bar = g/sqrt(2*pi)/barrier_width  #* 10
+tiles = 4
+barrier_width = 0.699 # as in SolitonBEC.jl
+max_vel = 1.17 # CALCULATED VALUE 1.17 FOR CHOOSEN NONLINEARITY
+max_bar = 1.68 # CALCULATED VALUE 1.68 FOR CHOOSEN NONLINEARITY
 
 vel_list = LinRange(0, max_vel, tiles)
 bar_list = LinRange(0, max_bar, tiles)
 tran = Array{Float64, 2}(undef, (tiles, tiles))
 refl = Array{Float64, 2}(undef, (tiles, tiles))
 
-mask_refl = map(xx -> xx>0, x)
-mask_tran = map(xx -> xx<0, x)
+mask_refl = map(xx -> xx>0, CuArray(x))
+mask_tran = map(xx -> xx<0, CuArray(x))
 
 iter = Iterators.product(enumerate(vel_list), enumerate(bar_list))
 for ((vx, vv), (bx, bb)) in ProgressBar(iter)
@@ -128,7 +129,7 @@ for ((vx, vv), (bx, bb)) in ProgressBar(iter)
 
     # ===================== tile simulation parameters
     @unpack_Sim sim
-    tmp = [ (1/2*(y^2+ z^2) + 0.0*1/2*x^2 + bb*exp(-10*x^2)) for x in x, y in y, z in z]
+    tmp = [ (1/2*(y^2+ z^2) + 0.0*1/2*x^2 + bb*exp(-(x/barrier_width)^2)) for x in x, y in y, z in z]
     V0 = CuArray(tmp)
 
     if vv == 0.0

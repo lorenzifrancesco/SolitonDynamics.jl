@@ -1,3 +1,4 @@
+
 include("solvers_1D.jl")
 include("solvers_1D ground_state.jl")
 include("solvers_3D.jl")
@@ -6,7 +7,7 @@ include("solvers_3D.jl")
 Main solution routine
 """
 function runsim(sim; info=false)
-   @unpack psi_0, dV, dt, ti, tf, t, solver, iswitch, abstol, reltol, N,Nt, V0, maxiters, time_steps= sim
+   @unpack psi_0, dV, dt, ti, tf, t, solver, iswitch, abstol, reltol, N,Nt, V0, maxiters, time_steps, equation = sim
    info && @info ns(psi_0, sim)
 
    function savefunction(psi...)
@@ -99,33 +100,66 @@ function runsim(sim; info=false)
       end
    else # real-time dynamics
       if solver == SplitStep 
-         problem = ODEProblem(propagate!, psi_0, (ti, tf), sim)
-         try
-         sim.nfiles ?
-         (sol = solve(problem,
-                     alg=sim.alg,
-                     reltol=sim.reltol,
-                     saveat=sim.t[end],
-                     dt=dt,
-                     callback=savecb,
-                     dense=false,
-                     maxiters=maxiters,
-                     progress=true)) :
-         (sol = solve(problem,
-                     alg=sim.alg,
-                     reltol=sim.reltol,
-                     saveat=sim.t,
-                     dt=dt,
-                     dense=false,
-                     maxiters=maxiters,
-                     progress=true))
-         catch err
-            if isa(err, NpseCollapse)
-               showerror(stdout, err)
-            else
-               throw(err)
+         if equation == NPSE_plus
+            initial_sigma2 = 1.0
+            initial_lambda = 0.0
+            problem = ODEProblem(propagate!, psi_0, (ti, tf), sim, initial_sigma2, initial_lambda)
+            try
+            sim.nfiles ?
+            (sol = solve(problem,
+                        alg=sim.alg,
+                        reltol=sim.reltol,
+                        saveat=sim.t[end],
+                        dt=dt,
+                        callback=savecb,
+                        dense=false,
+                        maxiters=maxiters,
+                        progress=true)) :
+            (sol = solve(problem,
+                        alg=sim.alg,
+                        reltol=sim.reltol,
+                        saveat=sim.t,
+                        dt=dt,
+                        dense=false,
+                        maxiters=maxiters,
+                        progress=true))
+            catch err
+               if isa(err, NpseCollapse)
+                  showerror(stdout, err)
+               else
+                  throw(err)
+               end
+               return nothing
             end
-            return nothing
+         else
+            problem = ODEProblem(propagate!, psi_0, (ti, tf), sim)
+            try
+            sim.nfiles ?
+            (sol = solve(problem,
+                        alg=sim.alg,
+                        reltol=sim.reltol,
+                        saveat=sim.t[end],
+                        dt=dt,
+                        callback=savecb,
+                        dense=false,
+                        maxiters=maxiters,
+                        progress=true)) :
+            (sol = solve(problem,
+                        alg=sim.alg,
+                        reltol=sim.reltol,
+                        saveat=sim.t,
+                        dt=dt,
+                        dense=false,
+                        maxiters=maxiters,
+                        progress=true))
+            catch err
+               if isa(err, NpseCollapse)
+                  showerror(stdout, err)
+               else
+                  throw(err)
+               end
+               return nothing
+            end
          end
       elseif solver == ManualSplitStep
          time = 0.0

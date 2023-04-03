@@ -142,3 +142,4 @@ $$
 \psi_0 \propto e^{i\frac{m}{\hbar} v x}
 $$
 
+## sim 3D is broken (1e21 transmission output nonsense)
