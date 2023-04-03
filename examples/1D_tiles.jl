@@ -21,8 +21,6 @@ N = (256,)
 
 sim = Sim{length(L), Array{Complex{Float64}}}(L=L, N=N)
 
-
-
 # ====== tiling parameters
 # in previous simulations:
 #   -  max velocity = 1 V_S

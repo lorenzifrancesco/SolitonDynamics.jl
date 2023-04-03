@@ -17,10 +17,22 @@ function nlin!(dpsi,psi,sim::Sim{1, Array{ComplexF64}},t)
       @. dpsi *= -im*iswitch* (V0 + V(x, t) + nonlinear) + mu_im
    elseif equation == NPSE_plus # compute the effect of the derivative perturbatively
       sigma2_0 = sigma2.(dpsi)
-      kspace!(sigma2_0, sim)
-      @. sigma2_0 *= -ksquared
-      xspace!(sigma2_0, sim)
-      sigma2_plus = sqrt.(-1/2 * sigma2_0 * 0.01 + g*abs2.(dpsi) .+ 1) # ad-hoc coefficient
+      # kspace!(sigma2_0, sim)
+      # @. sigma2_0 *= -ksquared
+      # xspace!(sigma2_0, sim)
+      d2sigma = dV^2 * diff(diff(sigma2_0))
+      append!(d2sigma, [0.0, 0.0])
+      # test point: set the correction to zero and see NPSE collapse
+      try
+         sigma2_plus = sqrt.(-1/2 * d2sigma * 10  + g*abs2.(dpsi) .+ 1) # ad-hoc coefficient
+      catch  err
+         if isa(err, DomainError)
+            sigma2_plus = NaN
+            throw(NpseCollapse(g * maximum(abs2.(psi))))
+         else
+            throw(err)
+         end
+      end
       nonlinear = g*abs2.(dpsi) ./sigma2_plus + (1 ./(2*sigma2_plus) + 1/2*sigma2_plus)
       @. dpsi *= -im*iswitch* (V0 + V(x, t) + nonlinear) + mu_im
    end
