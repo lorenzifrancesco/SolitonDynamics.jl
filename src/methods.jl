@@ -120,40 +120,40 @@ function init_sigma2(g::Float64)
     return sigma2
 end
 
-"""
-check notes, Sigma is sigma^2
-"""
-function deSigmaLambda!(dsigma, sigma, psi, t)
-    return 
-end
+# """
+# check notes, Sigma is sigma^2
+# """
+# function deSigmaLambda!(dsigma, sigma, psi, t)
+#     return 
+# end
 
-"""
-return the sigma2 function to be called in the ODE loop
-"""
-function init_sigma2_ode(g::Float64, x::Array{Float64})
-    function sigma2(psi::Array{ComplexF64}, sigma2_0::Float64, lambda::Float64)
-        problem = ODEProblem(deSigmaLambda!, Array([sigma2_0, lambda]), (x[1], x[end]), psi)
-        sol = solve(problem,
-                    alg=BS3(),
-                    dense=false,
-                    maxiters=2000,
-                    progress=true, 
-                    )
-        result = sol.u
-        try
-            tmp = sqrt.(result)
-        catch  err
-            if isa(err, DomainError)
-                result = NaN
-                throw(NpseCollapse(NaN))
-            else
-                throw(err)
-            end
-        end
-        return result
-    end
-    return sigma2
-end
+# """
+# return the sigma2 function to be called in the ODE loop
+# """
+# function init_sigma2_ode(g::Float64, x::Array{Float64})
+#     function sigma2(psi::Array{ComplexF64}, sigma2_0::Float64, lambda::Float64)
+#         problem = ODEProblem(deSigmaLambda!, Array([sigma2_0, lambda]), (x[1], x[end]), psi)
+#         sol = solve(problem,
+#                     alg=BS3(),
+#                     dense=false,
+#                     maxiters=2000,
+#                     progress=true, 
+#                     )
+#         result = sol.u
+#         try
+#             tmp = sqrt.(result)
+#         catch  err
+#             if isa(err, DomainError)
+#                 result = NaN
+#                 throw(NpseCollapse(NaN))
+#             else
+#                 throw(err)
+#             end
+#         end
+#         return result
+#     end
+#     return sigma2
+# end
 
 """
 chemical potential in a given configuration
