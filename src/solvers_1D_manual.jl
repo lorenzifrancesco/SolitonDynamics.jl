@@ -1,4 +1,31 @@
-# General solvers
+# Particular solvers to be used manually
+
+# ============== ManualSplitStep methods, improved with exp
+
+function nlin_manual!(dpsi,psi,sim::Sim{1, Array{ComplexF64}},t)
+   @unpack ksquared,g,X,V0,dV,Vol,mu,equation,sigma2,dt,iswitch = sim; x = X[1]
+   xspace!(psi,sim)
+   if equation == GPE_1D
+      @. psi = exp(dt/2 * -im*iswitch* (V0 + V(x, t) + g*abs2(psi))) * psi
+   elseif equation == NPSE
+      nonlinear = g*abs2.(dpsi) ./sigma2.(dpsi) + (1 ./(2*sigma2.(dpsi)) + 1/2*sigma2.(dpsi))
+      @. psi = exp(dt/2*-im*iswitch* (V0 + V(x, t) + nonlinear)) * psi
+   end
+   kspace!(psi,sim)
+   return nothing
+end
+
+
+function propagate_manual!(dpsi, psi, sim::Sim{1, Array{ComplexF64}}, t; info=false)
+   @unpack ksquared, iswitch, dV, Vol,mu,gamma,dt = sim
+   nlin_manual!(dpsi,psi,sim,t)
+   @. psi = exp(dt/2 * (1.0 - im*gamma)*(-im*(1/2*ksquared - mu)))*psi 
+   return nothing
+end
+
+
+# ============== ManualSplitStep methods for ground state, improved with exp (wait for merge with above methods)
+
 """
 Imaginary time evolution in xspace,
 including explicit normalization
@@ -31,6 +58,7 @@ function ground_state_evolve!(psi, sim::Sim{1, Array{ComplexF64}}, dt; info=fals
    return nothing
 end
 
+# ============== Manual CN GS
 
 """
 Imaginary time evolution in xspace, 
@@ -52,6 +80,7 @@ function cn_ground_state!(psi,sim::Sim{1, Array{ComplexF64}}, dt, tri_fwd, tri_b
    return norm_diff
 end
 
+# ============== Manual PC GS
 
 """
 Imaginary time evolution in xspace, 
@@ -80,6 +109,7 @@ function pc_ground_state!(psi,sim::Sim{1, Array{ComplexF64}}, dt, tri_fwd, tri_b
    return norm_diff
 end
 
+# ============== Manual BE GS
 
 """
 Imaginary time evolution in xspace, 
@@ -87,24 +117,6 @@ using BKW Euler
 """
 function be_ground_state!(psi,sim::Sim{1, Array{ComplexF64}}, dt, tri_fwd, tri_bkw; info=false)
    @unpack dt,g,X,V0,iswitch,dV,Vol,N = sim; x = X[1]
-   psi_i = copy(psi) 
-   nonlin = -(dt/2) * g*abs2.(psi)
-   tri_bkw += Diagonal(nonlin)
-   psi .= transpose(\(psi, tri_bkw))
-
-   norm_diff = ns(psi - psi_i, sim)/dt
-   psi .= psi / sqrt(ns(psi, sim))
-   return norm_diff
-end
-
-
-"""
-3D Imaginary time evolution in xspace, 
-using BKW Euler
-"""
-function be_ground_state!(psi,sim::Sim{3, CuArray{ComplexF64}}, dt, tri_fwd, tri_bkw; info=false)
-   @unpack dt,g,X,V0,iswitch,dV,Vol,N = sim; x = X[1]
-   throw("Broken")
    psi_i = copy(psi) 
    nonlin = -(dt/2) * g*abs2.(psi)
    tri_bkw += Diagonal(nonlin)

@@ -1,13 +1,14 @@
 
-include("solvers_1D.jl")
-include("solvers_1D ground_state.jl")
-include("solvers_3D.jl")
+include("solvers_1D_auto.jl")
+include("solvers_1D_manual.jl")
+include("solvers_3D_auto.jl")
+include("solvers_3D_manual.jl")
 
 """
 Main solution routine
 """
 function runsim(sim; info=false)
-   @unpack psi_0, dV, dt, ti, tf, t, solver, iswitch, abstol, reltol, N,Nt, V0, maxiters, time_steps, equation = sim
+   @unpack psi_0, dV, dt, ti, tf, t, solver, iswitch, abstol, reltol, N,Nt, V0, maxiters, time_steps = sim
    info && @info ns(psi_0, sim)
 
    function savefunction(psi...)
@@ -29,7 +30,7 @@ function runsim(sim; info=false)
    # due to normalization, ground state solution 
    # is computed with forward Euler
    boring = false
-   if iswitch == -im 
+   if iswitch == -im  # imaginary-time dynamics
       if boring == false
          sim.iswitch = 1.0
          if solver == SplitStep 
@@ -100,38 +101,6 @@ function runsim(sim; info=false)
       end
    else # real-time dynamics
       if solver == SplitStep 
-         if equation == NPSE_plus
-            initial_sigma2 = 1.0
-            initial_lambda = 0.0
-            problem = ODEProblem(propagate!, psi_0, (ti, tf), sim, initial_sigma2, initial_lambda)
-            try
-            sim.nfiles ?
-            (sol = solve(problem,
-                        alg=sim.alg,
-                        reltol=sim.reltol,
-                        saveat=sim.t[end],
-                        dt=dt,
-                        callback=savecb,
-                        dense=false,
-                        maxiters=maxiters,
-                        progress=true)) :
-            (sol = solve(problem,
-                        alg=sim.alg,
-                        reltol=sim.reltol,
-                        saveat=sim.t,
-                        dt=dt,
-                        dense=false,
-                        maxiters=maxiters,
-                        progress=true))
-            catch err
-               if isa(err, NpseCollapse)
-                  showerror(stdout, err)
-               else
-                  throw(err)
-               end
-               return nothing
-            end
-         else
             problem = ODEProblem(propagate!, psi_0, (ti, tf), sim)
             try
             sim.nfiles ?
@@ -160,7 +129,6 @@ function runsim(sim; info=false)
                end
                return nothing
             end
-         end
       elseif solver == ManualSplitStep
          time = 0.0
          psi = 0.0 * psi_0
