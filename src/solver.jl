@@ -57,7 +57,7 @@ Time evolution in kspace
 """
 function propagate!(dpsi, psi, sim::Sim{3, CuArray{ComplexF64}}, t; info=false)
    @unpack ksquared, iswitch, dV, Vol,mu,gamma = sim
-      nlin!(dpsi,psi,sim,t)
+      nlin!(dpsi,psi,sim,sigma2_0, lambda,t)
       @. dpsi = (1.0 - im*gamma)*(-im*(1/2*ksquared - mu)*psi + dpsi)
    return nothing
 end
@@ -66,7 +66,7 @@ end
 """
 Time evolution in xspace
 """
-function nlin!(dpsi,psi,sim::Sim{1, Array{ComplexF64}}, sigma2, lambda, t)
+function nlin!(dpsi,psi,sim::Sim{1, Array{ComplexF64}}, sigma2_0, lambda, t)
    @unpack ksquared,g,X,V0,iswitch,dV,Vol,mu,equation,sigma2 = sim; x = X[1]
 
    dpsi .= psi
@@ -82,7 +82,7 @@ function nlin!(dpsi,psi,sim::Sim{1, Array{ComplexF64}}, sigma2, lambda, t)
       @. dpsi *= -im*iswitch* (V0 + V(x, t) + nonlinear) + mu_im
    elseif equation == NPSE_plus
       # 2 state variable ODE problem for sigma
-      sigma2_updated = sigma2.(dpsi, sigma2, lambda)
+      sigma2_updated = sigma2.(dpsi, sigma2_0, lambda)
       nonlinear = g*abs2.(dpsi) ./sigma2_updated + (1 ./(2*sigma2_updated) + 1/2*sigma2_updated)
       @. dpsi *= -im*iswitch* (V0 + V(x, t) + nonlinear) + mu_im
    end
@@ -94,7 +94,7 @@ end
 """
 Time evolution in kspace
 """
-function propagate!(dpsi, psi, sim::Sim{1, Array{ComplexF64}}, t; info=false)
+function propagate!(dpsi, psi, sim::Sim{1, Array{ComplexF64}}, sigma2_0, lambda, t; info=false)
    @unpack ksquared, iswitch, dV, Vol,mu,gamma = sim
       nlin!(dpsi,psi,sim,t)
       #    @. dϕ = -im*(1.0 - im*γ)*(dϕ + (espec - μ)*ϕ)
@@ -253,7 +253,7 @@ end
 Main solution routine
 """
 function runsim(sim; info=false)
-   @unpack psi_0, dV, dt, ti, tf, t, solver, iswitch, abstol, reltol, N,Nt, V0, maxiters, time_steps= sim
+   @unpack psi_0, dV, dt, ti, tf, t, solver, iswitch, abstol, reltol, N,Nt, V0, maxiters, time_steps, equation = sim
    info && @info ns(psi_0, sim)
 
    function savefunction(psi...)
@@ -346,33 +346,66 @@ function runsim(sim; info=false)
       end
    else # real-time dynamics
       if solver == SplitStep 
-         problem = ODEProblem(propagate!, psi_0, (ti, tf), sim)
-         try
-         sim.nfiles ?
-         (sol = solve(problem,
-                     alg=sim.alg,
-                     reltol=sim.reltol,
-                     saveat=sim.t[end],
-                     dt=dt,
-                     callback=savecb,
-                     dense=false,
-                     maxiters=maxiters,
-                     progress=true)) :
-         (sol = solve(problem,
-                     alg=sim.alg,
-                     reltol=sim.reltol,
-                     saveat=sim.t,
-                     dt=dt,
-                     dense=false,
-                     maxiters=maxiters,
-                     progress=true))
-         catch err
-            if isa(err, NpseCollapse)
-               showerror(stdout, err)
-            else
-               throw(err)
+         if equation == NPSE_plus
+            initial_sigma2 = 1.0
+            initial_lambda = 0.0
+            problem = ODEProblem(propagate!, psi_0, (ti, tf), sim, initial_sigma2, initial_lambda)
+            try
+            sim.nfiles ?
+            (sol = solve(problem,
+                        alg=sim.alg,
+                        reltol=sim.reltol,
+                        saveat=sim.t[end],
+                        dt=dt,
+                        callback=savecb,
+                        dense=false,
+                        maxiters=maxiters,
+                        progress=true)) :
+            (sol = solve(problem,
+                        alg=sim.alg,
+                        reltol=sim.reltol,
+                        saveat=sim.t,
+                        dt=dt,
+                        dense=false,
+                        maxiters=maxiters,
+                        progress=true))
+            catch err
+               if isa(err, NpseCollapse)
+                  showerror(stdout, err)
+               else
+                  throw(err)
+               end
+               return nothing
             end
-            return nothing
+         else
+            problem = ODEProblem(propagate!, psi_0, (ti, tf), sim)
+            try
+            sim.nfiles ?
+            (sol = solve(problem,
+                        alg=sim.alg,
+                        reltol=sim.reltol,
+                        saveat=sim.t[end],
+                        dt=dt,
+                        callback=savecb,
+                        dense=false,
+                        maxiters=maxiters,
+                        progress=true)) :
+            (sol = solve(problem,
+                        alg=sim.alg,
+                        reltol=sim.reltol,
+                        saveat=sim.t,
+                        dt=dt,
+                        dense=false,
+                        maxiters=maxiters,
+                        progress=true))
+            catch err
+               if isa(err, NpseCollapse)
+                  showerror(stdout, err)
+               else
+                  throw(err)
+               end
+               return nothing
+            end
          end
       elseif solver == ManualSplitStep
          time = 0.0
