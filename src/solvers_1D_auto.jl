@@ -34,11 +34,11 @@ function nlin!(dpsi,psi,sim::Sim{1, Array{ComplexF64}},t)
          sigma2_plus = [sol.u[i][1] for i in 1:length(x)]
 
          # what is the difference in using this improved model?
-         try
-            @info sum.(abs2.(sigma2_plus - sigma2.(psi))) # for each time step
-         catch err
-            @info "collapse, pazienza"
-         end
+         # try
+         #    @info sum.(abs2.(sigma2_plus - sigma2.(psi))) # for each time step
+         # catch err
+         #    @info "collapse, pazienza"
+         # end
 
       catch  err
          if isa(err, DomainError)

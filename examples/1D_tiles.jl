@@ -30,7 +30,7 @@ sim = Sim{length(L), Array{Complex{Float64}}}(L=L, N=N)
 # ====== initialization and unpacking
 @unpack_Sim sim
 # ======= simulation custom parameters
-equation = NPSE
+equation = NPSE_plus
 solver = SplitStep 
 g = -1.17  #corresponds to gamma -0.587
 gamma = 0.0
@@ -63,13 +63,10 @@ maxiters = 50000
 
 mask_refl = map(xx -> xx>0, x)
 mask_tran = map(xx -> xx<0, x)
-
-iter = Iterators.product(enumerate(vel_list), enumerate(bar_list))
-
 p = plot(x, zeros(length(x)))
 
-
-for ((vx, vv), (bx, bb)) in ProgressBar(iter)
+iter = collect(((collect(enumerate(vel_list[i])), collect(enumerate(bar_list[j]))) for i in 1:tiles for j in 1:tiles))
+Threads.@threads for ((vx, vv), (bx, bb)) in ProgressBar(iter)
     @unpack_Sim sim
     @. psi_0 = sqrt(g_param/2) * 2/(exp(g_param*(x-x0)) + exp(-(x-x0)*g_param)) * exp(-im*(x-x0)*vv)
 

@@ -123,8 +123,8 @@ refl = Array{Float64, 2}(undef, (tiles, tiles))
 mask_refl = map(xx -> xx>0, CuArray(x))
 mask_tran = map(xx -> xx<0, CuArray(x))
 
-iter = Iterators.product(enumerate(vel_list), enumerate(bar_list))
-for ((vx, vv), (bx, bb)) in ProgressBar(iter)
+iter = collect(((collect(enumerate(vel_list[i])), collect(enumerate(bar_list[j]))) for i in 1:tiles for j in 1:tiles))
+Threads.@threads for ((vx, vv), (bx, bb)) in ProgressBar(iter)
     @info "Computing tile" (vv, bb)
 
     # ===================== tile simulation parameters
