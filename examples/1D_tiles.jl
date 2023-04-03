@@ -65,8 +65,9 @@ mask_refl = map(xx -> xx>0, x)
 mask_tran = map(xx -> xx<0, x)
 p = plot(x, zeros(length(x)))
 
-iter = collect(((collect(enumerate(vel_list[i])), collect(enumerate(bar_list[j]))) for i in 1:tiles for j in 1:tiles))
-Threads.@threads for ((vx, vv), (bx, bb)) in ProgressBar(iter)
+iter = collect(((collect(enumerate(vel_list))[i], collect(enumerate(bar_list))[j]) for i in 1:tiles for j in 1:tiles))
+display(iter)
+Threads.@threads for ((vx, vv), (bx, bb)) in iter
     @unpack_Sim sim
     @. psi_0 = sqrt(g_param/2) * 2/(exp(g_param*(x-x0)) + exp(-(x-x0)*g_param)) * exp(-im*(x-x0)*vv)
 
