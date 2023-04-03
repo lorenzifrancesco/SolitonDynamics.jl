@@ -36,7 +36,7 @@ equation = NPSE_plus
 solver = SplitStep 
 g = -1.17  #corresponds to gamma -0.587
 gamma = 0.0
-tiles = 25
+tiles = 3
 barrier_width = 0.699 # as in SolitonBEC.jl
 max_vel = 1.17 # CALCULATED VALUE 1.17 FOR CHOOSEN NONLINEARITY
 max_bar = 1.68 # CALCULATED VALUE 1.68 FOR CHOOSEN NONLINEARITY
@@ -56,7 +56,7 @@ g_param = abs(g) / 2
 x = X[1] |> real
 k = K[1] |> real
 dV= volume_element(L, N)
-sigma2 = init_sigma2_ode(g, x)
+sigma2 = init_sigma2(g)
 
 alg = BS3()
 maxiters = 50000
