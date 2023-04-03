@@ -100,7 +100,7 @@ function runsim(sim; info=false)
          return [sol]
       end
    else # real-time dynamics
-      if solver == SplitStep 
+      if solver == SplitStep
             problem = ODEProblem(propagate!, psi_0, (ti, tf), sim)
             try
             sim.nfiles ?

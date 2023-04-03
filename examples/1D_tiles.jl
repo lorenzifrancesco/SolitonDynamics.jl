@@ -65,12 +65,12 @@ mask_refl = map(xx -> xx>0, x)
 mask_tran = map(xx -> xx<0, x)
 
 iter = Iterators.product(enumerate(vel_list), enumerate(bar_list))
-#iter = Iterators.product(enumerate(vel_list[7]), enumerate(bar_list[7]))
 
 p = plot(x, zeros(length(x)))
 
 
-nth = Threads.nthreads() #print number of threads
+JLD2.@load("tran.jld2")
+mat = tran
 
 for ((vx, vv), (bx, bb)) in ProgressBar(iter)
     @unpack_Sim sim
@@ -112,14 +112,16 @@ for ((vx, vv), (bx, bb)) in ProgressBar(iter)
     tran[bx, vx] = ns(final, sim, mask_tran)
     refl[bx, vx] = ns(final, sim, mask_refl)
     @info "T = " tran[bx, vx]
+    @info "difference wrt NPSE alone: " tran[bx, vx] - mat[bx, vx]
+    print("\n")
     end
 
 end
 
 # display(p)
 
-JLD2.@save("tran.jld2", tran)
-JLD2.@save("refl.jld2", refl)
+# JLD2.@save("tran.jld2", tran)
+# JLD2.@save("refl.jld2", refl)
 norm_bar = bar_list / max_bar
 norm_vel = vel_list / max_vel
 ht = heatmap(norm_bar, norm_vel, tran')
