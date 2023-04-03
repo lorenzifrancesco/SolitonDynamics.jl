@@ -24,7 +24,7 @@ function nlin!(dpsi,psi,sim::Sim{1, Array{ComplexF64}},t)
          # initial state is (1, 0)
          sol = solve(problem,
                      alg=BS3(),
-                     maxiters=5000,
+                     maxiters=1000,
                      saveat=x
                      )
          if length(sol.u) < length(dpsi)
@@ -32,7 +32,14 @@ function nlin!(dpsi,psi,sim::Sim{1, Array{ComplexF64}},t)
             @warn "dmetj"
          end
          sigma2_plus = [sol.u[i][1] for i in 1:length(x)]
-         #display(maximum(sigma2_plus))
+
+         # what is the difference in using this improved model?
+         try
+            @info sum.(abs2.(sigma2_plus - sigma2.(psi))) # for each time step
+         catch err
+            @info "collapse, pazienza"
+         end
+
       catch  err
          if isa(err, DomainError)
             sigma2_plus = NaN

@@ -30,11 +30,11 @@ sim = Sim{length(L), Array{Complex{Float64}}}(L=L, N=N)
 # ====== initialization and unpacking
 @unpack_Sim sim
 # ======= simulation custom parameters
-equation = NPSE_plus
+equation = NPSE
 solver = SplitStep 
 g = -1.17  #corresponds to gamma -0.587
 gamma = 0.0
-tiles = 3
+tiles = 9
 barrier_width = 0.699 # as in SolitonBEC.jl
 max_vel = 1.17 # CALCULATED VALUE 1.17 FOR CHOOSEN NONLINEARITY
 max_bar = 1.68 # CALCULATED VALUE 1.68 FOR CHOOSEN NONLINEARITY
@@ -68,9 +68,6 @@ iter = Iterators.product(enumerate(vel_list), enumerate(bar_list))
 
 p = plot(x, zeros(length(x)))
 
-
-JLD2.@load("tran.jld2")
-mat = tran
 
 for ((vx, vv), (bx, bb)) in ProgressBar(iter)
     @unpack_Sim sim
@@ -112,7 +109,7 @@ for ((vx, vv), (bx, bb)) in ProgressBar(iter)
     tran[bx, vx] = ns(final, sim, mask_tran)
     refl[bx, vx] = ns(final, sim, mask_refl)
     @info "T = " tran[bx, vx]
-    @info "difference wrt NPSE alone: " tran[bx, vx] - mat[bx, vx]
+    #@info "difference wrt NPSE alone: " tran[bx, vx] - mat[bx, vx]
     print("\n")
     end
 
