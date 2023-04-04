@@ -113,7 +113,7 @@ end
 Main solution routine
 """
 function runsim(sim; info=false)
-   @unpack psi_0, dV, dt, ti, tf, t, solver, iswitch, abstol, reltol, N,Nt, V0, maxiters, time_steps = sim
+   @unpack psi_0, dV, dt, ti, tf, t, solver, iswitch, abstol, reltol, N,Nt, V0, maxiters, time_steps, manual = sim
    
    function savefunction(psi...)
       isdir(path) || mkpath(path)

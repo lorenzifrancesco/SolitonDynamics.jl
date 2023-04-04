@@ -30,11 +30,11 @@ sim = Sim{length(L), Array{Complex{Float64}}}(L=L, N=N)
 # ====== initialization and unpacking
 @unpack_Sim sim
 # ======= simulation custom parameters
-equation = NPSE_plus
+equation = NPSE
 solver = SplitStep 
 g = -1.17  #corresponds to gamma -0.587
 gamma = 0.0
-tiles = 9
+tiles = 3
 barrier_width = 0.699 # as in SolitonBEC.jl
 max_vel = 1.17 # CALCULATED VALUE 1.17 FOR CHOOSEN NONLINEARITY
 max_bar = 1.68 # CALCULATED VALUE 1.68 FOR CHOOSEN NONLINEARITY
@@ -65,10 +65,12 @@ mask_refl = map(xx -> xx>0, x)
 mask_tran = map(xx -> xx<0, x)
 p = plot(x, zeros(length(x)))
 
-iter = collect(((collect(enumerate(vel_list))[i], collect(enumerate(bar_list))[j]) for i in 1:tiles for j in 1:tiles))
-display(iter)
-@assert Threads.nthreads() > 1
-Threads.@threads for ((vx, vv), (bx, bb)) in iter
+# iter = collect(((collect(enumerate(vel_list))[i], collect(enumerate(bar_list))[j]) for i in 1:tiles for j in 1:tiles))
+# display(iter)
+# @assert Threads.nthreads() > 1
+# Threads.@threads for ((vx, vv), (bx, bb)) in iter
+iter = Iterators.product(enumerate(vel_list), enumerate(bar_list))
+for ((vx, vv), (bx, bb)) in ProgressBar(iter)
     @unpack_Sim sim
     @. psi_0 = sqrt(g_param/2) * 2/(exp(g_param*(x-x0)) + exp(-(x-x0)*g_param)) * exp(-im*(x-x0)*vv)
 
