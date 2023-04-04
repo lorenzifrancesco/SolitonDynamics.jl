@@ -1,6 +1,6 @@
 # Particular solvers to be used manually
 
-# ============== ManualSplitStep methods, improved with exp
+# ============== Manual SplitStep methods, improved with exp
 
 function nlin_manual!(dpsi,psi,sim::Sim{3, CuArray{ComplexF64}},t)
    @unpack ksquared,g,X,V0,dV,Vol,mu,equation,sigma2,dt,iswitch = sim; x = X[1]

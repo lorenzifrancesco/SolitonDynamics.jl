@@ -27,7 +27,6 @@ const SplitStep = Solver(1, true)
 const CrankNicholson = Solver(2, false)
 const PredictorCorrector = Solver(3, false)
 const BackwardEuler = Solver(4, false)
-const ManualSplitStep = Solver(5, true)
 
 
 abstract type UserParams end

@@ -1,6 +1,6 @@
 # Particular solvers to be used manually
 
-# ============== ManualSplitStep methods, improved with exp
+# ============== Manual SplitStep methods, improved with exp
 
 function nlin_manual!(dpsi,psi,sim::Sim{1, Array{ComplexF64}},t)
    @unpack ksquared,g,X,V0,dV,Vol,mu,equation,sigma2,dt,iswitch = sim; x = X[1]
@@ -24,7 +24,7 @@ function propagate_manual!(dpsi, psi, sim::Sim{1, Array{ComplexF64}}, t; info=fa
 end
 
 
-# ============== ManualSplitStep methods for ground state, improved with exp (wait for merge with above methods)
+# ============== Manual SplitStep methods for ground state, improved with exp (wait for merge with above methods)
 
 """
 Imaginary time evolution in xspace,
