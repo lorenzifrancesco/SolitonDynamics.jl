@@ -67,6 +67,7 @@ p = plot(x, zeros(length(x)))
 
 iter = collect(((collect(enumerate(vel_list))[i], collect(enumerate(bar_list))[j]) for i in 1:tiles for j in 1:tiles))
 display(iter)
+@assert Threads.nthreads() > 1
 Threads.@threads for ((vx, vv), (bx, bb)) in iter
     @unpack_Sim sim
     @. psi_0 = sqrt(g_param/2) * 2/(exp(g_param*(x-x0)) + exp(-(x-x0)*g_param)) * exp(-im*(x-x0)*vv)
