@@ -75,6 +75,7 @@ sim = Sim{length(L), CuArray{Complex{Float64}}}(L=L, N=N)
 # =================== physical parameters 
 @unpack_Sim sim
 equation = GPE_3D
+manual = true
 g = -1.17 * 2*pi
 g_param = abs(g)/(4*pi)
 reltol = 1e-3

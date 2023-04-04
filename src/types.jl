@@ -76,6 +76,7 @@ end
 @with_kw mutable struct Sim{D, A <: AbstractArray}
     # === solver and algorithm
     equation::EquationType = GPE_1D
+    manual::Bool = false
     solver::Solver = SplitStep
     graphics::Bool = false
     alg::OrdinaryDiffEq.OrdinaryDiffEqAdaptiveAlgorithm = Tsit5() # default solver
