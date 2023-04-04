@@ -23,7 +23,7 @@ function nlin!(dpsi,psi,sim::Sim{1, Array{ComplexF64}},t)
          problem = ODEProblem(sigma2_diff!, [init_sigma, init_lambda], (x[1], x[end]), [sim, dpsi])
          # initial state is (1, 0)
          sol = solve(problem,
-                     alg=BS3(),
+                     alg=Tsit5(),
                      maxiters=1000,
                      saveat=x
                      )
