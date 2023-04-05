@@ -6,46 +6,72 @@ include("solvers_3D_manual.jl")
 
 function manual_run(sim; info=false)
    @unpack psi_0, dV, dt, ti, tf, t, solver, iswitch, abstol, reltol, N,Nt, V0, maxiters, time_steps = sim
-   if iswitch == true # select solver and run manual convergence routine 
-      xspace!(psi_0, sim)
-      solvers = [ground_state_nlin!, cn_ground_state!, pc_ground_state!, be_ground_state!]
-      func = solvers[solver.number]
-      @info "Solving using solver" func 
-      norm_diff = 1
-      abstol_diff = abstol
-      taglia = N[1]
-      #for i in  1:10000
-      d_central = -(dt/2) * ( 1/(dV^2) * ones(taglia) - V0) |> complex
-      d_lu = (dt/2) * 1/(2*dV^2) * ones(taglia-1) |> complex
-      tri_fwd = SymTridiagonal(d_central, d_lu) + Diagonal(ones(taglia)) # Dx
-      tri_bkw = -SymTridiagonal(d_central, d_lu) + Diagonal(ones(taglia)) # Sx
-      cnt = 0 
-      while norm_diff > abstol_diff && cnt < maxiters
-         norm_diff = func(psi_0,sim,dt, tri_fwd, tri_bkw)
-         cnt +=1
+   if iswitch == -im # select solver and run manual convergence routine 
+      if solver == SplitStep
+         norm_diff = 1
+         abstol_diff = abstol
+         cnt = 0 
+         while norm_diff > abstol_diff && cnt < maxiters
+            norm_diff = ground_state_nlin!(psi_0,sim,dt)
+            cnt +=1
+         end
+         @info "Computation ended after iterations" cnt
+         sol = psi_0 
+      else # nonspectral methods
+         xspace!(psi_0, sim)
+         solvers = [ground_state_nlin!, cn_ground_state!, pc_ground_state!, be_ground_state!]
+         func = solvers[solver.number]
+         @info "Solving using solver" func 
+         norm_diff = 1
+         abstol_diff = abstol
+         taglia = N[1]
+         #for i in  1:10000
+         d_central = -(dt/2) * ( 1/(dV^2) * ones(taglia) - V0) |> complex
+         d_lu = (dt/2) * 1/(2*dV^2) * ones(taglia-1) |> complex
+         tri_fwd = SymTridiagonal(d_central, d_lu) + Diagonal(ones(taglia)) # Dx
+         tri_bkw = -SymTridiagonal(d_central, d_lu) + Diagonal(ones(taglia)) # Sx
+         cnt = 0 
+         while norm_diff > abstol_diff && cnt < maxiters
+            norm_diff = func(psi_0,sim,dt, tri_fwd, tri_bkw)
+            cnt +=1
+         end
+         @info "Computation ended after iterations" cnt
+         kspace!(psi_0, sim)
+         sol = psi_0
       end
-      @info "Computation ended after iterations" cnt
-      kspace!(psi_0, sim)
-      sol = psi_0
       return [sol]
    else
       time = 0.0
       psi = 0.0 * psi_0
       psi .= psi_0
       dpsi = 0.0 * psi
-      collection = Array{ComplexF64, 2}(undef, (length(psi_0), Nt))
-      collection[:, 1] = psi
-
-      save_interval = Int(round(time_steps/Nt))
-      for i in 1:time_steps
-         propagate_manual!(dpsi, psi, sim, time)
-         if i % save_interval == 0
-            collection[:, Int(floor(i / save_interval))] = psi
+      if length(N) == 1
+         collection = Array{ComplexF64, 2}(undef, (length(psi_0), Nt))
+         collection[:, 1] = psi
+         save_interval = Int(round(time_steps/Nt))
+         for i in 1:time_steps
+            propagate_manual!(dpsi, psi, sim, time)
+            if i % save_interval == 0
+               collection[:, Int(floor(i / save_interval))] = psi
+            end
+            #@info "norm" (nsk(psi_0, sim))
+            time += dt
          end
-         @info "norm" (nsk(psi_0, sim))
-         time += dt
+         sol = CustomSolution(u=[collection[:, k] for k in 1:Nt], t=t)
+      elseif length(N) == 3
+         collection = CuArray{ComplexF64, 4}(undef, (N..., Nt))
+         collection[:, :, :, 1] = psi
+         save_interval = Int(round(time_steps/Nt))
+         for i in 1:time_steps
+            propagate_manual!(dpsi, psi, sim, time)
+            if i % save_interval == 0
+               collection[:, :, :, Int(floor(i / save_interval))] = psi
+            end
+            #@info "norm" (nsk(psi_0, sim))
+            time += dt
+         end
+         sol = CustomSolution(u=[collection[:,:,:, k] for k in 1:Nt], t=t)
       end
-      sol = CustomSolution(u=[collection[:, k] for k in 1:Nt], t=t)
       return sol
    end
 end
