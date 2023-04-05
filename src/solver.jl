@@ -42,32 +42,30 @@ function manual_run(sim; info=false)
       return [sol]
    else
       time = 0.0
-      psi = 0.0 * psi_0
-      psi .= psi_0
-      dpsi = 0.0 * psi
+      dpsi = 0.0*psi_0
       if length(N) == 1
          collection = Array{ComplexF64, 2}(undef, (length(psi_0), Nt))
-         collection[:, 1] = psi
+         collection[:, 1] = psi_0
          save_interval = Int(round(time_steps/Nt))
+         @warn time_steps
          for i in 1:time_steps
-            propagate_manual!(dpsi, psi, sim, time)
+            propagate_manual!(dpsi, psi_0, sim, time)
             if i % save_interval == 0
-               collection[:, Int(floor(i / save_interval))] = psi
+               collection[:, Int(floor(i / save_interval))] = psi_0
             end
-            #@info "norm" (nsk(psi_0, sim))
             time += dt
          end
          sol = CustomSolution(u=[collection[:, k] for k in 1:Nt], t=t)
+         @info sol
       elseif length(N) == 3
          collection = CuArray{ComplexF64, 4}(undef, (N..., Nt))
-         collection[:, :, :, 1] = psi
+         collection[:, :, :, 1] = psi_0
          save_interval = Int(round(time_steps/Nt))
          for i in 1:time_steps
-            propagate_manual!(dpsi, psi, sim, time)
+            propagate_manual!(dpsi, psi_0, sim, time)
             if i % save_interval == 0
-               collection[:, :, :, Int(floor(i / save_interval))] = psi
+               collection[:, :, :, Int(floor(i / save_interval))] = psi_0
             end
-            #@info "norm" (nsk(psi_0, sim))
             time += dt
          end
          sol = CustomSolution(u=[collection[:,:,:, k] for k in 1:Nt], t=t)
