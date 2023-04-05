@@ -13,6 +13,8 @@ function nlin_manual!(dpsi,psi,sim::Sim{1, Array{ComplexF64}},t)
    elseif equation == NPSE
       nonlinear = g*abs2.(psi) ./sigma2.(psi) + (1 ./(2*sigma2.(psi)) + 1/2*sigma2.(psi))
       @. psi = exp(dt * -im*iswitch* (V0 + V(x, t) + nonlinear)) * psi
+   elseif equation == NPSE_plus
+      throw("NPSE_plus is only implemented in auto solvers!")
    end
    kspace!(psi,sim)
    return nothing
