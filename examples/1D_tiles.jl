@@ -30,7 +30,7 @@ sim = Sim{length(L), Array{Complex{Float64}}}(L=L, N=N)
 # ====== initialization and unpacking
 @unpack_Sim sim
 # ======= simulation custom parameters
-equation = NPSE
+equation = GPE_1D
 solver = SplitStep 
 manual = true
 g = -1.17  #corresponds to gamma -0.587
@@ -85,6 +85,7 @@ for ((vx, vv), (bx, bb)) in ProgressBar(iter)
     end
     Nt = 2
     t = LinRange(ti, tf, Nt)
+    dt = (tf-ti)/1000
     #@info "Computing tile" (vv, bb)
     @pack_Sim! sim
 
@@ -96,7 +97,7 @@ for ((vx, vv), (bx, bb)) in ProgressBar(iter)
         @info "T = " tran[bx, vx]
     else
     #JLD2.@save("tran.jld2", tran)
-    final = sol[end]
+    final = sol.u[end]
     
     # plot!(p, x, abs2.(final))
     

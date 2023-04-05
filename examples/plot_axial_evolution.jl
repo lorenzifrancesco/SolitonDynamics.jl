@@ -41,7 +41,7 @@ function plot_final_density(u, psi_0, sim::Sim{3, CuArray{ComplexF64}}, axis; in
     ax_list = (1, 2, 3)
     ax_list= filter(x->x!=axis, ax_list)
     final = u[end]
-    xspace!(final, sim)
+    final = xspace(final, sim)
     info && @info "final norm" ns(final, sim)
     final_axial = Array(sum(abs2.(final), dims=ax_list))[1,1,:]
     xspace!(psi_0, sim)
