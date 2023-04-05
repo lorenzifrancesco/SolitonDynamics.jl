@@ -1,7 +1,7 @@
 # General solvers to be used with DiffEq
 
 function nlin!(dpsi,psi,sim::Sim{3, CuArray{ComplexF64}},t)
-   @unpack ksquared,g,X,V0,iswitch,dV,Vol,mu,equation,sigma2 = sim; x = X[1]
+   @unpack ksquared,g,X,V0,iswitch,dV,Vol,mu,equation,sigma2 = sim; x = X[1]; y = X[2]; z = X[3]
    dpsi .= psi
    mu_im = 0.0
    if iswitch == -im
