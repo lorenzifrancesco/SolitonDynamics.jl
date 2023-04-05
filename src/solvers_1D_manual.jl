@@ -3,13 +3,16 @@
 # ============== Manual SplitStep methods, improved with exp
 
 function nlin_manual!(dpsi,psi,sim::Sim{1, Array{ComplexF64}},t)
+
+   #   @. dpsi *= -im*iswitch* (V0 + V(x, t) + nonlinear) + mu_im   
+
    @unpack ksquared,g,X,V0,dV,Vol,mu,equation,sigma2,dt,iswitch = sim; x = X[1]
    xspace!(psi,sim)
    if equation == GPE_1D
-      @. psi = exp(dt/2 * -im*iswitch* (V0 + V(x, t) + g*abs2(psi))) * psi
+      @. psi = exp(dt * -im*iswitch* (V0 + V(x, t) + g*abs2(psi))) * psi
    elseif equation == NPSE
-      nonlinear = g*abs2.(dpsi) ./sigma2.(dpsi) + (1 ./(2*sigma2.(dpsi)) + 1/2*sigma2.(dpsi))
-      @. psi = exp(dt/2*-im*iswitch* (V0 + V(x, t) + nonlinear)) * psi
+      nonlinear = g*abs2.(psi) ./sigma2.(psi) + (1 ./(2*sigma2.(psi)) + 1/2*sigma2.(psi))
+      @. psi = exp(dt * -im*iswitch* (V0 + V(x, t) + nonlinear)) * psi
    end
    kspace!(psi,sim)
    return nothing
@@ -19,7 +22,7 @@ end
 function propagate_manual!(dpsi, psi, sim::Sim{1, Array{ComplexF64}}, t; info=false)
    @unpack ksquared, iswitch, dV, Vol,mu,gamma,dt = sim
    nlin_manual!(dpsi,psi,sim,t)
-   @. psi = exp(dt/2 * (1.0 - im*gamma)*(-im*(1/2*ksquared - mu)))*psi 
+   @. psi = exp(dt * (1.0 - im*gamma)*(-im*(1/2*ksquared - mu)))*psi
    return nothing
 end
 
