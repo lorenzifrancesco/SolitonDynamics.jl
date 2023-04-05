@@ -105,7 +105,7 @@ function pc_ground_state!(psi,sim::Sim{1, Array{ComplexF64}}, dt, tri_fwd, tri_b
    psi .+= 1/2*(tri_fwd*psi_star) 
    tri_fwd = -  Diagonal(ones(N[1])) + Diagonal(nonlin)
    psi .= 1/2*(tri_fwd*psi_i + tri_fwd*psi) + psi
-   @info display(sum(psi))
+   info && @info display(sum(psi))
 
    norm_diff = ns(psi - psi_i, sim)/dt
    psi .= psi / sqrt(ns(psi, sim))
