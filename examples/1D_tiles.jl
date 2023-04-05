@@ -32,10 +32,11 @@ sim = Sim{length(L), Array{Complex{Float64}}}(L=L, N=N)
 # ======= simulation custom parameters
 equation = GPE_1D
 solver = SplitStep 
-manual = true
+manual = false
+time_steps = 2000
 g = -1.17  #corresponds to gamma -0.587
 gamma = 0.0
-tiles = 3
+tiles = 2
 barrier_width = 0.699 # as in SolitonBEC.jl
 max_vel = 1.17 # CALCULATED VALUE 1.17 FOR CHOOSEN NONLINEARITY
 max_bar = 1.68 # CALCULATED VALUE 1.68 FOR CHOOSEN NONLINEARITY
@@ -85,11 +86,11 @@ for ((vx, vv), (bx, bb)) in ProgressBar(iter)
     end
     Nt = 2
     t = LinRange(ti, tf, Nt)
-    dt = (tf-ti)/1000
+    dt = (tf-ti)/time_steps
     #@info "Computing tile" (vv, bb)
     @pack_Sim! sim
 
-    @time sol = runsim(sim; info=false)
+    sol = runsim(sim; info=true)
 
     if isnothing(sol)
         tran[bx, vx] = NaN
@@ -98,15 +99,6 @@ for ((vx, vv), (bx, bb)) in ProgressBar(iter)
     else
     #JLD2.@save("tran.jld2", tran)
     final = sol.u[end]
-    
-    # plot!(p, x, abs2.(final))
-    
-    # time_axis = sol.t
-    # u = reduce(hcat, sol.u)
-    # u = mapslices(x->xspace(x, sim),u,dims=(1)) 
-
-    # ht = heatmap(real.(x), time_axis, abs2.(u)')
-    # display(ht)
 
     xspace!(final, sim)
     tran[bx, vx] = ns(final, sim, mask_tran)
