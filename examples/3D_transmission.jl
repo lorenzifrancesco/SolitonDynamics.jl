@@ -57,7 +57,7 @@ psi_0 .= psi_0 / sqrt(sum(abs2.(psi_0) * dV))
 initial_state = psi_0
 kspace!(psi_0, sim)
 alg = BS3()
-tmp = [1/2*(x^2+y^2) + bb*exp(-(x/barrier_width)^2) for x in x, y in y, z in z]
+tmp = [1/2*(x^2+y^2) + bb*exp(-(z/barrier_width)^2) for x in x, y in y, z in z]
 V0 = CuArray(tmp)
 #V(x,y,z,t) = 1/2 * (x^2+y^2+z^2)
 @pack_Sim! sim
@@ -67,9 +67,9 @@ V0 = CuArray(tmp)
 sol = runsim(sim; info=false)
 u = sol.u
 # =================== plotting and collect 
-plot_final_density(u, psi_0, sim, 3; info=true)
+#plot_final_density(u, psi_0, sim, 3; info=true)
 plot_axial_heatmap(u, sol.t, sim, 3)
 
 @info "Building animation..."
-isosurface_animation(sol,length(sol), sim; framerate=5)
+isosurface_animation(sol.u,length(sol.u), sim; framerate=5)
 @info "Completed."
