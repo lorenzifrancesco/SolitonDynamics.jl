@@ -32,6 +32,7 @@ sim = Sim{length(L), Array{Complex{Float64}}}(L=L, N=N)
 # ======= simulation custom parameters
 equation = NPSE
 solver = SplitStep 
+manual = true
 g = -1.17  #corresponds to gamma -0.587
 gamma = 0.0
 tiles = 3

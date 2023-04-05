@@ -83,6 +83,7 @@ iswitch = 1
 vv = 5.0
 tf = 3
 Nt = 30
+dt = 0.1
 
 x = Array(X[1]) |> real
 y = Array(X[2]) |> real
@@ -124,8 +125,10 @@ refl = Array{Float64, 2}(undef, (tiles, tiles))
 mask_refl = map(xx -> xx>0, CuArray(x))
 mask_tran = map(xx -> xx<0, CuArray(x))
 
-iter = collect(((collect(enumerate(vel_list[i])), collect(enumerate(bar_list[j]))) for i in 1:tiles for j in 1:tiles))
-Threads.@threads for ((vx, vv), (bx, bb)) in ProgressBar(iter)
+# iter = collect(((collect(enumerate(vel_list[i])), collect(enumerate(bar_list[j]))) for i in 1:tiles for j in 1:tiles))
+# Threads.@threads for ((vx, vv), (bx, bb)) in ProgressBar(iter)
+iter = Iterators.product(enumerate(vel_list), enumerate(bar_list))
+for ((vx, vv), (bx, bb)) in ProgressBar(iter)
     @info "Computing tile" (vv, bb)
 
     # ===================== tile simulation parameters
@@ -150,7 +153,7 @@ Threads.@threads for ((vx, vv), (bx, bb)) in ProgressBar(iter)
     
     @info "Running solver..."
     sol = runsim(sim; info=false)
-    final = sol[end]
+    final = sol[:, :, :, end]
     @info "Run complete, computing transmission..."
     xspace!(final, sim)
     tran[bx, vx] = ns(final, sim, mask_tran)
