@@ -29,7 +29,7 @@ function nlin!(dpsi,psi,sim::Sim{1, Array{ComplexF64}},t)
                      )
          if length(sol.u) < length(dpsi)
             throw(DomainError("placeholder"))
-            @warn "dmetj"
+            @warn "Danger length(sol.u) < length(dpsi)"
          end
          sigma2_plus = [sol.u[i][1] for i in 1:length(x)]
 
