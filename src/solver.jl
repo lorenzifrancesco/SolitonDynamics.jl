@@ -6,6 +6,7 @@ include("solvers_3D_manual.jl")
 
 function manual_run(sim; info=false)
    @unpack psi_0, dV, dt, ti, tf, t, solver, iswitch, abstol, reltol, N,Nt, V0, maxiters, time_steps = sim
+   info && @info "Running on manual mode: time_steps =  " time_steps
    if iswitch == -im # select solver and run manual convergence routine 
       if solver == SplitStep
          norm_diff = 1
@@ -15,13 +16,13 @@ function manual_run(sim; info=false)
             norm_diff = ground_state_nlin!(psi_0,sim,dt)
             cnt +=1
          end
-         @info "Computation ended after iterations" cnt
+         info && @info "Computation ended after iterations" cnt
          sol = psi_0 
       else # nonspectral methods
          xspace!(psi_0, sim)
          solvers = [ground_state_nlin!, cn_ground_state!, pc_ground_state!, be_ground_state!]
          func = solvers[solver.number]
-         @info "Solving using solver" func 
+         info && @info "Solving using solver" func 
          norm_diff = 1
          abstol_diff = abstol
          taglia = N[1]
@@ -35,7 +36,7 @@ function manual_run(sim; info=false)
             norm_diff = func(psi_0,sim,dt, tri_fwd, tri_bkw)
             cnt +=1
          end
-         @info "Computation ended after iterations" cnt
+         info && @info "Computation ended after iterations" cnt
          kspace!(psi_0, sim)
          sol = psi_0
       end
@@ -47,7 +48,6 @@ function manual_run(sim; info=false)
          collection = Array{ComplexF64, 2}(undef, (length(psi_0), Nt))
          collection[:, 1] = psi_0
          save_interval = Int(round(time_steps/Nt))
-         @warn time_steps
          for i in 1:time_steps
             propagate_manual!(dpsi, psi_0, sim, time)
             if i % save_interval == 0
@@ -56,7 +56,7 @@ function manual_run(sim; info=false)
             time += dt
          end
          sol = CustomSolution(u=[collection[:, k] for k in 1:Nt], t=t)
-         @info sol
+         info && @info sol
       elseif length(N) == 3
          collection = CuArray{ComplexF64, 4}(undef, (N..., Nt))
          collection[:, :, :, 1] = psi_0
@@ -157,9 +157,9 @@ function runsim(sim; info=false)
 
    info && @info ns(psi_0, sim)
    if manual == true
-      sol = manual_run(sim; info=false)
+      sol = manual_run(sim; info)
    else 
-      sol = auto_run(sim; info=false)
+      sol = auto_run(sim; info)
    end
    return sol
 end
