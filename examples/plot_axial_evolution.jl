@@ -27,6 +27,7 @@ function plot_axial_heatmap(u, time_axis, sim::Sim{3, CuArray{ComplexF64}}, axis
 end
 
 function plot_final_density(u, psi_0, sim::Sim{1, Array{ComplexF64}}; info=false)
+    @unpack t, X = sim; x = Array(X[axis])
     final = u[end]
     xspace!(final, sim)
     xspace!(psi_0, sim)
@@ -38,6 +39,7 @@ function plot_final_density(u, psi_0, sim::Sim{1, Array{ComplexF64}}; info=false
 end
 
 function plot_final_density(u, psi_0, sim::Sim{3, CuArray{ComplexF64}}, axis; info=false)
+    @unpack t, X = sim; x = Array(X[axis])
     ax_list = (1, 2, 3)
     ax_list= filter(x->x!=axis, ax_list)
     final = u[end]
