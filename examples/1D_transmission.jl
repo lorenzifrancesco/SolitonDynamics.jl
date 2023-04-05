@@ -16,8 +16,8 @@ sim = Sim{length(L), Array{Complex{Float64}}}(L=L, N=N)
 # ======= packing sim
 @unpack_Sim sim
 # ======= simulation custom parameters
-equation = GPE_1D
-manual = true
+equation = NPSE_plus
+manual = false
 solver = SplitStep 
 g = -1.17
 gamma = 0.0
@@ -25,8 +25,8 @@ tiles = 8
 barrier_width = 0.699 # as in SolitonBEC.jl
 max_vel = 1.17 # CALCULATED VALUE 1.17 FOR CHOOSEN NONLINEARITY
 max_bar = 1.68 # CALCULATED VALUE 1.68 FOR CHOOSEN NONLINEARITY
-vx = 8
-bx = 8
+vx = 2
+bx = 2
 
 reltol = 1e-4
 abstol = 1e-4
@@ -81,7 +81,7 @@ tran = ns(final, sim, mask_tran)
 
 time_axis = sol.t |> real
 
-plot_final_density(sol.u, psi_0, sim)
+#plot_final_density(sol.u, psi_0, sim)
 plot_axial_heatmap(sol.u, time_axis, sim)
 
 display(sol.destats)

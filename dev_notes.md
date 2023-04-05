@@ -142,4 +142,6 @@ $$
 \psi_0 \propto e^{i\frac{m}{\hbar} v x}
 $$
 
-## sim 3D is broken (1e21 transmission output nonsense)
+## sim 3D is broken (1e21 transmission output nonsense) --> FIXED
+
+## remember to remove Plots.jl from the main branch
