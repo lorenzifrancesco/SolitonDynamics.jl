@@ -49,7 +49,16 @@ function manual_run(sim; info=false)
          collection[:, 1] = psi_0
          save_interval = Int(round(time_steps/Nt))
          for i in 1:time_steps
-            propagate_manual!(dpsi, psi_0, sim, time)
+            try
+               propagate_manual!(dpsi, psi_0, sim, time)
+            catch err
+               if isa(err, NpseCollapse)
+                  showerror(stdout, err)
+               else
+                  throw(err)
+               end
+            return nothing
+            end
             if i % save_interval == 0
                collection[:, Int(floor(i / save_interval))] = psi_0
             end
@@ -62,7 +71,16 @@ function manual_run(sim; info=false)
          collection[:, :, :, 1] = psi_0
          save_interval = Int(round(time_steps/Nt))
          for i in 1:time_steps
-            propagate_manual!(dpsi, psi_0, sim, time)
+            try
+               propagate_manual!(dpsi, psi_0, sim, time)
+            catch err
+               if isa(err, NpseCollapse)
+                  showerror(stdout, err)
+               else
+                  throw(err)
+               end
+            return nothing
+            end
             if i % save_interval == 0
                collection[:, :, :, Int(floor(i / save_interval))] = psi_0
             end
