@@ -76,5 +76,3 @@ plot!(p, real.(x), abs2.(analytical_gs), ls=:dot, lw=2, color=:grey, label="anal
 #plot!(p, real.(x), abs.(V0), ls=:dash, lw=2, color=:green, label="potential")
 
 display(p)
-
-#@warn "norm distance" sum(abs2.(final-analytical_gs))
