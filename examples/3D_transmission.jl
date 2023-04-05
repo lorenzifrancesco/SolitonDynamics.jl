@@ -20,6 +20,7 @@ sim = Sim{length(L), CuArray{Complex{Float64}}}(L=L, N=N)
 # =================== physical parameters 
 @unpack_Sim sim
 g = -1.17 * 2 * pi
+g_param = abs(g)/(4*pi)
 equation = GPE_3D
 manual = true
 iswitch = 1
@@ -28,6 +29,7 @@ y = Array(X[2])
 z = Array(X[3])
 dV= volume_element(L, N)
 reltol = 1e-3
+time_steps = 100
 Nt = 30
 t = LinRange(ti,tf,Nt)
 # nfiles = true
