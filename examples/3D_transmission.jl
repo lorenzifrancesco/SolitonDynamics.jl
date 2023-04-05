@@ -19,10 +19,10 @@ sim = Sim{length(L), CuArray{Complex{Float64}}}(L=L, N=N)
 
 # =================== physical parameters 
 @unpack_Sim sim
-g = -1.1 # this is the 1D g
+g = -1.1 # this is g_1D (g_3D is computed in the propagation routine)
 g_param = abs(g)/2
 equation = GPE_3D
-manual = false
+manual = true
 iswitch = 1
 x = Array(X[1])
 y = Array(X[2])
@@ -31,23 +31,24 @@ dV= volume_element(L, N)
 reltol = 1e-3
 time_steps = 50
 Nt = 30
-t = LinRange(ti,tf,Nt)
+
 # nfiles = true
-maxiters = 2000
+maxiters = 20000
 tiles = 8
 barrier_width = 0.699 # as in SolitonBEC.jl
 max_vel = 1.17 # CALCULATED VALUE 1.17 FOR CHOOSEN NONLINEARITY
 max_bar = 1.68 # CALCULATED VALUE 1.68 FOR CHOOSEN NONLINEARITY
-vx = 1
+vx = 4
 bx = 4
-x0 = L[3]/5
-tf = 1
-# tf = x0*2/vv
+x0 = L[3]/4
 
 vel_list = LinRange(0, max_vel, tiles)
 bar_list = LinRange(0, max_bar, tiles)
 vv = vel_list[vx]
 bb = bar_list[bx]
+tf = x0*2/vv
+t = LinRange(ti,tf,Nt)
+dt = (tf-ti)/time_steps
 
 tmp = [exp(-(x^2+y^2)/2) * sqrt(g_param/2) * 2/(exp(g_param*(z-x0)) + exp(-(z-x0)*g_param)) * exp(-im*(z-x0)*vv) for x in x, y in y, z in z]
 psi_0 = CuArray(tmp)
