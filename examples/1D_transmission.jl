@@ -1,15 +1,13 @@
 using Pkg
 Pkg.activate(".")
 
-using LaTeXStrings, Plots
 import GR
 using CondensateDynamics
 using OrdinaryDiffEq
 using LSODA
 import CondensateDynamics.V
-gr()
-GR.usecolorscheme(1)
 
+include("plot_axial_evolution.jl")
 
 L = (70.0,)
 N = (256,)
@@ -20,6 +18,7 @@ sim = Sim{length(L), Array{Complex{Float64}}}(L=L, N=N)
 @unpack_Sim sim
 # ======= simulation custom parameters
 equation = NPSE
+manual = false
 solver = SplitStep 
 g = -1.17
 gamma = 0.0
@@ -27,8 +26,8 @@ tiles = 8
 barrier_width = 0.699 # as in SolitonBEC.jl
 max_vel = 1.17 # CALCULATED VALUE 1.17 FOR CHOOSEN NONLINEARITY
 max_bar = 1.68 # CALCULATED VALUE 1.68 FOR CHOOSEN NONLINEARITY
-vx = 7
-bx = 7
+vx = 4
+bx = 4
 
 reltol = 1e-4
 abstol = 1e-4
@@ -55,7 +54,7 @@ end
 Nt = 200
 t = LinRange(ti, tf, Nt)
 
-time_steps = 200
+time_steps = 2000
 dt = (tf-ti)/time_steps
 maxiters = 20000
 
@@ -78,24 +77,9 @@ if isnothing(sol)
     throw("NPSE collapse detected, cannot proceed further to plots...")
 end
 time_axis = sol.t |> real
-u = reduce(hcat, sol.u)
 
-final = u[:, end]
-xspace!(final, sim)
-xspace!(psi_0, sim)
-@info "final distribution norm squared: " ns(final, sim)
-
-p = plot(real.(x), abs2.(psi_0), label="initial")
-plot!(p, real.(x), abs2.(final), label="final")
-
-@info "transmitted norm" ns(final, sim, mask_tran)
-
-u = mapslices(x->xspace(x, sim),u,dims=(1)) 
-
-#map(x -> xspace!(x, sim), sol)
-ht = heatmap(real.(x), time_axis, abs2.(u)')
-display(ht)
-@info "max" g*maximum(abs2.(u))
+plot_axial_heatmap(sol.u, time_axis, sim)
+plot_final_density(sol.u, psi_0, sim)
 
 display(sol.destats)
 display(sol.retcode)
