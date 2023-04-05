@@ -71,8 +71,9 @@ p = plot(x, zeros(length(x)))
 # display(iter)
 # @assert Threads.nthreads() > 1
 # Threads.@threads for ((vx, vv), (bx, bb)) in iter
+avg_iteration_time = 0.0
 iter = Iterators.product(enumerate(vel_list), enumerate(bar_list))
-for ((vx, vv), (bx, bb)) in ProgressBar(iter)
+full_time = @elapsed for ((vx, vv), (bx, bb)) in ProgressBar(iter)
     @unpack_Sim sim
     @. psi_0 = sqrt(g_param/2) * 2/(exp(g_param*(x-x0)) + exp(-(x-x0)*g_param)) * exp(-im*(x-x0)*vv)
 
@@ -90,7 +91,7 @@ for ((vx, vv), (bx, bb)) in ProgressBar(iter)
     #@info "Computing tile" (vv, bb)
     @pack_Sim! sim
 
-    sol = runsim(sim; info=true)
+    avg_iteration_time += @elapsed sol = runsim(sim; info=true)
 
     if isnothing(sol)
         tran[bx, vx] = NaN
@@ -107,8 +108,10 @@ for ((vx, vv), (bx, bb)) in ProgressBar(iter)
     #@info "difference wrt NPSE alone: " tran[bx, vx] - mat[bx, vx]
     print("\n")
     end
-
 end
+@info "Tiling time            = " full_time
+@info "Total time in solver   = " avg_iteration_time
+@info "Average iteration time = " avg_iteration_time / tiles^2
 
 # display(p)
 
