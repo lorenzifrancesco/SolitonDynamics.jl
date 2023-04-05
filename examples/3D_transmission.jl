@@ -19,17 +19,17 @@ sim = Sim{length(L), CuArray{Complex{Float64}}}(L=L, N=N)
 
 # =================== physical parameters 
 @unpack_Sim sim
-g = -1.17 * 2 * pi
-g_param = abs(g)/(4*pi)
+g = -1.1 # this is the 1D g
+g_param = abs(g)/2
 equation = GPE_3D
-manual = true
+manual = false
 iswitch = 1
 x = Array(X[1])
 y = Array(X[2])
 z = Array(X[3])
 dV= volume_element(L, N)
 reltol = 1e-3
-time_steps = 100
+time_steps = 50
 Nt = 30
 t = LinRange(ti,tf,Nt)
 # nfiles = true
@@ -38,7 +38,7 @@ tiles = 8
 barrier_width = 0.699 # as in SolitonBEC.jl
 max_vel = 1.17 # CALCULATED VALUE 1.17 FOR CHOOSEN NONLINEARITY
 max_bar = 1.68 # CALCULATED VALUE 1.68 FOR CHOOSEN NONLINEARITY
-vx = 4
+vx = 1
 bx = 4
 x0 = L[3]/5
 tf = 1
@@ -66,9 +66,8 @@ V0 = CuArray(tmp)
 sol = runsim(sim; info=false)
 u = sol.u
 # =================== plotting and collect 
-
-plot_axial_heatmap(u, sol.t, sim, 3)
 plot_final_density(u, psi_0, sim, 3; info=true)
+plot_axial_heatmap(u, sol.t, sim, 3)
 
 @info "Building animation..."
 isosurface_animation(sol,length(sol), sim; framerate=5)

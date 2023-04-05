@@ -76,8 +76,8 @@ sim = Sim{length(L), CuArray{Complex{Float64}}}(L=L, N=N)
 @unpack_Sim sim
 equation = GPE_3D
 manual = true
-g = -1.17 * 2*pi
-g_param = abs(g)/(4*pi)
+g = -1.17 # this is the 1D g
+g_param = abs(g)/2
 reltol = 1e-3
 iswitch = 1
 vv = 5.0
@@ -169,4 +169,6 @@ ht = heatmap(norm_bar, norm_vel, tran')
 display(ht)
 savefig(ht, saveto)
 
+display(sol.destats)
+display(sol.retcode)
 end
