@@ -67,10 +67,6 @@ mask_refl = map(xx -> xx>0, x)
 mask_tran = map(xx -> xx<0, x)
 p = plot(x, zeros(length(x)))
 
-# iter = collect(((collect(enumerate(vel_list))[i], collect(enumerate(bar_list))[j]) for i in 1:tiles for j in 1:tiles))
-# display(iter)
-# @assert Threads.nthreads() > 1
-# Threads.@threads for ((vx, vv), (bx, bb)) in iter
 avg_iteration_time = 0.0
 iter = Iterators.product(enumerate(vel_list), enumerate(bar_list))
 full_time = @elapsed for ((vx, vv), (bx, bb)) in ProgressBar(iter)
@@ -91,12 +87,12 @@ full_time = @elapsed for ((vx, vv), (bx, bb)) in ProgressBar(iter)
     #@info "Computing tile" (vv, bb)
     @pack_Sim! sim
 
-    avg_iteration_time += @elapsed sol = runsim(sim; info=true)
+    avg_iteration_time += @elapsed sol = runsim(sim; info=false)
 
     if isnothing(sol)
         tran[bx, vx] = NaN
         refl[bx, vx] = NaN
-        @info "T = " tran[bx, vx]
+        #@info "T = " tran[bx, vx]
     else
     #JLD2.@save("tran.jld2", tran)
     final = sol.u[end]
@@ -104,7 +100,7 @@ full_time = @elapsed for ((vx, vv), (bx, bb)) in ProgressBar(iter)
     xspace!(final, sim)
     tran[bx, vx] = ns(final, sim, mask_tran)
     refl[bx, vx] = ns(final, sim, mask_refl)
-    @info "T = " tran[bx, vx]
+    #@info "T = " tran[bx, vx]
     #@info "difference wrt NPSE alone: " tran[bx, vx] - mat[bx, vx]
     print("\n")
     end
