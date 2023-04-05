@@ -3,7 +3,7 @@
 # ============== Manual SplitStep methods, improved with exp
 
 function nlin_manual!(dpsi,psi,sim::Sim{3, CuArray{ComplexF64}},t)
-   @unpack ksquared,g,X,V0,dV,Vol,mu,equation,sigma2,dt,iswitch = sim; x = X[1]
+   @unpack ksquared,g,X,V0,dV,Vol,mu,equation,sigma2,dt,iswitch = sim; x = X[1]; y = X[1]; z = X[1]
    xspace!(psi,sim)
    @. psi = exp(dt/2 * -im*iswitch* (V0 + V(x,y,z,t) + 2*pi*g*abs2(psi))) * psi
    kspace!(psi,sim)
@@ -24,7 +24,7 @@ end
 using BKW Euler
 """
 function be_ground_state!(psi,sim::Sim{3, CuArray{ComplexF64}}, dt, tri_fwd, tri_bkw; info=false)
-   @unpack dt,g,X,V0,iswitch,dV,Vol,N = sim; x = X[1]
+   @unpack dt,g,X,V0,iswitch,dV,Vol,N = sim; x = X[1]; y = X[1]; z = X[1]
    throw("Broken")
    psi_i = copy(psi) 
    nonlin = -(dt/2) * g*abs2.(psi)
