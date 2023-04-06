@@ -12,31 +12,25 @@ end
 gr()
 GR.usecolorscheme(1)
 
-file = "tran.pdf"
+file = "tran_GPE.pdf"
 let sim
 saveto=joinpath("media/1D",file)
 
 L = (50.0,)
-N = (256,)
+N = (128,)
 
 sim = Sim{length(L), Array{Complex{Float64}}}(L=L, N=N)
-
-# ====== tiling parameters
-# in previous simulations:
-#   -  max velocity = 1 V_S
-#   -  max barrier  = 1.2246 E_S
-# In SolitonBEC: g = -1.17
 
 # ====== initialization and unpacking
 @unpack_Sim sim
 # ======= simulation custom parameters
-equation = NPSE
+equation = GPE_1D
 solver = SplitStep 
 manual = false
 time_steps = 2000
 g = -1.17  #corresponds to gamma -0.587
 gamma = 0.0
-tiles = 20
+tiles = 100
 barrier_width = 0.699 # as in SolitonBEC.jl
 max_vel = 1.17 # CALCULATED VALUE 1.17 FOR CHOOSEN NONLINEARITY
 max_bar = 1.68 # CALCULATED VALUE 1.68 FOR CHOOSEN NONLINEARITY
@@ -71,6 +65,13 @@ avg_iteration_time = 0.0
 iter = Iterators.product(enumerate(vel_list), enumerate(bar_list))
 full_time = @elapsed for ((vx, vv), (bx, bb)) in ProgressBar(iter)
     @unpack_Sim sim
+    # if vx > tiles/2 && bx > tiles/2
+    #     @info "choosing NPSE_plus"
+    #     equation = NPSE_plus
+    # else
+    #     @info "choosing NPSE"
+    #     equation = NPSE
+    # end
     @. psi_0 = sqrt(g_param/2) * 2/(exp(g_param*(x-x0)) + exp(-(x-x0)*g_param)) * exp(-im*(x-x0)*vv)
 
     psi_0 = psi_0 / sqrt(ns(psi_0, sim))

@@ -22,8 +22,8 @@ tiles = 8
 barrier_width = 0.699 # as in SolitonBEC.jl
 max_vel = 1.17 # CALCULATED VALUE 1.17 FOR CHOOSEN NONLINEARITY
 max_bar = 1.68 # CALCULATED VALUE 1.68 FOR CHOOSEN NONLINEARITY
-vx = 8 # 6
-bx = 8 # 3
+vx = 6
+bx = 3
 
 reltol = 1e-4
 abstol = 1e-4
