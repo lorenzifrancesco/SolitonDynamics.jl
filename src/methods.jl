@@ -106,7 +106,7 @@ function init_sigma2(g::Float64)
     function sigma2(psi::ComplexF64)
         result = psi
         try
-            result = sqrt(1 + g * abs2(psi))
+            result = sqrt(maximum([1 + g * abs2(psi), 0.05]))
         catch  err
             if isa(err, DomainError)
                 result = NaN

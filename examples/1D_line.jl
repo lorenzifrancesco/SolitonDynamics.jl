@@ -64,7 +64,7 @@ p = plot(x, zeros(length(x)))
 
 vel_coord = [0 , 1] * max_vel
 
-bar_coord = [0.8 , 0.8] * max_bar 
+bar_coord = [0.2 , 0.2] * max_bar 
 
 iter = enumerate([[i/tiles * bar_coord[1] + (tiles -i)/tiles * bar_coord[2] , 
                    i/tiles * vel_coord[1] + (tiles -i)/tiles * vel_coord[2]] for i in 1:tiles])
@@ -72,7 +72,6 @@ avg_iteration_time = 0.0
 full_time = @elapsed for (idx, coordinate) in ProgressBar(iter)
     bb = coordinate[1]
     vv = coordinate[2] 
-    @info "compute tile" bb/max_bar, vv/max_vel
     @unpack_Sim sim
     @. psi_0 = sqrt(g_param/2) * 2/(exp(g_param*(x-x0)) + exp(-(x-x0)*g_param)) * exp(-im*(x-x0)*vv)
 

@@ -47,19 +47,19 @@ function nlin!(dpsi,psi,sim::Sim{1, Array{ComplexF64}},t)
          # ============ semi-relaxation method, working well only for single pulses
          # calculate the maximum point of solution 
 
-         # forward problem 
+         ##forward problem 
          # bvp = ODEProblem(sigma2_diff!, [init_sigma, init_lambda], (x[1], x[end]), [sim, dpsi])
          # sol = solve(bvp,
-         #             alg=MIRK4(),
+         #             alg=Tsit5(),
          #             maxiters=5000,
          #             saveat=x,
          #             reltol=1e-2,
          #             dt = (x[end]-x[1])/length(x))
          # tmp = sol.u
-         # # backward problem
+         # ## backward problem
          # bvp = ODEProblem(sigma2_diff!, [init_sigma, init_lambda], (x[end], x[1]), [sim, dpsi])
          # sol = solve(bvp,
-         #             alg=MIRK4(),
+         #             alg=Tsit5(),
          #             maxiters=5000,
          #             saveat=x,
          #             reltol=1e-2,
@@ -69,17 +69,15 @@ function nlin!(dpsi,psi,sim::Sim{1, Array{ComplexF64}},t)
 
          @info "reach"
          if length(sol.u) < length(dpsi)
-            @info "reach"
-            @info sol.t
-            @warn length(sol.u)
+            @warn "ahia"
             throw(DomainError("placeholder"))
          end
 
          sigma2_plus = [sol.u[i][1] for i in 1:length(x)]
-         # tmp = [tmp[i][1] for i in 1:length(x)]
-         if false
+         #tmp = [tmp[i][1] for i in 1:length(x)]
+         if true
             @warn "we plot"
-            shit(sigma2_plus, sigma2_plus, sim)
+            shit(sigma2.(dpsi), g*abs2.(dpsi), sim)
             @assert 1==2
          end
       catch  err
