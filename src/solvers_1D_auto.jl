@@ -31,31 +31,57 @@ function nlin!(dpsi,psi,sim::Sim{1, Array{ComplexF64}},t)
       # test point: set the correction to zero and see NPSE collapse
       sigma2_plus = zeros(length(x))
       try
-         init_sigma = 1.0
-         init_lambda = 0.0
-         problem = ODEProblem(sigma2_diff!, [init_sigma, init_lambda], (x[1], x[end]), [sim, dpsi])
+         init_sigma = 1.0 #
+         init_lambda = 0.000
+
+         # ============ Full BVP
+         bvp = TwoPointBVProblem(sigma2_diff!, bc!, [init_sigma, init_lambda], (x[1], x[end]), [sim, dpsi])
          # initial state is (1, 0)
-         sol = solve(problem,
-                     alg=Tsit5(),
-                     maxiters=1000,
-                     saveat=x
-                     )
+         sol = solve(bvp,
+                     alg=MIRK4(),
+                     maxiters=5000,
+                     saveat=x,
+                     reltol=1e-2,
+                     dt = (x[end]-x[1])/length(x))
+         
+         # ============ semi-relaxation method, working well only for single pulses
+         # calculate the maximum point of solution 
+
+         # forward problem 
+         # bvp = ODEProblem(sigma2_diff!, [init_sigma, init_lambda], (x[1], x[end]), [sim, dpsi])
+         # sol = solve(bvp,
+         #             alg=MIRK4(),
+         #             maxiters=5000,
+         #             saveat=x,
+         #             reltol=1e-2,
+         #             dt = (x[end]-x[1])/length(x))
+         # tmp = sol.u
+         # # backward problem
+         # bvp = ODEProblem(sigma2_diff!, [init_sigma, init_lambda], (x[end], x[1]), [sim, dpsi])
+         # sol = solve(bvp,
+         #             alg=MIRK4(),
+         #             maxiters=5000,
+         #             saveat=x,
+         #             reltol=1e-2,
+         #             dt = (x[end]-x[1])/length(x))
+         # reverse!(sol.u)
+
+
+         @info "reach"
          if length(sol.u) < length(dpsi)
+            @info "reach"
+            @info sol.t
+            @warn length(sol.u)
             throw(DomainError("placeholder"))
-            @warn "Danger length(sol.u) < length(dpsi)"
          end
+
          sigma2_plus = [sol.u[i][1] for i in 1:length(x)]
-
-         # what is the difference in using this improved model?
-         # try
-         #    @info sum.(abs2.(sigma2_plus - sigma2.(psi))) # for each time step
-         # catch err
-         #    @info "collapse, pazienza"
-         # end
-         @warn "we plot"
-         shit(sigma2_plus, sigma2_plus, sim)
-         @warn "end plo"
-
+         # tmp = [tmp[i][1] for i in 1:length(x)]
+         if false
+            @warn "we plot"
+            shit(sigma2_plus, sigma2_plus, sim)
+            @assert 1==2
+         end
       catch  err
          if isa(err, DomainError)
             sigma2_plus = NaN
@@ -79,10 +105,41 @@ function propagate!(dpsi, psi, sim::Sim{1, Array{ComplexF64}}, t; info=false)
    return nothing
 end
 
+"""
+params are [sim, psi]
+"""
 function sigma2_diff!(dSigmaLambda, state, params, x)
    L = params[1].L[1]
    idx = minimum([Int(floor((x+L/2)/params[1].dV))+1, 256]) # horrible solution
-   dSigmaLambda[1] = state[2]
-   dSigmaLambda[2] = -2*state[1]^2 + 2*(1 + params[1].g * abs2(params[2][idx]))
+   dSigmaLambda[1] =  state[2]
+   dSigmaLambda[2] = (-2*state[1]^2 + 2*(1 + params[1].g * abs2(params[2][idx])))
+   return nothing
+end
+
+function bc!(residual, u, sim, t)
+   # the solution at the end of the time span should be pi/2
+   residual[1] = u[1][1] - 1.0 
+   residual[2] = u[end][1] - 1.0
+end
+
+
+
+
+
+
+function sigma2_fwd(dSigmaLambda, state, params, x, dx)
+   L = params[1].L[1]
+   idx = minimum([Int(floor((x+L/2)/params[1].dV))+1, 256]) # horrible solution
+   state[1] += dx * state[2]
+   state[2] += dx * (-2*state[1]^2 + 2*(1 + params[1].g * abs2(params[2][idx])))
+   return nothing
+end
+
+
+function sigma2_bkw(dSigmaLambda, state, params, x, dx)
+   L = params[1].L[1]
+   idx = minimum([Int(floor((x+L/2)/params[1].dV))+1, 256]) # horrible solution
+   state[1] += -dx * state[2]
+   state[2] += -dx * (-2*state[1]^2 + 2*(1 + params[1].g * abs2(params[2][idx])))
    return nothing
 end
