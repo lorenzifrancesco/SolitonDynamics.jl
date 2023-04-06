@@ -13,8 +13,8 @@ sim = Sim{length(L), Array{Complex{Float64}}}(L=L, N=N)
 # ======= packing sim
 @unpack_Sim sim
 # ======= simulation custom parameters
-equation = NPSE
-manual = true
+equation = NPSE_plus
+manual = false
 solver = SplitStep 
 g = -1.17
 gamma = 0.0

@@ -30,13 +30,13 @@ sim = Sim{length(L), Array{Complex{Float64}}}(L=L, N=N)
 # ====== initialization and unpacking
 @unpack_Sim sim
 # ======= simulation custom parameters
-equation = GPE_1D
+equation = NPSE
 solver = SplitStep 
 manual = false
 time_steps = 2000
 g = -1.17  #corresponds to gamma -0.587
 gamma = 0.0
-tiles = 2
+tiles = 20
 barrier_width = 0.699 # as in SolitonBEC.jl
 max_vel = 1.17 # CALCULATED VALUE 1.17 FOR CHOOSEN NONLINEARITY
 max_bar = 1.68 # CALCULATED VALUE 1.68 FOR CHOOSEN NONLINEARITY
