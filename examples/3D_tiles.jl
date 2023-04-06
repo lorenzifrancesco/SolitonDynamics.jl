@@ -27,9 +27,10 @@ sim = Sim{length(L), CuArray{Complex{Float64}}}(L=L, N=N)
 @unpack_Sim sim
 equation = GPE_3D
 manual = true
+time_steps = 200
 g = -1.17 # this is the 1D g
 g_param = abs(g)/2
-reltol = 1e-3
+reltol = 1e-2
 iswitch = 1
 vv = 5.0
 tf = 3
@@ -82,7 +83,7 @@ full_time = @elapsed for ((vx, vv), (bx, bb)) in ProgressBar(iter)
     end
     Nt = 2
     t = LinRange(ti, tf, Nt)
-    dt = (tf-ti)/Nt
+    dt = (tf-ti)/time_steps # fixed
 
     tmp = [exp(-(y^2+z^2+(x-x0)^2)/2) * exp(-im*x*vv) for x in x, y in y, z in z]
     psi_0 = CuArray(tmp)
