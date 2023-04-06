@@ -1,6 +1,3 @@
-using Pkg
-Pkg.activate(".")
-
 using CondensateDynamics, OrdinaryDiffEq, LSODA
 import CondensateDynamics.V
 using CUDA
@@ -38,8 +35,8 @@ tiles = 8
 barrier_width = 0.699 # as in SolitonBEC.jl
 max_vel = 1.17 # CALCULATED VALUE 1.17 FOR CHOOSEN NONLINEARITY
 max_bar = 1.68 # CALCULATED VALUE 1.68 FOR CHOOSEN NONLINEARITY
-vx = 4
-bx = 4
+vx = 8  # 6
+bx = 8 #  3
 x0 = L[3]/4
 
 vel_list = LinRange(0, max_vel, tiles)
