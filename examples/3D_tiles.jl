@@ -66,10 +66,9 @@ refl = Array{Float64, 2}(undef, (tiles, tiles))
 mask_refl = map(xx -> xx>0, CuArray(x))
 mask_tran = map(xx -> xx<0, CuArray(x))
 
-# iter = collect(((collect(enumerate(vel_list[i])), collect(enumerate(bar_list[j]))) for i in 1:tiles for j in 1:tiles))
-# Threads.@threads for ((vx, vv), (bx, bb)) in ProgressBar(iter)
+avg_iteration_time = 0.0
 iter = Iterators.product(enumerate(vel_list), enumerate(bar_list))
-for ((vx, vv), (bx, bb)) in ProgressBar(iter)
+full_time = @elapsed for ((vx, vv), (bx, bb)) in ProgressBar(iter)
     @info "Computing tile" (vv, bb)
 
     # ===================== tile simulation parameters
@@ -93,7 +92,7 @@ for ((vx, vv), (bx, bb)) in ProgressBar(iter)
     @pack_Sim! sim
     
     @info "Running solver..."
-    sol = runsim(sim; info=false)
+    avg_iteration_time += @elapsed sol = runsim(sim; info=false)
     final = sol.u[end]
     @info "Run complete, computing transmission..."
     xspace!(final, sim)
@@ -101,6 +100,9 @@ for ((vx, vv), (bx, bb)) in ProgressBar(iter)
     refl[bx, vx] = ns(final, sim, mask_refl)
     @info "T = " tran[bx, vx]
 end
+@info "Tiling time            = " full_time
+@info "Total time in solver   = " avg_iteration_time
+@info "Average iteration time = " avg_iteration_time / tiles^2
 
 JLD2.@save("tran.jld2", tran)
 JLD2.@save("refl.jld2", refl)
