@@ -34,7 +34,6 @@ iswitch = 1
 vv = 5.0
 tf = 3
 Nt = 30
-dt = 0.1
 
 x = Array(X[1]) |> real
 y = Array(X[2]) |> real
@@ -83,6 +82,7 @@ full_time = @elapsed for ((vx, vv), (bx, bb)) in ProgressBar(iter)
     end
     Nt = 2
     t = LinRange(ti, tf, Nt)
+    dt = (tf-ti)/Nt
 
     tmp = [exp(-(y^2+z^2+(x-x0)^2)/2) * exp(-im*x*vv) for x in x, y in y, z in z]
     psi_0 = CuArray(tmp)
