@@ -8,7 +8,7 @@ using ExportAll
 using FFTW, CUDA, Adapt # useful for loading sparse matrix in GPU
 using Parameters
 using Reexport
-using OrdinaryDiffEq, DiffEqCallbacks, SteadyStateDiffEq, DiffEqGPU
+using OrdinaryDiffEq, DiffEqCallbacks, SteadyStateDiffEq, DiffEqGPU, BoundaryValueDiffEq
 using LinearAlgebra, RecursiveArrayTools, LazyArrays
 import JLD2 
 
