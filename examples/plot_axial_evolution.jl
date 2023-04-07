@@ -1,23 +1,24 @@
 using LaTeXStrings, Plots
 using CUDA
 import GR
+import Makie, GLMakie
 
-function plot_axial_heatmap(u, time_axis, sim::Sim{1, Array{ComplexF64}}; info=false)
+function plot_axial_heatmap(u, time_axis, sim::Sim{1, Array{ComplexF64}}; info=false, doifft=true)
     @unpack t, X = sim; x = X[1]
     u = reduce(hcat, u)
-    u = mapslices(x->xspace(x, sim),u,dims=(1))
+    doifft ? u = mapslices(x->xspace(x, sim),u,dims=(1)) : nothing
     ht = heatmap(real.(x), time_axis, abs2.(u)')
     display(ht)
     return ht
 end
 
-function plot_axial_heatmap(u, time_axis, sim::Sim{3, CuArray{ComplexF64}}, axis; info=false)
+function plot_axial_heatmap(u, time_axis, sim::Sim{3, CuArray{ComplexF64}}, axis; info=false, doifft=true)
     @unpack t, X = sim; x = Array(X[axis])
     @assert axis == 3
     ax_list = (1, 2, 3)
     ax_list= filter(x->x!=axis, ax_list)
 
-    [xspace!(x, sim) for x in u]
+    doifft && [xspace!(x, sim) for x in u]
     # SPECIALIZE to axis = 3
     u_axial = [sum(abs2.(x), dims=ax_list)[1,1,:] for x in u]
     u_axial = Array(reduce(hcat, u_axial))
@@ -27,7 +28,7 @@ function plot_axial_heatmap(u, time_axis, sim::Sim{3, CuArray{ComplexF64}}, axis
 end
 
 function plot_final_density(u, psi_0, sim::Sim{1, Array{ComplexF64}}; info=false)
-    @unpack t, X = sim; x = Array(X[axis])
+    @unpack t, X = sim; x = Array(X[1])
     final = u[end]
     xspace!(final, sim)
     xspace!(psi_0, sim)
@@ -52,4 +53,19 @@ function plot_final_density(u, psi_0, sim::Sim{3, CuArray{ComplexF64}}, axis; in
     plot!(p, real.(x), final_axial, label="final")
     display(p)
     return p
+end
+
+function animation_final_density(u,sim::Sim{1, Array{ComplexF64}};file="1D_evolution.gif",framerate=30,info=false)
+    @unpack t, X, Nt = sim; x = Array(X[1]) |> real
+    saveto=joinpath("media",file)
+    tindex = Makie.Observable(1)
+    iter = [Array(xspace(u[k], sim)) for k in 1:Nt]
+    #iter = [ for k in 1:Nt]
+    iter = [abs2.(iter[k]) for k in 1:Nt]
+
+    fig = Makie.lines(x, Makie.@lift(iter[$tindex]))
+    Makie.record(fig, saveto, 1:Nt; framerate=framerate) do i
+        tindex[] = i
+    end
+    return fig
 end
