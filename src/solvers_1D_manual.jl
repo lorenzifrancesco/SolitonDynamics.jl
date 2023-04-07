@@ -3,10 +3,7 @@
 # ============== Manual SplitStep methods, improved with exp
 
 function nlin_manual!(dpsi,psi,sim::Sim{1, Array{ComplexF64}},t)
-
-   #   @. dpsi *= -im*iswitch* (V0 + V(x, t) + nonlinear) + mu_im   
-
-   @unpack ksquared,g,X,V0,dV,Vol,mu,equation,sigma2,dt,iswitch = sim; x = X[1]
+   @unpack ksquared,g,X,V0,dV,Vol,mu,equation,sigma2,dt,iswitch,N = sim; x = X[1]; N = N[1]
    xspace!(psi,sim)
    if equation == GPE_1D
       @. psi = exp(dt * -im*iswitch* (V0 + V(x, t) + g*abs2(psi))) * psi
@@ -14,7 +11,35 @@ function nlin_manual!(dpsi,psi,sim::Sim{1, Array{ComplexF64}},t)
       nonlinear = g*abs2.(psi) ./sigma2.(psi) + (1 ./(2*sigma2.(psi)) + 1/2*sigma2.(psi))
       @. psi = exp(dt * -im*iswitch* (V0 + V(x, t) + nonlinear)) * psi
    elseif equation == NPSE_plus
-      throw("NPSE_plus is only implemented in auto solvers!")
+      sigma2_plus = zeros(length(x))
+      try
+         # Nonlinear Finite Element routine
+         b = 2*(1 .+ g*abs2.(psi))
+         b[1]   += 1.0 * 1/(2*dV)
+         b[end] += 1.0 * 1/(2*dV)
+         a = ones(length(b))
+         A0 = 1/(2*dV) * SymTridiagonal(2*a, -a)
+         ss = ones(N)
+         prob = NonlinearProblem(sigma_eq, ss, [b, A0])
+         sol = solve(prob, NewtonRaphson(), reltol=1e-3)
+         sigma2_plus = sol.u
+
+         # === scientific debug zone
+         append!(time_of_sigma, t)
+         append!(sigma2_old, [sigma2_plus])
+         append!(sigma2_new, [1 .+ g*abs2.(psi)])
+         # === end scientific debug zone
+
+      catch  err
+         if isa(err, DomainError)
+            sigma2_plus = NaN
+            throw(NpseCollapse(-666))
+         else
+            throw(err)
+         end
+      end
+      nonlinear = g*abs2.(psi) ./sigma2_plus + (1 ./(2*sigma2_plus) + 1/2*sigma2_plus)
+      @. psi = exp(dt * -im*iswitch* (V0 + V(x, t) + nonlinear)) * psi
    end
    kspace!(psi,sim)
    return nothing
