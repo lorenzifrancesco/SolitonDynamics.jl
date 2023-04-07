@@ -42,12 +42,15 @@ function manual_run(sim; info=false)
       end
       return [sol]
    else
+      # in manual run mode the number of steps is specified by time_steps
+      
       time = 0.0
       dpsi = 0.0*psi_0
       if length(N) == 1
          collection = Array{ComplexF64, 2}(undef, (length(psi_0), Nt))
          collection[:, 1] = psi_0
-         save_interval = Int(round(time_steps/Nt))
+         save_counter = 1
+         solve_time_axis = LinRange(ti, tf, time_steps)
          for i in 1:time_steps
             try
                propagate_manual!(dpsi, psi_0, sim, time)
@@ -59,8 +62,9 @@ function manual_run(sim; info=false)
                end
             return nothing
             end
-            if i % save_interval == 0
-               collection[:, Int(floor(i / save_interval))] = psi_0
+            if t[save_counter] < solve_time_axis[i]
+               collection[:, save_counter] = psi_0
+               save_counter += 1
             end
             time += dt
          end
