@@ -1,4 +1,3 @@
-
 # General solvers to be used with DiffEq
 
 # # ======= begin inset for online
@@ -28,12 +27,10 @@ function nlin!(dpsi,psi,sim::Sim{1, Array{ComplexF64}},t)
    elseif equation == NPSE
       nonlinear = g*abs2.(dpsi) ./sigma2.(dpsi) + (1 ./(2*sigma2.(dpsi)) + 1/2*sigma2.(dpsi))
       @. dpsi *= -im*iswitch* (V0 + V(x, t) + nonlinear) + mu_im
-   elseif equation == NPSE_plus # compute the effect of the derivative perturbatively
-      # test point: set the correction to zero and see NPSE collapse
+   elseif equation == NPSE_plus
       sigma2_plus = zeros(length(x))
       try
          # Nonlinear Finite Element routine
-         
          b = 2*(1 .+ g*abs2.(dpsi))
          b[1]   += 1.0 * 1/(2*dV)
          b[end] += 1.0 * 1/(2*dV)
@@ -43,6 +40,12 @@ function nlin!(dpsi,psi,sim::Sim{1, Array{ComplexF64}},t)
          prob = NonlinearProblem(sigma_eq, ss, [b, A0])
          sol = solve(prob, NewtonRaphson(), reltol=1e-3)
          sigma2_plus = sol.u
+
+         # === scientific debug zone
+         append!(time_of_sigma, t)
+         append!(sigma2_old, [sigma2_plus])
+         append!(sigma2_new, [1 .+ g*abs2.(psi)])
+         # === end scientific debug zone
       catch  err
          if isa(err, DomainError)
             sigma2_plus = NaN
