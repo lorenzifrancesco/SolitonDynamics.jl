@@ -5,9 +5,8 @@ using CondensateDynamics, OrdinaryDiffEq, LSODA
 import JLD2
 import CondensateDynamics.V
 using CUDA
-using LaTeXStrings, Plots
+using LaTeXStrings, Plots, GR
 using CUDA.CUFFT
-import Makie, GLMakie
 using ProgressBars
 
 JULIA_CUDA_SOFT_MEMORY_LIMIT ="95%"
@@ -129,7 +128,7 @@ norm_bar = bar_list / max_bar
 norm_vel = vel_list / max_vel
 ht = heatmap(norm_bar, norm_vel, tran')
 display(ht)
-savefig(ht, saveto)
+Plots.savefig(ht, saveto)
 
 display(sol.destats)
 display(sol.retcode)
