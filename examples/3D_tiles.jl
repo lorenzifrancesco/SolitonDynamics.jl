@@ -43,7 +43,7 @@ dV= volume_element(L, N)
 
 t = LinRange(ti,tf,Nt)
 # nfiles = true
-maxiters = 10000
+maxiters = 2000
 x0 = L[1]/4
 
 kspace!(psi_0, sim)
@@ -53,7 +53,7 @@ alg = BS3()
 
 
 # ===================== tiling
-tiles = 4
+tiles = 2
 barrier_width = 0.699 # as in SolitonBEC.jl
 max_vel = 1.17 # CALCULATED VALUE 1.17 FOR CHOOSEN NONLINEARITY
 max_bar = 1.68 # CALCULATED VALUE 1.68 FOR CHOOSEN NONLINEARITY
@@ -94,12 +94,30 @@ full_time = @elapsed for ((vx, vv), (bx, bb)) in ProgressBar(iter)
     
     @info "Running solver..."
     avg_iteration_time += @elapsed sol = runsim(sim; info=false)
-    final = sol.u[end]
-    @info "Run complete, computing transmission..."
-    xspace!(final, sim)
-    tran[bx, vx] = ns(final, sim, mask_tran)
-    refl[bx, vx] = ns(final, sim, mask_refl)
-    @info "T = " tran[bx, vx]
+    # catch maxiters hit and set the transmission to zero
+    if manual == false
+        if sol.retcode != ReturnCode.Success
+            @info "Run complete, computing transmission..."
+            @info "Detected solver failure"
+            tran[bx, vx] = 0.0
+            refl[bx, vx] = 1.0
+            @info "T = " tran[bx, vx]
+        else
+            final = sol.u[end]
+            @info "Run complete, computing transmission..."
+            xspace!(final, sim)
+            tran[bx, vx] = ns(final, sim, mask_tran)
+            refl[bx, vx] = ns(final, sim, mask_refl)
+            @info "T = " tran[bx, vx]
+        end
+    else
+        final = sol.u[end]
+        @info "Run complete, computing transmission..."
+        xspace!(final, sim)
+        tran[bx, vx] = ns(final, sim, mask_tran)
+        refl[bx, vx] = ns(final, sim, mask_refl)
+        @info "T = " tran[bx, vx]
+    end
 end
 @info "Tiling time            = " full_time
 @info "Total time in solver   = " avg_iteration_time
