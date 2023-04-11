@@ -26,8 +26,8 @@ function nlin_manual!(dpsi,psi,sim::Sim{1, Array{ComplexF64}},t)
 
          # === scientific debug zone
          append!(time_of_sigma, t)
-         append!(sigma2_old, [sigma2_plus])
-         append!(sigma2_new, [1 .+ g*abs2.(psi)])
+         append!(sigma2_new, [sigma2_plus])
+         append!(sigma2_old, [1 .+ g*abs2.(psi)])
          # === end scientific debug zone
 
       catch  err

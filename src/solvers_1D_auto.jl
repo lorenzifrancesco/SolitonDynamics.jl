@@ -40,12 +40,6 @@ function nlin!(dpsi,psi,sim::Sim{1, Array{ComplexF64}},t)
          prob = NonlinearProblem(sigma_eq, ss, [b, A0])
          sol = solve(prob, NewtonRaphson(), reltol=1e-3)
          sigma2_plus = sol.u
-
-         # === scientific debug zone
-         append!(time_of_sigma, t)
-         append!(sigma2_old, [sigma2_plus])
-         append!(sigma2_new, [1 .+ g*abs2.(psi)])
-         # === end scientific debug zone
       catch  err
          if isa(err, DomainError)
             sigma2_plus = NaN
