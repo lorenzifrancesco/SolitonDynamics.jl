@@ -31,15 +31,15 @@ function nlin!(dpsi,psi,sim::Sim{1, Array{ComplexF64}},t)
       sigma2_plus = zeros(length(x))
       try
          # Nonlinear Finite Element routine
-         b = 2*(1 .+ g*abs2.(dpsi))
-         b[1]   += 1.0 * 1/(2*dV)
-         b[end] += 1.0 * 1/(2*dV)
+         b = (1 .+ g*abs2.(dpsi))
+         b[1]   += 1.0 * 1/(4*dV)
+         b[end] += 1.0 * 1/(4*dV)
          a = ones(length(b))
          A0 = 1/(2*dV) * SymTridiagonal(2*a, -a)
          ss = ones(N)
-         prob = NonlinearProblem(sigma_eq, ss, [b, A0])
+         prob = NonlinearProblem(sigma_eq, ss, [b, A0, dV])
          sol = solve(prob, NewtonRaphson(), reltol=1e-3)
-         sigma2_plus = sol.u
+         sigma2_plus = (sol.u).^2
       catch  err
          if isa(err, DomainError)
             sigma2_plus = NaN
@@ -68,36 +68,25 @@ end
 params are [sim, psi]
 """
 
-function sigma_eq(ss, params)
-   b = params[1]
-   A0 = params[2]
-   A = A0 + Diagonal(2*ss)
-   f = A * ss - b
-   return f
-end
-
 # function sigma_eq(ss, params)
 #    b = params[1]
 #    A0 = params[2]
-#    N = length(sigma)
-#    select_1   = zeros(N, N)
-#    select_end = zeros(N, N)
-#    select_1[1, 1] = 1
-#    select_end[end, end] = 1
-#    bc = zeros(N)
-#    bc -= 1/(2*dx) *( (select_1 * (sigma)) + (select_end * (sigma))) 
-#    f = -1/2 *(A0 * sigma.^2) + 2 * sigma .* (A0 * sigma) + sigma.^4 - b + bc
+#    A = A0 + Diagonal(2*ss)
+#    f = A * ss - b
 #    return f
 # end
 
-
-# # b = (1 .+ g*abs2.(psi))
-# # b[1]   += 1.0 * 1/(4*dx)
-# # b[end] += 1.0 * 1/(4*dx)
-
-# # we should allocate the boundary conditions inside the lhs
-# function sigma_eq(sigma, params)
-
-
-#    return f
-# end
+function sigma_eq(sigma, params)
+   b = params[1]
+   A0 = params[2]
+   dV = params[3]
+   N = length(sigma)
+   select_1   = zeros(N, N)
+   select_end = zeros(N, N)
+   select_1[1, 1] = 1
+   select_end[end, end] = 1
+   bc = zeros(N)
+   bc -= 1/(2*dV) *( (select_1 * (sigma)) + (select_end * (sigma))) 
+   f = -1/2 *(A0 * sigma.^2) + 2 * sigma .* (A0 * sigma) + sigma.^4 - b + bc
+   return f
+end

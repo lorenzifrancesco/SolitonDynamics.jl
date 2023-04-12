@@ -14,15 +14,15 @@ function nlin_manual!(dpsi,psi,sim::Sim{1, Array{ComplexF64}},t)
       sigma2_plus = zeros(length(x))
       try
          # Nonlinear Finite Element routine
-         b = 2*(1 .+ g*abs2.(psi))
-         b[1]   += 1.0 * 1/(2*dV)
-         b[end] += 1.0 * 1/(2*dV)
+         b = (1 .+ g*abs2.(psi))
+         b[1]   += 1.0 * 1/(4*dV)
+         b[end] += 1.0 * 1/(4*dV)
          a = ones(length(b))
          A0 = 1/(2*dV) * SymTridiagonal(2*a, -a)
          ss = ones(N)
-         prob = NonlinearProblem(sigma_eq, ss, [b, A0])
+         prob = NonlinearProblem(sigma_eq, ss, [b, A0, dV])
          sol = solve(prob, NewtonRaphson(), reltol=1e-3)
-         sigma2_plus = sol.u
+         sigma2_plus = (sol.u).^2
 
          # === scientific debug zone
          append!(time_of_sigma, t)
@@ -38,8 +38,8 @@ function nlin_manual!(dpsi,psi,sim::Sim{1, Array{ComplexF64}},t)
             throw(err)
          end
       end
-      nonlinear = g*abs2.(dpsi) ./sigma2_plus +  (1/2 * sigma2_plus .+ (1 ./(2*sigma2_plus)).* (1 .+ (1/dV * diff(prepend!(sigma2_plus, 1.0))).^2))
-      # warning: sigma2_plus gets modified by prepend!
+      tmp = copy(sigma2_plus)
+      nonlinear = g*abs2.(psi) ./sigma2_plus +  (1/2 * sigma2_plus .+ (1 ./(2*sigma2_plus)).* (1 .+ (1/dV * diff(prepend!(tmp, 1.0))).^2))
       @. psi = exp(dt * -im*iswitch* (V0 + V(x, t) + nonlinear)) * psi
    end
    kspace!(psi,sim)
