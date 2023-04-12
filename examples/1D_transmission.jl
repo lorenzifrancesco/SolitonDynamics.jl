@@ -6,16 +6,16 @@ import CondensateDynamics.V
 
 include("plot_axial_evolution.jl")
 
-
 L = (70.0,)
-N = (256,)
+N = (1024,)
 sim = Sim{length(L), Array{Complex{Float64}}}(L=L, N=N)
+
 
 # ======= packing sim
 @unpack_Sim sim
 # ======= simulation custom parameters
 equation = NPSE_plus
-manual = false
+manual = true
 time_steps = 500
 Nt = 200
 
@@ -83,15 +83,16 @@ time_axis = sol.t |> real
 #plot_final_density(sol.u, psi_0, sim)
 plot_axial_heatmap(sol.u, time_axis, sim)
 
-@info "Building animation..."
-animation_final_density(sol.u, sim)
+
 
 # sigma heatmaps
-plot_axial_heatmap(sigma2_new, time_of_sigma, sim; doifft = false)
+plot_axial_heatmap(sigma2_new , time_of_sigma, sim; doifft = false)
 plot_axial_heatmap(sigma2_old, time_of_sigma, sim; doifft = false)
 
+@info "Building animation..."
+animation_final_density(sol.u, sim)
+animation_final_density(sigma2_new, sim; doifft=false, info=true, file="sigma2_new.gif")
 animation_final_density(sigma2_old, sim; doifft=false, info=true, file="sigma2_old.gif")
-
 @info "Done!"
 
 display(sol.destats)
