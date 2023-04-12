@@ -90,6 +90,8 @@ animation_final_density(sol.u, sim)
 plot_axial_heatmap(sigma2_new, time_of_sigma, sim; doifft = false)
 plot_axial_heatmap(sigma2_old, time_of_sigma, sim; doifft = false)
 
+animation_final_density(sigma2_old, sim; doifft=false, info=true, file="sigma2_old.gif")
+
 @info "Done!"
 
 display(sol.destats)
