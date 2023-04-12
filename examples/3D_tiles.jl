@@ -52,7 +52,7 @@ alg = BS3()
 
 
 # ===================== tiling
-tiles = 2
+tiles = 10
 barrier_width = 0.699 # as in SolitonBEC.jl
 max_vel = 1.17 # CALCULATED VALUE 1.17 FOR CHOOSEN NONLINEARITY
 max_bar = 1.68 # CALCULATED VALUE 1.68 FOR CHOOSEN NONLINEARITY
@@ -126,10 +126,10 @@ JLD2.@save("tran.jld2", tran)
 JLD2.@save("refl.jld2", refl)
 norm_bar = bar_list / max_bar
 norm_vel = vel_list / max_vel
-ht = heatmap(norm_bar, norm_vel, tran')
+ht = Plots.heatmap(norm_bar, norm_vel, tran')
 display(ht)
 Plots.savefig(ht, saveto)
 
-display(sol.destats)
-display(sol.retcode)
+# display(sol.destats)
+# display(sol.retcode)
 end
