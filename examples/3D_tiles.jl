@@ -13,7 +13,7 @@ JULIA_CUDA_SOFT_MEMORY_LIMIT ="95%"
 include("plot_isosurfaces.jl")
 include("plot_axial_evolution.jl")
 
-file = "3Dtran.pdf"
+file = "3Dtran_20.pdf"
 let sim
 saveto=joinpath("media/1D",file)
 
@@ -26,7 +26,7 @@ sim = Sim{length(L), CuArray{Complex{Float64}}}(L=L, N=N)
 @unpack_Sim sim
 equation = GPE_3D
 manual = true
-time_steps = 200
+time_steps = 1000
 g = -1.17 # this is the 1D g
 g_param = abs(g)/2
 reltol = 1e-2
@@ -52,7 +52,7 @@ alg = BS3()
 
 
 # ===================== tiling
-tiles = 10
+tiles = 20
 barrier_width = 0.699 # as in SolitonBEC.jl
 max_vel = 1.17 # CALCULATED VALUE 1.17 FOR CHOOSEN NONLINEARITY
 max_bar = 1.68 # CALCULATED VALUE 1.68 FOR CHOOSEN NONLINEARITY
@@ -82,6 +82,11 @@ full_time = @elapsed for ((vx, vv), (bx, bb)) in ProgressBar(iter)
     end
     Nt = 2
     t = LinRange(ti, tf, Nt)
+    if vv > max_vel/2
+        time_steps = 200
+    else
+        time_steps = 1000
+    end
     dt = (tf-ti)/time_steps # fixed
 
     tmp = [exp(-(y^2+z^2+(x-x0)^2)/2) * exp(-im*x*vv) for x in x, y in y, z in z]
