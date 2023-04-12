@@ -38,7 +38,8 @@ function nlin_manual!(dpsi,psi,sim::Sim{1, Array{ComplexF64}},t)
             throw(err)
          end
       end
-      nonlinear = g*abs2.(psi) ./sigma2_plus + (1 ./(2*sigma2_plus) + 1/2*sigma2_plus)
+      nonlinear = g*abs2.(dpsi) ./sigma2_plus +  (1/2 * sigma2_plus .+ (1 ./(2*sigma2_plus)).* (1 .+ (1/dV * diff(prepend!(sigma2_plus, 1.0))).^2))
+      # warning: sigma2_plus gets modified by prepend!
       @. psi = exp(dt * -im*iswitch* (V0 + V(x, t) + nonlinear)) * psi
    end
    kspace!(psi,sim)
