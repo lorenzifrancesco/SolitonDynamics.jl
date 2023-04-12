@@ -24,13 +24,13 @@ sim = Sim{length(L), Array{Complex{Float64}}}(L=L, N=N)
 # ====== initialization and unpacking
 @unpack_Sim sim
 # ======= simulation custom parameters
-equation = GPE_1D
+equation = NPSE_plus
 solver = SplitStep 
 manual = false
 time_steps = 2000
 g = -1.17  #corresponds to gamma -0.587
 gamma = 0.0
-tiles = 100
+tiles = 20
 barrier_width = 0.699 # as in SolitonBEC.jl
 max_vel = 1.17 # CALCULATED VALUE 1.17 FOR CHOOSEN NONLINEARITY
 max_bar = 1.68 # CALCULATED VALUE 1.68 FOR CHOOSEN NONLINEARITY
@@ -59,7 +59,7 @@ maxiters = 50000
 
 mask_refl = map(xx -> xx>0, x)
 mask_tran = map(xx -> xx<0, x)
-p = plot(x, zeros(length(x)))
+p = Plots.plot(x, zeros(length(x)))
 
 avg_iteration_time = 0.0
 iter = Iterators.product(enumerate(vel_list), enumerate(bar_list))
@@ -116,9 +116,9 @@ end
 # JLD2.@save("refl.jld2", refl)
 norm_bar = bar_list / max_bar
 norm_vel = vel_list / max_vel
-ht = heatmap(norm_bar, norm_vel, tran')
+ht = Plots.heatmap(norm_bar, norm_vel, tran')
 display(ht)
-savefig(ht, saveto)
+Plots.savefig(ht, saveto)
 end
 
 # JLD2.@load "refl.jld2" refl

@@ -7,7 +7,7 @@ function plot_axial_heatmap(u, time_axis, sim::Sim{1, Array{ComplexF64}}; info=f
     @unpack t, X = sim; x = X[1]
     u = reduce(hcat, u)
     doifft ? u = mapslices(x->xspace(x, sim),u,dims=(1)) : nothing
-    ht = heatmap(real.(x), time_axis, abs2.(u)')
+    ht = Plots.heatmap(real.(x), time_axis, abs2.(u)')
     display(ht)
     return ht
 end
@@ -22,7 +22,7 @@ function plot_axial_heatmap(u, time_axis, sim::Sim{3, CuArray{ComplexF64}}, axis
     # SPECIALIZE to axis = 3
     u_axial = [sum(abs2.(x), dims=ax_list)[1,1,:] for x in ux]
     u_axial = Array(reduce(hcat, u_axial))
-    ht = heatmap(real.(x), time_axis, u_axial')
+    ht = Plots.heatmap(real.(x), time_axis, u_axial')
     display(ht)
     return ht
 end

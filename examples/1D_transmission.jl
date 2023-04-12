@@ -15,7 +15,7 @@ sim = Sim{length(L), Array{Complex{Float64}}}(L=L, N=N)
 @unpack_Sim sim
 # ======= simulation custom parameters
 equation = NPSE_plus
-manual = true
+manual = false
 time_steps = 500
 Nt = 200
 
