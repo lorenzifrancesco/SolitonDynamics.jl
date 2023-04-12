@@ -13,11 +13,21 @@ function manual_run(sim; info=false)
          abstol_diff = abstol
          cnt = 0 
          while norm_diff > abstol_diff && cnt < maxiters
-            norm_diff = ground_state_nlin!(psi_0,sim,dt)
+            try
+               norm_diff = ground_state_nlin!(psi_0,sim,dt)
+            catch err
+               if isa(err, NpseCollapse)
+                  showerror(stdout, err)
+               else
+                  throw(err)
+               end
+            return nothing
+            end
             cnt +=1
          end
          info && @info "Computation ended after iterations" cnt
-         sol = psi_0 
+         sol = CustomSolution(u=psi_0, t=t)
+         info && @info sol
       else # nonspectral methods
          xspace!(psi_0, sim)
          solvers = [ground_state_nlin!, cn_ground_state!, pc_ground_state!, be_ground_state!]
@@ -38,9 +48,9 @@ function manual_run(sim; info=false)
          end
          info && @info "Computation ended after iterations" cnt
          kspace!(psi_0, sim)
-         sol = psi_0
+         sol = CustomSolution(u=psi_0, t=t)
       end
-      return [sol]
+      return sol
    else
       # in manual run mode the number of steps is specified by time_steps
       

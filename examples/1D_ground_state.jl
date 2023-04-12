@@ -22,12 +22,17 @@ initial_state = zeros(N[1])
 # =========================================================
 @unpack_Sim sim
 iswitch = -im
+equation = NPSE
+manual = false
 solver = SplitStep 
+time_steps = 1000
+Nt = 200
 g = -4.0 # our g corresponds to g' * (N-1)
 g_param = abs(g) / (2)
-mu_analytical = 1 - g_param^2/2
+mu_analytical = (1 - g_param^2/2 + 0.5)
 abstol = 1e-2
-equation = GPE_1D
+maxiters = 1100
+
 x = X[1]
 k = K[1]
 dV= volume_element(L, N)
@@ -53,15 +58,14 @@ width = sqrt(width)
 @. analytical_gs = sqrt(g_param/2) * 2/(exp(g_param*x) + exp(-x*g_param))
 
 sol = runsim(sim; info=false)
-u = reduce(hcat, sol.u)
+final = sol.u
 
-final = transpose(u)[:, end] |> collect
-@info ns(analytical_gs, sim)
 @info "chempot of analytical" chempot(analytical_gs, sim)
+@info "final chempot" chempotk(final, sim)
+@info "analytical calculation of chempot" mu_analytical
 
-@info "chemical potential" chempotk(final, sim)
-@info "chemical potential, analytical" mu_analytical
 p = plot(real.(k), abs2.(kspace(initial_state, sim)), color=:blue, ls=:dot, lw=3, label="initial")
+
 plot!(p, real.(k), abs2.(final), color=:red, label="final")
 plot!(p, real.(k), abs2.(kspace(analytical_gs, sim)), ls=:dot, lw=2, color=:grey, label="analytical")
 display(p)
