@@ -8,13 +8,16 @@ function manual_run(sim; info=false)
    @unpack psi_0, dV, dt, ti, tf, t, solver, iswitch, abstol, reltol, N,Nt, V0, maxiters, time_steps = sim
    info && @info "Running on manual mode: time_steps =  " time_steps
    if iswitch == -im # select solver and run manual convergence routine 
+      @warn "Only GPE_1D is implemented as a manual solver"
       if solver == SplitStep
+         #xspace!(psi_0, sim)
          norm_diff = 1
          abstol_diff = abstol
          cnt = 0 
          while norm_diff > abstol_diff && cnt < maxiters
             try
-               norm_diff = ground_state_nlin!(psi_0,sim,dt)
+               norm_diff = ground_state_evolve!(psi_0,sim,dt)
+               info && @info "norm squared of psi" ns(psi_0, sim)
             catch err
                if isa(err, NpseCollapse)
                   showerror(stdout, err)
@@ -26,6 +29,7 @@ function manual_run(sim; info=false)
             cnt +=1
          end
          info && @info "Computation ended after iterations" cnt
+         #kspace!(psi_0, sim)
          sol = CustomSolution(u=psi_0, t=t)
          info && @info sol
       else # nonspectral methods
@@ -55,7 +59,6 @@ function manual_run(sim; info=false)
       # in manual run mode the number of steps is specified by time_steps
       
       time = 0.0
-      dpsi = 0.0*psi_0
       if length(N) == 1
          collection = Array{ComplexF64, 2}(undef, (length(psi_0), Nt))
          collection[:, 1] = psi_0
@@ -63,7 +66,7 @@ function manual_run(sim; info=false)
          solve_time_axis = LinRange(ti, tf, time_steps)
          for i in 1:time_steps
             try
-               propagate_manual!(dpsi, psi_0, sim, time)
+               propagate_manual!(psi_0, sim, time)
             catch err
                if isa(err, NpseCollapse)
                   showerror(stdout, err)
@@ -86,7 +89,7 @@ function manual_run(sim; info=false)
          save_interval = Int(round(time_steps/Nt))
          for i in 1:time_steps
             try
-               propagate_manual!(dpsi, psi_0, sim, time)
+               propagate_manual!(psi_0, sim, time)
             catch err
                if isa(err, NpseCollapse)
                   showerror(stdout, err)
@@ -110,7 +113,7 @@ function auto_run(sim; info=false)
    @unpack psi_0, dV, dt, ti, tf, t, solver, iswitch, abstol, reltol, N,Nt, V0, maxiters, time_steps = sim
    @assert solver == SplitStep
    if iswitch == -im # solve a steady state problem
-      sim.iswitch = 1.0 # we should catch NPSE collapse in ground state?
+      #sim.iswitch = 1.0 # we should catch NPSE collapse in ground state?
       ssalg = DynamicSS(BS3(); 
       reltol = sim.reltol,
       tspan = Inf)
