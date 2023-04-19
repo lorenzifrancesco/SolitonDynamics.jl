@@ -8,16 +8,16 @@ function manual_run(sim; info=false)
    @unpack psi_0, dV, dt, ti, tf, t, solver, iswitch, abstol, reltol, N,Nt, V0, maxiters, time_steps = sim
    info && @info "Running on manual mode: time_steps =  " time_steps
    if iswitch == -im # select solver and run manual convergence routine 
-      @warn "Only GPE_1D is implemented as a manual solver"
       if solver == SplitStep
          #xspace!(psi_0, sim)
          norm_diff = 1
          abstol_diff = abstol
          cnt = 0 
+         info && print("\n")
          while norm_diff > abstol_diff && cnt < maxiters
             try
-               norm_diff = ground_state_evolve!(psi_0,sim,dt)
-               info && @info "norm squared of psi" ns(psi_0, sim)
+               norm_diff = ground_state_evolve!(psi_0,sim,dt; info=info)
+               info && print("\r Interation number: ", cnt, " - norm diff: ", norm_diff)
             catch err
                if isa(err, NpseCollapse)
                   showerror(stdout, err)
