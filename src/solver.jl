@@ -48,6 +48,7 @@ function manual_run(sim; info=false)
          cnt = 0 
          while norm_diff > abstol_diff && cnt < maxiters
             norm_diff = func(psi_0,sim,dt, tri_fwd, tri_bkw)
+            info && print("\r Interation number: ", cnt, " - norm diff: ", norm_diff)
             cnt +=1
          end
          info && @info "Computation ended after iterations" cnt

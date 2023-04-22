@@ -10,6 +10,7 @@ using Parameters
 using Reexport
 using OrdinaryDiffEq, DiffEqCallbacks, SteadyStateDiffEq, DiffEqGPU, BoundaryValueDiffEq, NonlinearSolve
 using LinearAlgebra, RecursiveArrayTools, LazyArrays
+using IntervalRootFinding, IntervalArithmetic
 import JLD2 
 
 @reexport using Parameters
