@@ -24,19 +24,22 @@ initial_state = zeros(N[1])
 iswitch = -im
 equation = NPSE
 manual = true
-solver = SplitStep 
+solver = BackwardEuler
 time_steps = 10000
-g = -1.5
-g_param = abs(g) / (2)
+g_param = 0.5
+g = -2 * g_param
+
 @info "gamma: " g_param
 if equation==NPSE && g_param > 2/3
     @warn "we should expect NPSE collapse"
 end
-mu_analytical = (1 - g_param^2/2)
+
+n = 100
+as = g_param / n
+mu_analytical = npse_mu(n, as)
 abstol = 1e-6
 maxiters = 30000
 dt = 0.022
-
 
 x = X[1]
 k = K[1]
