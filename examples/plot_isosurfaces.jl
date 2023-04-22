@@ -21,18 +21,13 @@ function isosurface_animation(sol,Nt, sim;file="3Devolution.gif",framerate=3)
     iter = [abs2.(iter[k]) for k in 1:Nt]
     fig = Makie.volume(Makie.@lift(iter[$tindex]/maximum(iter[$tindex])),
                         algorithm =:iso,
-                        isovalue=0.1,
+                        isovalue=0.2,
                         isorange=0.1,
                         transparency=true
     )
 
     R = 180
-    # eyeat = Makie.Vec3f0(R,0,0)
-    # lookat = Makie.Vec3f0(-50,-50,0)
-    # cam = Makie.cameracontrols(scene)
-    # Makie.update_cam!(scene, eyeat, lookat)
-
-    Makie.record(scene, saveto, 1:Nt; framerate=framerate) do i
+    Makie.record(fig, saveto, 1:Nt; framerate=framerate) do i
         tindex[] = i
     end
     return

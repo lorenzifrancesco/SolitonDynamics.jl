@@ -357,3 +357,51 @@ function makeT(X,K,T::Type{CuArray{ComplexF64}};flags=FFTW.MEASURE)
     Txk,Txk!,Tkx,Tkx! = definetransforms(trans,args,meas)
     return GPUTransforms{D,N,T}(Txk,Txk!,Tkx,Tkx!)
 end
+
+
+function npse_expr(mu) 
+    f =  ((1-mu)^(3/2) - 3/2*(1-mu)^(1/2))*(2*sqrt(2))/3
+    return f
+end
+
+"""
+Compute the ground state energy normalized to the harmonic energy unit
+"""
+function npse_energy(n, as)
+    steps = 500
+    dn = n/steps
+    energy = 0
+    for n_int in LinRange(0, n, steps)
+        gamma = as * n_int
+        a = roots(x->npse_expr(x)+gamma, 0.5..1, Newton, 1e-4)
+        mu = mid(a[1].interval)
+        energy += mu
+    end
+    return energy * dn
+end
+
+function gpe_energy(n, as)
+    steps = 500
+    dn = n/steps
+    energy = 0
+    for n_int in LinRange(0, n, steps)
+        gamma = as * n_int
+        mu = 1-gamma^2/2
+        energy += mu
+    end
+    return energy * dn
+end
+
+"""
+Compute the chemical potential
+"""
+function npse_mu(n, as)
+    gamma = as * n
+    a = roots(x->npse_expr(x)+gamma, 0.5..1, Newton, 1e-4)
+    mu = mid(a[1].interval)
+    return mu - 1
+end
+
+function gpe_mu(n, as)
+    return - (n * as)^2/8
+end

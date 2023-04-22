@@ -7,23 +7,27 @@ import CondensateDynamics.V
 include("plot_axial_evolution.jl")
 
 L = (70.0,)
-N = (256,)
+N = (1024,)
 sim = Sim{length(L), Array{Complex{Float64}}}(L=L, N=N)
+
 
 # ======= packing sim
 @unpack_Sim sim
 # ======= simulation custom parameters
 equation = NPSE_plus
-manual = false
-solver = SplitStep 
+manual = true
+time_steps = 500
+Nt = 200
+
+solver = SplitStep
 g = -1.17
 gamma = 0.0
 tiles = 8
 barrier_width = 0.699 # as in SolitonBEC.jl
 max_vel = 1.17 # CALCULATED VALUE 1.17 FOR CHOOSEN NONLINEARITY
 max_bar = 1.68 # CALCULATED VALUE 1.68 FOR CHOOSEN NONLINEARITY
-vx = 6
-bx = 3
+vx = 8
+bx = 8
 
 reltol = 1e-4
 abstol = 1e-4
@@ -47,10 +51,8 @@ if vv == 0.0
 else
     tf = 2*x0/vv
 end
-Nt = 200
 t = LinRange(ti, tf, Nt)
 
-time_steps = 2000
 dt = (tf-ti)/time_steps
 maxiters = 20000
 
@@ -77,9 +79,21 @@ tran = ns(final, sim, mask_tran)
 @info "T = " tran
 
 time_axis = sol.t |> real
-
+@info "Plotting..."
 #plot_final_density(sol.u, psi_0, sim)
 plot_axial_heatmap(sol.u, time_axis, sim)
+
+
+
+# sigma heatmaps
+plot_axial_heatmap(sigma2_new , time_of_sigma, sim; doifft = false)
+plot_axial_heatmap(sigma2_old, time_of_sigma, sim; doifft = false)
+
+@info "Building animation..."
+animation_final_density(sol.u, sim)
+animation_final_density(sigma2_new, sim; doifft=false, info=true, file="sigma2_new.gif")
+animation_final_density(sigma2_old, sim; doifft=false, info=true, file="sigma2_old.gif")
+@info "Done!"
 
 display(sol.destats)
 display(sol.retcode)

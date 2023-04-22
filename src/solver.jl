@@ -9,15 +9,29 @@ function manual_run(sim; info=false)
    info && @info "Running on manual mode: time_steps =  " time_steps
    if iswitch == -im # select solver and run manual convergence routine 
       if solver == SplitStep
+         #xspace!(psi_0, sim)
          norm_diff = 1
          abstol_diff = abstol
          cnt = 0 
+         info && print("\n")
          while norm_diff > abstol_diff && cnt < maxiters
-            norm_diff = ground_state_nlin!(psi_0,sim,dt)
+            try
+               norm_diff = ground_state_evolve!(psi_0,sim,dt; info=info)
+               info && print("\r Interation number: ", cnt, " - norm diff: ", norm_diff)
+            catch err
+               if isa(err, NpseCollapse)
+                  showerror(stdout, err)
+               else
+                  throw(err)
+               end
+            return nothing
+            end
             cnt +=1
          end
          info && @info "Computation ended after iterations" cnt
-         sol = psi_0 
+         #kspace!(psi_0, sim)
+         sol = CustomSolution(u=psi_0, t=t)
+         info && @info sol
       else # nonspectral methods
          xspace!(psi_0, sim)
          solvers = [ground_state_nlin!, cn_ground_state!, pc_ground_state!, be_ground_state!]
@@ -34,23 +48,26 @@ function manual_run(sim; info=false)
          cnt = 0 
          while norm_diff > abstol_diff && cnt < maxiters
             norm_diff = func(psi_0,sim,dt, tri_fwd, tri_bkw)
+            info && print("\r Interation number: ", cnt, " - norm diff: ", norm_diff)
             cnt +=1
          end
          info && @info "Computation ended after iterations" cnt
          kspace!(psi_0, sim)
-         sol = psi_0
+         sol = CustomSolution(u=psi_0, t=t)
       end
-      return [sol]
+      return sol
    else
+      # in manual run mode the number of steps is specified by time_steps
+      
       time = 0.0
-      dpsi = 0.0*psi_0
       if length(N) == 1
          collection = Array{ComplexF64, 2}(undef, (length(psi_0), Nt))
          collection[:, 1] = psi_0
-         save_interval = Int(round(time_steps/Nt))
+         save_counter = 1
+         solve_time_axis = LinRange(ti, tf, time_steps)
          for i in 1:time_steps
             try
-               propagate_manual!(dpsi, psi_0, sim, time)
+               propagate_manual!(psi_0, sim, time)
             catch err
                if isa(err, NpseCollapse)
                   showerror(stdout, err)
@@ -59,8 +76,9 @@ function manual_run(sim; info=false)
                end
             return nothing
             end
-            if i % save_interval == 0
-               collection[:, Int(floor(i / save_interval))] = psi_0
+            if t[save_counter] < solve_time_axis[i]
+               collection[:, save_counter] = psi_0
+               save_counter += 1
             end
             time += dt
          end
@@ -72,7 +90,7 @@ function manual_run(sim; info=false)
          save_interval = Int(round(time_steps/Nt))
          for i in 1:time_steps
             try
-               propagate_manual!(dpsi, psi_0, sim, time)
+               propagate_manual!(psi_0, sim, time)
             catch err
                if isa(err, NpseCollapse)
                   showerror(stdout, err)
@@ -96,7 +114,7 @@ function auto_run(sim; info=false)
    @unpack psi_0, dV, dt, ti, tf, t, solver, iswitch, abstol, reltol, N,Nt, V0, maxiters, time_steps = sim
    @assert solver == SplitStep
    if iswitch == -im # solve a steady state problem
-      sim.iswitch = 1.0 # we should catch NPSE collapse in ground state?
+      #sim.iswitch = 1.0 # we should catch NPSE collapse in ground state?
       ssalg = DynamicSS(BS3(); 
       reltol = sim.reltol,
       tspan = Inf)

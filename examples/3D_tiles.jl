@@ -82,6 +82,11 @@ full_time = @elapsed for ((vx, vv), (bx, bb)) in ProgressBar(iter)
     end
     Nt = 2
     t = LinRange(ti, tf, Nt)
+    if vv > max_vel/2
+        time_steps = 200
+    else
+        time_steps = 1000
+    end
     dt = (tf-ti)/time_steps # fixed
 
     tmp = [exp(-(y^2+z^2+(x-x0)^2)/2) * exp(-im*x*vv) for x in x, y in y, z in z]

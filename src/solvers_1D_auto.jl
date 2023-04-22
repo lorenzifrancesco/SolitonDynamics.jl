@@ -1,4 +1,3 @@
-
 # General solvers to be used with DiffEq
 
 # # ======= begin inset for online
@@ -28,21 +27,19 @@ function nlin!(dpsi,psi,sim::Sim{1, Array{ComplexF64}},t)
    elseif equation == NPSE
       nonlinear = g*abs2.(dpsi) ./sigma2.(dpsi) + (1 ./(2*sigma2.(dpsi)) + 1/2*sigma2.(dpsi))
       @. dpsi *= -im*iswitch* (V0 + V(x, t) + nonlinear) + mu_im
-   elseif equation == NPSE_plus # compute the effect of the derivative perturbatively
-      # test point: set the correction to zero and see NPSE collapse
+   elseif equation == NPSE_plus
       sigma2_plus = zeros(length(x))
       try
          # Nonlinear Finite Element routine
-         
-         b = 2*(1 .+ g*abs2.(dpsi))
-         b[1]   += 1.0 * 1/(2*dV)
-         b[end] += 1.0 * 1/(2*dV)
+         b = (1 .+ g*abs2.(dpsi))
+         b[1]   += 1.0 * 1/(4*dV)
+         b[end] += 1.0 * 1/(4*dV)
          a = ones(length(b))
          A0 = 1/(2*dV) * SymTridiagonal(2*a, -a)
          ss = ones(N)
-         prob = NonlinearProblem(sigma_eq, ss, [b, A0])
+         prob = NonlinearProblem(sigma_eq, ss, [b, A0, dV])
          sol = solve(prob, NewtonRaphson(), reltol=1e-3)
-         sigma2_plus = sol.u
+         sigma2_plus = (sol.u).^2
       catch  err
          if isa(err, DomainError)
             sigma2_plus = NaN
@@ -51,7 +48,8 @@ function nlin!(dpsi,psi,sim::Sim{1, Array{ComplexF64}},t)
             throw(err)
          end
       end
-      nonlinear = g*abs2.(dpsi) ./sigma2_plus + (1 ./(2*sigma2_plus) + 1/2*sigma2_plus)
+      nonlinear = g*abs2.(dpsi) ./sigma2_plus +  (1/2 * sigma2_plus .+ (1 ./(2*sigma2_plus)).* (1 .+ (1/dV * diff(prepend!(sigma2_plus, 1.0))).^2))
+      # warning: sigma2_plus gets modified by prepend!
       @. dpsi *= -im*iswitch* (V0 + V(x, t) + nonlinear) + mu_im
    end
    kspace!(dpsi,sim)
@@ -66,14 +64,17 @@ function propagate!(dpsi, psi, sim::Sim{1, Array{ComplexF64}}, t; info=false)
    return nothing
 end
 
-"""
-params are [sim, psi]
-"""
-
-function sigma_eq(ss, params)
+function sigma_eq(sigma, params)
    b = params[1]
    A0 = params[2]
-   A = A0 + Diagonal(2*ss)
-   f = A * ss - b
+   dV = params[3]
+   N = length(sigma)
+   select_1   = zeros(N, N)
+   select_end = zeros(N, N)
+   select_1[1, 1] = 1
+   select_end[end, end] = 1
+   bc = zeros(N)
+   bc -= 1/(2*dV) *( (select_1 * (sigma)) + (select_end * (sigma))) 
+   f = -1/2 *(A0 * sigma.^2) + 2 * sigma .* (A0 * sigma) + sigma.^4 - b + bc
    return f
 end
