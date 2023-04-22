@@ -13,9 +13,9 @@ JULIA_CUDA_SOFT_MEMORY_LIMIT ="95%"
 include("plot_isosurfaces.jl")
 include("plot_axial_evolution.jl")
 
-file = "3Dtran.pdf"
+file = "3Dtran_20.pdf"
 let sim
-saveto=joinpath("media/1D",file)
+saveto=joinpath("media/3D",file)
 
 # =================== simulation settings
 L = (40.0,40.0,40.0)
@@ -25,7 +25,7 @@ sim = Sim{length(L), CuArray{Complex{Float64}}}(L=L, N=N)
 # =================== physical parameters 
 @unpack_Sim sim
 equation = GPE_3D
-manual = true
+manual = false
 time_steps = 200
 g = -1.17 # this is the 1D g
 g_param = abs(g)/2
@@ -52,7 +52,7 @@ alg = BS3()
 
 
 # ===================== tiling
-tiles = 2
+tiles = 10
 barrier_width = 0.699 # as in SolitonBEC.jl
 max_vel = 1.17 # CALCULATED VALUE 1.17 FOR CHOOSEN NONLINEARITY
 max_bar = 1.68 # CALCULATED VALUE 1.68 FOR CHOOSEN NONLINEARITY
@@ -117,6 +117,7 @@ full_time = @elapsed for ((vx, vv), (bx, bb)) in ProgressBar(iter)
         refl[bx, vx] = ns(final, sim, mask_refl)
         @info "T = " tran[bx, vx]
     end
+    print("\n\n")
 end
 @info "Tiling time            = " full_time
 @info "Total time in solver   = " avg_iteration_time
@@ -126,10 +127,10 @@ JLD2.@save("tran.jld2", tran)
 JLD2.@save("refl.jld2", refl)
 norm_bar = bar_list / max_bar
 norm_vel = vel_list / max_vel
-ht = heatmap(norm_bar, norm_vel, tran')
+ht = Plots.heatmap(norm_bar, norm_vel, tran')
 display(ht)
 Plots.savefig(ht, saveto)
 
-display(sol.destats)
-display(sol.retcode)
+# display(sol.destats)
+# display(sol.retcode)
 end
