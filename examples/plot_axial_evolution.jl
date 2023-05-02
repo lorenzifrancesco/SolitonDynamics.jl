@@ -27,19 +27,42 @@ function plot_axial_heatmap(u, time_axis, sim::Sim{3, CuArray{ComplexF64}}, axis
     return ht
 end
 
-function plot_final_density(u, psi_0, sim::Sim{1, Array{ComplexF64}}; info=false, doifft=true)
+function plot_axial_heatmap!(p, u, time_axis, sim::Sim{3, CuArray{ComplexF64}}, axis; info=false, doifft=true)
+    @unpack t, X = sim; x = Array(X[axis])
+    @assert axis == 3
+    ax_list = (1, 2, 3)
+    ax_list= filter(x->x!=axis, ax_list)
+
+    doifft ? ux = [xspace(x, sim) for x in u] : nothing
+    # SPECIALIZE to axis = 3
+    u_axial = [sum(abs2.(x), dims=ax_list)[1,1,:] for x in ux]
+    u_axial = Array(reduce(hcat, u_axial))
+    ht = Plots.heatmap!(p, real.(x), time_axis, u_axial')
+    display(ht)
+    return ht
+end
+
+function plot_final_density(u, sim::Sim{1, Array{ComplexF64}}; info=false, doifft=true, label="initial")
     @unpack t, X = sim; x = Array(X[1])
     tmp = u[end]
     doifft ? final = xspace(tmp, sim) : nothing
-    doifft ? psi = xspace(psi_0, sim) : nothing
     info && @info "final norm" ns(final, sim)
-    p = plot(real.(x), abs2.(psi), label="initial")
-    plot!(p, real.(x), abs2.(final), label="final")
+    p = plot(real.(x), abs2.(final), label=label)
     display(p)
     return p
 end
 
-function plot_final_density(u, psi_0, sim::Sim{3, CuArray{ComplexF64}}, axis; info=false, doifft=true)
+function plot_final_density!(p, u, sim::Sim{1, Array{ComplexF64}}; info=false, doifft=true, label="initial")
+    @unpack t, X = sim; x = Array(X[1])
+    tmp = u[end]
+    doifft ? final = xspace(tmp, sim) : final = tmp
+    info && @info "final norm" ns(final, sim)
+    plot!(p, real.(x), abs2.(final), label=label)
+    display(p)
+    return p
+end
+
+function plot_final_density(u, sim::Sim{3, CuArray{ComplexF64}}, axis; info=false, doifft=true, label="initial")
     @unpack t, X = sim; x = Array(X[axis])
     ax_list = (1, 2, 3)
     ax_list= filter(x->x!=axis, ax_list)
@@ -47,10 +70,20 @@ function plot_final_density(u, psi_0, sim::Sim{3, CuArray{ComplexF64}}, axis; in
     doifft ? final = xspace(final, sim) : nothing
     info && @info "final norm" ns(final, sim)
     final_axial = Array(sum(abs2.(final), dims=ax_list))[1,1,:]
-    doifft ? psi = xspace(psi_0, sim) : nothing
-    psi_0_axial = Array(sum(abs2.(psi), dims=ax_list))[1,1,:]
-    p = plot(real.(x), psi_0_axial, label="initial")
-    plot!(p, real.(x), final_axial, label="final")
+    p = plot(real.(x), final_axial, label=label)
+    display(p)
+    return p
+end
+
+function plot_final_density!(p, u, sim::Sim{3, CuArray{ComplexF64}}, axis; info=false, doifft=true, label="initial")
+    @unpack t, X = sim; x = Array(X[axis])
+    ax_list = (1, 2, 3)
+    ax_list= filter(x->x!=axis, ax_list)
+    final = u[end]
+    doifft ? final = xspace(final, sim) : nothing
+    info && @info "final norm" ns(final, sim)
+    final_axial = Array(sum(abs2.(final), dims=ax_list))[1,1,:]
+    plot!(p, real.(x), final_axial, label=label)
     display(p)
     return p
 end
