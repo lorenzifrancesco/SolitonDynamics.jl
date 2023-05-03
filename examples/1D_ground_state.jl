@@ -51,7 +51,7 @@ tf = Inf
 analytical_gs = zeros(N)
 @. analytical_gs = sqrt(g_param/2) * 2/(exp(g_param*x) + exp(-x*g_param))
 
-psi_0 .= exp.(-(x/1).^2)
+psi_0 .= exp.(-(x/10).^2)
 psi_0 = psi_0 / sqrt(ns(psi_0, sim))
 initial_state .= psi_0
 

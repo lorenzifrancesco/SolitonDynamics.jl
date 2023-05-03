@@ -51,12 +51,10 @@ function propagate_manual!(psi, sim::Sim{1, Array{ComplexF64}}, t; info=false)
    @unpack ksquared, iswitch, dV, Vol,mu,gamma,dt,sigma2, g = sim
    psi_i = copy(psi) 
    nlin_manual!(psi,sim,t)
-   @. psi = exp(dt * (1.0 - im*gamma)*(-im*(1/2*ksquared - mu)))*psi
+   @. psi = exp(dt * iswitch * (1.0 - im*gamma)*(-im*(1/2*ksquared - mu)))*psi
    if iswitch == -im
       norm_diff = nsk(psi - psi_i, sim)/dt
       psi .= psi / sqrt(nsk(psi, sim))
-      info && @info sigma2.(xspace(psi, sim))
-      info && @info g
       return norm_diff
    else
       return nothing
