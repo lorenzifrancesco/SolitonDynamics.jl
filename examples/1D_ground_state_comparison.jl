@@ -14,6 +14,10 @@ gr()
 GR.usecolorscheme(1)
 include("plot_axial_evolution.jl")
 save_path = "results/"
+
+gamma_param = 0.67
+use_precomputed = false
+maxiters_1d = 1000
 # =========================================================
 ## 1D-GPE 
 
@@ -30,47 +34,64 @@ solver = SplitStep
 time_steps = 0
 
 # interaction parameter
-g_param = 0.0
-use_precomputed = false
-# ============
-maxiters = 100000
-
+g_param = gamma_param
+maxiters = maxiters_1d
 g = - 2 * g_param
 
 n = 100
 as = g_param / n
 abstol = 1e-6
-
 dt = 0.022
-
 x = X[1]
 k = K[1]
 dV= volume_element(L, N)
-
 flags = FFTW.EXHAUSTIVE
-
 width = 7
 tf = Inf
 # SPR condensate bright soliton t in units of omega_perp^-1
 analytical_gs = zeros(N)
 @. analytical_gs = sqrt(g_param/2) * 2/(exp(g_param*x) + exp(-x*g_param))
-
 psi_0 .= exp.(-(x/10).^2)
 psi_0 = psi_0 / sqrt(ns(psi_0, sim_gpe_1d))
 initial_state .= psi_0
-
 kspace!(psi_0, sim_gpe_1d)
 #@. V0 = 1/2*0.01*x^2
-
 @pack_Sim! sim_gpe_1d
 
 # =========================================================
-## NPSE 
+## NPSE (unable to copy)
+L = (40.0,)
+N = (1024,)
+sim_npse = Sim{length(L), Array{Complex{Float64}}}(L=L, N=N)
+initial_state = zeros(N[1])
 
-sim_npse = sim_gpe_1d
 @unpack_Sim sim_npse
+iswitch = -im
 equation = NPSE
-@info "gamma: " g_param
+manual = true
+solver = SplitStep
+time_steps = 0
+
+# interaction parameter
+g_param = gamma_param
+maxiters = maxiters_1d
+g = - 2 * g_param
+
+n = 100
+as = g_param / n
+abstol = 1e-6
+dt = 0.022
+x = X[1]
+k = K[1]
+dV= volume_element(L, N)
+flags = FFTW.EXHAUSTIVE
+width = 7
+tf = Inf
+psi_0 .= exp.(-(x/10).^2)
+psi_0 = psi_0 / sqrt(ns(psi_0, sim_gpe_1d))
+initial_state .= psi_0
+kspace!(psi_0, sim_gpe_1d)
+#@. V0 = 1/2*0.01*x^2@info "gamma: " g_param
 if g_param > 2/3
     @warn "we should expect NPSE collapse"
 end
@@ -123,6 +144,7 @@ if isfile(join([save_path, "gpe_1d.jld2"])) && use_precomputed
     @info "\t using precomputed solution gpe_1d.jld2" 
     JLD2.@load join([save_path, "gpe_1d.jld2"]) gpe_1d
 else
+    @info sim_npse.equation == NPSE
     sol = runsim(sim_gpe_1d; info=false)
     gpe_1d = sol.u
     JLD2.@save join([save_path, "gpe_1d.jld2"]) gpe_1d
@@ -133,6 +155,7 @@ if isfile(join([save_path, "npse.jld2"])) && use_precomputed
     @info "\t using precomputed solution npse.jld2" 
     JLD2.@load join([save_path, "npse.jld2"]) npse
 else
+    @info sim_npse.equation == NPSE
     sol = runsim(sim_npse; info=false)
     npse = sol.u
     JLD2.@save join([save_path, "npse.jld2"]) npse
