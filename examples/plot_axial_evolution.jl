@@ -42,22 +42,22 @@ function plot_axial_heatmap!(p, u, time_axis, sim::Sim{3, CuArray{ComplexF64}}, 
     return ht
 end
 
-function plot_final_density(u, sim::Sim{1, Array{ComplexF64}}; info=false, doifft=true, label="initial")
+function plot_final_density(u, sim::Sim{1, Array{ComplexF64}}; info=false, doifft=true, label="initial", lw=1, ls=:solid, color=:black)
     @unpack t, X = sim; x = Array(X[1])
     tmp = u[end]
     doifft ? final = xspace(tmp, sim) : nothing
     info && @info "final norm" ns(final, sim)
-    p = plot(real.(x), abs2.(final), label=label)
+    p = plot(real.(x), abs2.(final), label=label, linewidth=lw, linestyle=ls, color=color)
     display(p)
     return p
 end
 
-function plot_final_density!(p, u, sim::Sim{1, Array{ComplexF64}}; info=false, doifft=true, label="initial")
+function plot_final_density!(p, u, sim::Sim{1, Array{ComplexF64}}; info=false, doifft=true, label="initial", lw=1, ls=:solid, color=:black)
     @unpack t, X = sim; x = Array(X[1])
     tmp = u[end]
     doifft ? final = xspace(tmp, sim) : final = tmp
     info && @info "final norm" ns(final, sim)
-    plot!(p, real.(x), abs2.(final), label=label)
+    plot!(p, real.(x), abs2.(final), label=label, linewidth=lw, linestyle=ls, color=color)
     display(p)
     return p
 end
@@ -66,10 +66,11 @@ function plot_final_density(u, sim::Sim{3, CuArray{ComplexF64}}, axis; info=fals
     @unpack t, X = sim; x = Array(X[axis])
     ax_list = (1, 2, 3)
     ax_list= filter(x->x!=axis, ax_list)
+    info && @info size(u)
     final = u[end]
     doifft ? final = xspace(final, sim) : nothing
     info && @info "final norm" ns(final, sim)
-    final_axial = Array(sum(abs2.(final), dims=ax_list))[1,1,:]
+    final_axial = Array(sum(abs2.(final), dims=ax_list))[:,1,1]
     p = plot(real.(x), final_axial, label=label)
     display(p)
     return p
@@ -82,6 +83,7 @@ function plot_final_density!(p, u, sim::Sim{3, CuArray{ComplexF64}}, axis; info=
     final = u[end]
     doifft ? final = xspace(final, sim) : nothing
     info && @info "final norm" ns(final, sim)
+    @warn "dV missing?"
     final_axial = Array(sum(abs2.(final), dims=ax_list))[1,1,:]
     plot!(p, real.(x), final_axial, label=label)
     display(p)

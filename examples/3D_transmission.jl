@@ -9,6 +9,8 @@ import Makie, GLMakie
 include("plot_isosurfaces.jl")
 include("plot_axial_evolution.jl")
 
+use_precomputed = false
+
 # =================== simulation settings
 L = (40.0,40.0,40.0)
 N = (128,128,128)
@@ -61,8 +63,16 @@ V0 = CuArray(tmp)
 
 
 # ===================== simulation
-sol = runsim(sim; info=false)
-u = sol.u
+@info "computing GPE_3D" 
+if isfile(join([save_path, "3d_tran.jld2"])) && use_precomputed
+    @info "\t using precomputed solution 3d_tran.jld2" 
+    JLD2.@load join([save_path, "3d_tran.jld2"]) gpe_1d
+else
+    sol = runsim(sim; info=false)
+    u = sol.u
+    JLD2.@save join([save_path, "3d_tran.jld2"]) u
+end
+
 # =================== plotting and collect 
 #plot_final_density(u, psi_0, sim, 3; info=true)
 plot_axial_heatmap(u, sol.t, sim, 3)
