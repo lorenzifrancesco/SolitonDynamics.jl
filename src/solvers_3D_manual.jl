@@ -5,7 +5,7 @@
 function nlin_manual!(psi,sim::Sim{3, CuArray{ComplexF64}},t)
    @unpack ksquared,g,X,V0,dV,Vol,mu,equation,sigma2,dt,iswitch = sim; x = X[1]; y = X[1]; z = X[1]
    xspace!(psi,sim)
-   @. psi = exp(dt * -im*iswitch* (V0 + V(x,y,z,t) + 2*pi*g*abs2(psi))) * psi
+   @. psi = exp(dt * -im*iswitch* (V0 + V(x,y,z,t) + g*abs2(psi))) * psi
    kspace!(psi,sim)
    return nothing
 end
