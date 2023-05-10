@@ -77,7 +77,7 @@ end
 
 # =================== plotting and collect 
 plot_final_density([u], sim, 1; info=true, label="final")
-@info nsk(u, sim)
+
 s2 = estimate_sigma2(u, sim)
 # q = plot(sim.X[1] |> real, s2, label="bella zio")
 # display(q)
