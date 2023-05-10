@@ -30,7 +30,7 @@ end
 function plot_final_density(u, sim::Sim{1, Array{ComplexF64}}; info=false, doifft=true, label="initial", lw=1, ls=:solid, color=:black)
     @unpack t, X = sim; x = Array(X[1])
     tmp = u[end]
-    doifft ? final = xspace(tmp, sim) : nothing
+    doifft ? final = xspace(tmp, sim) : final = tmp
     info && @info "final norm" ns(final, sim)
     p = plot(real.(x), abs2.(final), label=label, linewidth=lw, linestyle=ls, color=color)
     display(p)

@@ -14,9 +14,9 @@ GR.usecolorscheme(1)
 include("plot_axial_evolution.jl")
 save_path = "results/"
 
-gamma_param = 0.6
+gamma_param = 0.2
 use_precomputed = false
-maxiters_1d = 1000
+maxiters_1d = 2000
 N_axial_steps = 512
 # =========================================================
 ## 1D-GPE 
@@ -174,6 +174,8 @@ V0 = CuArray(tmp)
 @pack_Sim! sim_gpe_3d
 # =========================================================
 Plots.CURRENT_PLOT.nullableplot = nothing
+p = plot_final_density([analytical_gs], sim_gpe_1d; label="analytical", color=:green, doifft=false, ls=:dash)
+
 
 @info "computing GPE_1D" 
 if isfile(join([save_path, "gpe_1d.jld2"])) && use_precomputed
@@ -184,7 +186,7 @@ else
     gpe_1d = sol.u
     JLD2.@save join([save_path, "gpe_1d.jld2"]) gpe_1d
 end
-p = plot_final_density([gpe_1d], sim_gpe_1d; label="GPE_1D", color=:red)
+plot_final_density!(p, [gpe_1d], sim_gpe_1d; label="GPE_1D", color=:red)
 
 
 @info "computing NPSE" 
@@ -199,36 +201,38 @@ end
 plot_final_density!(p, [npse], sim_npse; label="NPSE", ls=:dash, color=:green)
 
 
-@info "computing NPSE_plus" 
-if isfile(join([save_path, "npse_plus.jld2"])) && use_precomputed
-    @info "\t using precomputed solution npse_plus.jld2" 
-    JLD2.@load join([save_path, "npse_plus.jld2"]) npse_plus
-else
-    sol = runsim(sim_npse_plus; info=false)
-    npse_plus = sol.u
-    JLD2.@save join([save_path, "npse_plus.jld2"]) npse_plus
-end
-plot_final_density!(p, [npse_plus], sim_npse_plus; label="NPSE_der", ls=:dash, color=:blue)
-
-# @info "computing GPE_3D" 
-# if isfile(join([save_path, "gpe_3d.jld2"])) && use_precomputed
-#     @info "\t using precomputed solution gpe_3d.jld2" 
-#     JLD2.@load join([save_path, "gpe_3d.jld2"]) gpe_3d
+# @info "computing NPSE_plus" 
+# if isfile(join([save_path, "npse_plus.jld2"])) && use_precomputed
+#     @info "\t using precomputed solution npse_plus.jld2" 
+#     JLD2.@load join([save_path, "npse_plus.jld2"]) npse_plus
 # else
-#     sol = runsim(sim_gpe_3d; info=false)
-#     @info size(gpe_3d)
-#     gpe_3d = sol.u
-#     JLD2.@save join([save_path, "gpe_3d.jld2"]) gpe_3d
+#     sol = runsim(sim_npse_plus; info=false)
+#     npse_plus = sol.u
+#     JLD2.@save join([save_path, "npse_plus.jld2"]) npse_plus
 # end
+# plot_final_density!(p, [npse_plus], sim_npse_plus; label="NPSE_der", ls=:dash, color=:blue)
+
+@info "computing GPE_3D" 
+if isfile(join([save_path, "gpe_3d.jld2"])) && use_precomputed
+    @info "\t using precomputed solution gpe_3d.jld2" 
+    JLD2.@load join([save_path, "gpe_3d.jld2"]) gpe_3d
+else
+    sol = runsim(sim_gpe_3d; info=false)
+    @info size(gpe_3d)
+    gpe_3d = sol.u
+    JLD2.@save join([save_path, "gpe_3d.jld2"]) gpe_3d
+end
 
 # linear interpolation
-# gpe_3d = sim_gpe_3d.psi_0
-# x_axis = sim_npse.X[1] |> real
-# x_axis_3d = sim_gpe_3d.X[1] |> real
-# dx = sim_gpe_3d.X[1][2]-sim_gpe_3d.X[1][1]
-# final_axial = Array(sum(abs2.(xspace(gpe_3d, sim_gpe_3d)), dims=(2, 3)))[:, 1, 1] * dx^2 |> real
-# x_3d_range = range(-sim_gpe_3d.L[1]/2, sim_gpe_3d.L[1]/2, length(sim_gpe_3d.X[1]))
-# solution_3d = CubicSplineInterpolation(x_3d_range, final_axial, extrapolation_bc = Line())
-# plot!(p, x_axis, final_axial, label="GPE_3D", color=:blue, linestyle=:dot) 
+gpe_3d = sim_gpe_3d.psi_0
+x_axis = sim_npse.X[1] |> real
+x_axis_3d = sim_gpe_3d.X[1] |> real
+dx = sim_gpe_3d.X[1][2]-sim_gpe_3d.X[1][1]
+final_axial = Array(sum(abs2.(xspace(gpe_3d, sim_gpe_3d)), dims=(2, 3)))[:, 1, 1] * sim_gpe_3d.dV / dx |> real
+x_3d_range = range(-sim_gpe_3d.L[1]/2, sim_gpe_3d.L[1]/2, length(sim_gpe_3d.X[1])) 
+solution_3d = LinearInterpolation(x_3d_range, final_axial, extrapolation_bc = Line())
+plot!(p, x_axis, solution_3d(x_axis), label="GPE_3D", color=:black, linestyle=:dot) 
 
+q = plot(x_axis_3d, final_axial, label="GPE_3D", color=:black, linestyle=:dot) 
+display(q)
 display(p)
