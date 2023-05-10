@@ -14,9 +14,10 @@ function manual_run(sim; info=false)
          abstol_diff = abstol
          cnt = 0 
          info && print("\n")
+         @info maxiters
          while norm_diff > abstol_diff && cnt < maxiters
             try
-               norm_diff = ground_state_evolve!(psi_0,sim,dt; info=info)
+               norm_diff = propagate_manual!(psi_0,sim,dt; info=info)
                info && print("\r Interation number: ", cnt, " - norm diff: ", norm_diff)
             catch err
                if isa(err, NpseCollapse)
