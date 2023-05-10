@@ -146,7 +146,7 @@ equation = GPE_3D
 manual = true
 solver = SplitStep
 
-g = - g_param * (4*pi) *2
+g = - g_param * (4*pi)
 
 abstol = 1e-6
 maxiters = 1000

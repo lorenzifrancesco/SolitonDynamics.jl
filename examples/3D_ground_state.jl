@@ -10,7 +10,7 @@ import JLD2
 include("plot_axial_evolution.jl")
 include("plot_isosurfaces.jl")
 save_path = "results/"
-use_precomputed = false
+use_precomputed = true
 # ================ plotting functions
 
 gr()
@@ -18,7 +18,7 @@ GR.usecolorscheme(1)
 
 # =================== simulation settings
 L = (40.0,20.0,20.0)
-N = (512, 64, 64)
+N = (512, 128, 128)
 sim = Sim{length(L), CuArray{Complex{Float64}}}(L=L, N=N)
 
 # =================== physical parameters
@@ -26,7 +26,7 @@ sim = Sim{length(L), CuArray{Complex{Float64}}}(L=L, N=N)
 
 # "collapse is visible "
 
-g_param = 0.4
+g_param = 0.8
 g = - g_param * 4 * pi
 
 gamma = 0.0
@@ -49,12 +49,12 @@ tf = 2.0
 
 Nt = 30
 t = LinRange(ti,tf,Nt)
-maxiters = 0
+maxiters = 500
 abstol = 1e-6
 dt = 0.02
 
 
-tmp = [exp(-((x-x0)^2+y^2+z^2)/2) * exp(-im*x*vv) for x in x, y in y, z in z]
+tmp = [exp(-((x-x0)^2+y^2+z^2)/10) * exp(-im*x*vv) for x in x, y in y, z in z]
 psi_0 = CuArray(tmp)
 
 psi_0 .= psi_0 / sqrt(sum(abs2.(psi_0) * dV))
@@ -84,7 +84,8 @@ plot_final_density([u], sim, 1; info=true, label="final")
 # transverse view
 aa = Array(abs2.(xspace(initial_state, sim)))
 axial_density = sum(aa, dims=(2, 3))[:, 1, 1] * sim.dV
-q = heatmap(aa[190, :, :] / axial_density[190])
+dc = 160
+q = heatmap(aa[dc, :, :])
 display(q)
 
 # top view
@@ -95,8 +96,13 @@ display(q)
 # s2 = estimate_sigma2(u, sim)
 # @info "estimated sigma2" s2
 # @info "minimum   sigma2" minimum(s2)
+# k = plot(sim.X[1] |> real, s2)
+# display(k)
+
+(rax, radial_density) = project_radial(psi, sim)
+plot(rax, radial_density[200])
 # q = plot(sim.X[1] |> real, s2, label="bella zio")
 # display(q)
 #@info "Building animation..."
 #isosurface_animation(u, length(u), sim; framerate=5)
-@info "Completed."
+@info "Completed."false
