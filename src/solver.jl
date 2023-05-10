@@ -6,8 +6,9 @@ include("solvers_3D_manual.jl")
 
 function manual_run(sim; info=false)
    @unpack psi_0, dV, dt, ti, tf, t, solver, iswitch, abstol, reltol, N,Nt, V0, maxiters, time_steps = sim
-   info && @info "Running on manual mode: time_steps =  " time_steps
    if iswitch == -im # select solver and run manual convergence routine 
+      info && @info "Running on manual GS mode: maxiters =  " maxiters
+      # in manual GS mode the maximum number of steps is specified by maxiters
       if solver == SplitStep
          #xspace!(psi_0, sim)
          norm_diff = 1
@@ -32,7 +33,6 @@ function manual_run(sim; info=false)
          info && @info "Computation ended after iterations" cnt
          #kspace!(psi_0, sim)
          sol = CustomSolution(u=psi_0, t=t)
-         info && @info sol
       else # nonspectral methods
          xspace!(psi_0, sim)
          solvers = [ground_state_nlin!, cn_ground_state!, pc_ground_state!, be_ground_state!]
@@ -58,8 +58,8 @@ function manual_run(sim; info=false)
       end
       return sol
    else
+      info && @info "Running on manual mode: time_steps =  " time_steps
       # in manual run mode the number of steps is specified by time_steps
-      
       time = 0.0
       if length(N) == 1
          collection = Array{ComplexF64, 2}(undef, (length(psi_0), Nt))
