@@ -26,6 +26,7 @@ global time_of_sigma = Vector{Float64}()
 
 include("methods.jl")
 include("types.jl")
+include("utils.jl")
 include("arrays.jl")
 include("solver.jl")
 include("normalization.jl")
