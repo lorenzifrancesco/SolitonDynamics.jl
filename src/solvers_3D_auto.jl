@@ -8,7 +8,7 @@ function nlin!(dpsi,psi,sim::Sim{3, CuArray{ComplexF64}},t)
       mu_im = chempotk(psi, sim) # wainting for a more efficient implementation
    end
    xspace!(dpsi,sim)
-   @. dpsi *= -im*iswitch* (V0 + V(x,y,z,t) + 2*pi*g*abs2(dpsi)) + mu_im
+   @. dpsi *= -im*iswitch* (V0 + V(x,y,z,t) + g*abs2(dpsi)) + mu_im
    kspace!(dpsi,sim)
    return nothing
 end
