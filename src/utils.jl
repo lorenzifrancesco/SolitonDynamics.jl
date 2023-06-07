@@ -19,7 +19,7 @@ function estimate_sigma2(psi_k,sim::Sim{3, CuArray{ComplexF64}})
                     tmp[x, y, z] = aa[x, y, z] / axial_density[x] * sim.dV
                     @warn "found small prob"
                 else
-                    @time tmp[x, y, z] = sim.X[2][y]^2 * sim.X[3][z]^2 * aa[x, y, z] / axial_density[x] * sim.dV
+                    tmp[x, y, z] = sim.X[2][y]^2 * sim.X[3][z]^2 * aa[x, y, z] / axial_density[x] * sim.dV
                 end
             end
         end
