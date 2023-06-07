@@ -19,7 +19,7 @@ GR.usecolorscheme(1)
 
 # =================== simulation settings
 L = (40.0,40.0,40.0)
-N = (512, 128, 128)
+N = (128, 128, 128)
 sim = Sim{length(L), CuArray{Complex{Float64}}}(L=L, N=N)
 
 # =================== physical parameters
@@ -27,7 +27,7 @@ sim = Sim{length(L), CuArray{Complex{Float64}}}(L=L, N=N)
 
 # "collapse is visible "
 
-g_param = 0.5
+g_param = 0.5 * 0
 g = - g_param * 4 * pi
 
 gamma = 0.0
@@ -39,6 +39,7 @@ manual = true
 iswitch = -im
 reltol = 1e-5
 abstol = 1e-6
+dt = 1
 x0 = 0.0
 vv = 0.0
 
@@ -51,13 +52,16 @@ tf = 2.0
 
 Nt = 30
 t = LinRange(ti,tf,Nt)
-maxiters = 1000
+maxiters = 30000
 
-tmp = [exp(-((x-x0)^2+y^2+z^2)/10) * exp(-im*x*vv) for x in x, y in y, z in z]
+tmp = [exp(-((x-x0)^2+y^2+z^2)/20) * exp(-im*x*vv) for x in x, y in y, z in z]
 psi_0 = CuArray(tmp)
 
 psi_0 .= psi_0 / sqrt(sum(abs2.(psi_0) * dV))
-initial_state = psi_0
+initial_state = zeros(size(psi_0))
+copy!(initial_state, psi_0)
+initial_state = CuArray(initial_state)
+
 kspace!(psi_0, sim)
 alg = BS3()
 
@@ -74,16 +78,14 @@ if isfile(join([save_path, "3d_gs.jld2"])) && use_precomputed
 else
     sol = runsim(sim; info=true)
     u = sol.u
-    JLD2.@save join([save_path, "3d_gs.jld2"]) u
+    # JLD2.@save join([save_path, "3d_gs.jld2"]) u
 end
 
 # =================== plotting and collect 
 p = plot_final_density([u], sim, 1; info=true, label="final")
-q = plot_final_density([initial_state], sim, 1; info=true, label="initial")
+q = plot_final_density([initial_state], sim, 1; info=true, doifft=false, label="initial")
 
 #s2 = estimate_sigma2(u, sim)
-# q = plot(sim.X[1] |> real, s2, label="bella zio")
-# display(q)
 #@info "Building animation..."
 #isosurface_animation(u, length(u), sim; framerate=5)
 @info "Completed."
