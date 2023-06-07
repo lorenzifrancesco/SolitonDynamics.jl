@@ -189,7 +189,7 @@ if isfile(join([save_path, "gpe_1d.jld2"])) && use_precomputed
 else
     sol = runsim(sim_gpe_1d; info=false)
     gpe_1d = sol.u
-    JLD2.@save join([save_path, "gpe_1d.jld2"]) gpe_1d
+    # JLD2.@save join([save_path, "gpe_1d.jld2"]) gpe_1d
 end
 plot_final_density!(p, [gpe_1d], sim_gpe_1d; label="GPE_1D", color=:blue, ls=:dash)
 
@@ -201,7 +201,7 @@ if isfile(join([save_path, "npse.jld2"])) && use_precomputed
 else
     sol = runsim(sim_npse; info=true)
     npse = sol.u
-    JLD2.@save join([save_path, "npse.jld2"]) npse
+    # JLD2.@save join([save_path, "npse.jld2"]) npse
 end
 plot_final_density!(p, [npse], sim_npse; label="NPSE", color=:blue)
 
@@ -226,7 +226,7 @@ else
     sol = runsim(sim_gpe_3d; info=true)
     @info size(gpe_3d)
     gpe_3d = sol.u
-    JLD2.@save join([save_path, "gpe_3d.jld2"]) gpe_3d
+    # JLD2.@save join([save_path, "gpe_3d.jld2"]) gpe_3d
 end
 
 # linear interpolation
