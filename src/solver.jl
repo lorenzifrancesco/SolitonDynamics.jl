@@ -17,7 +17,7 @@ function manual_run(sim; info=false)
          info && print("\n")
 
          info && @info maxiters
-         decay = 0.0005
+         decay = 0.0 
          info && @info "setting exp decay rate to" decay 
          while norm_diff > abstol_diff && cnt < maxiters
             try
@@ -179,7 +179,6 @@ Main solution routine
 """
 function runsim(sim; info=false)
    @unpack psi_0, dV, dt, ti, tf, t, solver, iswitch, abstol, reltol, N,Nt, V0, maxiters, time_steps, manual = sim
-   
    function savefunction(psi...)
       isdir(path) || mkpath(path)
       i = findfirst(x->x== psi[2],sim.t)
