@@ -15,6 +15,7 @@ function manual_run(sim; info=false)
          abstol_diff = abstol
          cnt = 0 
          info && print("\n")
+
          info && @info maxiters
          decay = 0.0005
          info && @info "setting exp decay rate to" decay 
@@ -197,9 +198,9 @@ function runsim(sim; info=false)
 
    info && @info ns(psi_0, sim)
    if manual == true
-      sol = manual_run(sim; info)
+      sol = manual_run(sim; info=info)
    else 
-      sol = auto_run(sim; info)
+      sol = auto_run(sim; info=info)
    end
    return sol
 end
