@@ -1,7 +1,3 @@
-using Pkg
-Pkg.activate(".")
-
-using CondensateDynamics, OrdinaryDiffEq, LSODA
 import JLD2
 import CondensateDynamics.V
 using CUDA
