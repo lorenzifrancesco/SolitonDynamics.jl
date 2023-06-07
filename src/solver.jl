@@ -15,10 +15,13 @@ function manual_run(sim; info=false)
          abstol_diff = abstol
          cnt = 0 
          info && print("\n")
-         @info maxiters
+         info && @info maxiters
+         decay = 0.0005
+         info && @info "setting exp decay rate to" decay 
          while norm_diff > abstol_diff && cnt < maxiters
             try
                norm_diff = propagate_manual!(psi_0,sim,dt; info=info)
+               sim.dt *= (1-decay)
                info && print("\r Interation number: ", cnt, " - norm diff: ", norm_diff)
             catch err
                if isa(err, NpseCollapse)
