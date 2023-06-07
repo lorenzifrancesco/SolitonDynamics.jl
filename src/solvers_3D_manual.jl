@@ -17,7 +17,7 @@ function propagate_manual!(psi, sim::Sim{3, CuArray{ComplexF64}}, t; info=false)
    psi_i = copy(psi) 
    @. psi = exp(dt * (1.0 - im*gamma)*(-im*(1/2*ksquared - mu))) * psi
    if iswitch == -im
-      norm_diff = nsk(psi - psi_i, sim)/dt
+      norm_diff = (nsk(abs.(psi_i) - abs.(psi), sim))/dt
       psi .= psi / sqrt(nsk(psi, sim))
       return norm_diff
    else
