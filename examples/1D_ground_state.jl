@@ -1,7 +1,3 @@
-using Pkg
-Pkg.activate(".")
-
-using LaTeXStrings, Plots
 import GR
 using CondensateDynamics
 using OrdinaryDiffEq

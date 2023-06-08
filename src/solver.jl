@@ -15,10 +15,14 @@ function manual_run(sim; info=false)
          abstol_diff = abstol
          cnt = 0 
          info && print("\n")
-         @info maxiters
+
+         info && @info maxiters
+         decay = 1e-10
+         info && @info "setting exp decay rate to" decay 
          while norm_diff > abstol_diff && cnt < maxiters
             try
                norm_diff = propagate_manual!(psi_0,sim,dt; info=info)
+               sim.dt *= (1-decay)
                info && print("\r Interation number: ", cnt, " - norm diff: ", norm_diff)
             catch err
                if isa(err, NpseCollapse)
@@ -175,7 +179,6 @@ Main solution routine
 """
 function runsim(sim; info=false)
    @unpack psi_0, dV, dt, ti, tf, t, solver, iswitch, abstol, reltol, N,Nt, V0, maxiters, time_steps, manual = sim
-   
    function savefunction(psi...)
       isdir(path) || mkpath(path)
       i = findfirst(x->x== psi[2],sim.t)
@@ -194,9 +197,9 @@ function runsim(sim; info=false)
 
    info && @info ns(psi_0, sim)
    if manual == true
-      sol = manual_run(sim; info)
+      sol = manual_run(sim; info=info)
    else 
-      sol = auto_run(sim; info)
+      sol = auto_run(sim; info=info)
    end
    return sol
 end

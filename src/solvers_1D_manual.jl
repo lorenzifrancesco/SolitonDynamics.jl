@@ -53,7 +53,7 @@ function propagate_manual!(psi, sim::Sim{1, Array{ComplexF64}}, t; info=false)
    nlin_manual!(psi,sim,t)
    @. psi = exp(dt * iswitch * (1.0 - im*gamma)*(-im*(1/2*ksquared - mu)))*psi
    if iswitch == -im
-      norm_diff = nsk(psi - psi_i, sim)/dt
+      norm_diff = nsk(abs.(psi) - abs.(psi_i), sim)/dt
       psi .= psi / sqrt(nsk(psi, sim))
       return norm_diff
    else
