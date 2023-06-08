@@ -84,7 +84,7 @@ plot_final_density([u], sim, 1; info=true, label="final")
 # transverse view
 aa = Array(abs2.(xspace(initial_state, sim)))
 axial_density = sum(aa, dims=(2, 3))[:, 1, 1] * sim.dV
-dc = 160
+dc = 256
 q = heatmap(aa[dc, :, :])
 display(q)
 
@@ -93,16 +93,23 @@ display(q)
 # qt = heatmap(aa[:, :, 32])
 # display(qt)
 
-# s2 = estimate_sigma2(u, sim)
-# @info "estimated sigma2" s2
-# @info "minimum   sigma2" minimum(s2)
-# k = plot(sim.X[1] |> real, s2)
-# display(k)
+s2 = estimate_sigma2(u, sim)
+@info "estimated sigma2" s2
+@info "minimum   sigma2" minimum(s2)
+k = plot(sim.X[1] |> real, s2)
+display(k)
 
-(rax, radial_density) = project_radial(psi, sim)
-plot(rax, radial_density[200])
+gaussian = [exp(-(x^2+y^2)/s2[256]) for x in x for y in y]
+gaussian /= sum(abs2.(gaussian))
+(rax, radial_density) = project_radial(u, sim)
+m = plot(rax, radial_density[256, :])
+
+m = heatmap(gaussian)
+display(m)
+# superimpose with gaussian
+
 # q = plot(sim.X[1] |> real, s2, label="bella zio")
 # display(q)
 #@info "Building animation..."
 #isosurface_animation(u, length(u), sim; framerate=5)
-@info "Completed."false
+@info "Completed."

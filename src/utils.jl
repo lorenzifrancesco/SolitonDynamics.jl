@@ -33,23 +33,24 @@ function project_radial(psi_k,sim::Sim{3, CuArray{ComplexF64}})
     # MSE estimator
     psi = xspace(psi_k, sim)
     aa = Array(abs2.(psi))
-    x = sim.X[1]
-    y = sim.X[2]
-    z = sim.X[3]
-    rmax = sim.X[2] * sqrt(2)
-    r_steps = 256
+    x = sim.X[1] |> real
+    y = sim.X[2] |> real
+    z = sim.X[3] |> real
+    rmax = sim.X[2][end] * sqrt(2) |> real
+    r_steps = 128
     r_axis = LinRange(0, rmax, r_steps) |> collect
     dr = rmax / r_steps
     radial_density = zeros((sim.N[1], r_steps)) # axis and radius
-    for (ix, x) in eunerate(x)
-        for (iy, y) in enumerate(y)
-            for (iz, z) in enumerate(z)
-                distance = sqrt(y^2 + z^2) 
-                ir = floor(r_steps * distance/rmax)
-                radial_density[ix, ir] += aa[ix, iy, iz] * dV
+    for (ix, xv) in enumerate(x)
+        for (iy, yv) in enumerate(y)
+            for (iz, zv) in enumerate(z)
+                distance = sqrt(yv^2 + zv^2)
+                ir = Int(round(r_steps * distance/rmax))
+                radial_density[ix, ir] += aa[ix, iy, iz] * sim.dV
             end
         end
     end
+    #radial_density[:, :] = aa[:, :, 64]
     radial_density .= radial_density / dr
     return r_axis, radial_density
 end
