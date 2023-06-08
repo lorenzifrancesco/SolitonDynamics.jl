@@ -14,14 +14,14 @@ GR.usecolorscheme(1)
 include("plot_axial_evolution.jl")
 save_path = "results/"
 
-gamma_param = 0.4
+gamma_param = 0.0
 use_precomputed = false
 maxiters_1d = 100000
 N_axial_steps = 512
 # =========================================================
 ## 1D-GPE 
 
-L = (40.0,)
+L = (20.0,)
 N = (N_axial_steps,)
 sim_gpe_1d = Sim{length(L), Array{Complex{Float64}}}(L=L, N=N)
 initial_state = zeros(N[1])
@@ -49,16 +49,18 @@ width = 7
 tf = Inf
 # SPR condensate bright soliton t in units of omega_perp^-1
 analytical_gs = zeros(N)
-@. analytical_gs = sqrt(g_param/2) * 2/(exp(g_param*x) + exp(-x*g_param))
+@. analytical_gs = exp.(-(x).^2/2)
+analytical_gs = analytical_gs / sqrt(ns(analytical_gs, sim_gpe_1d))
 psi_0 .= exp.(-(x/1e2).^2)
 psi_0 = psi_0 / sqrt(ns(psi_0, sim_gpe_1d))
+@. V0 =  1/2*x.^2
 initial_state .= psi_0
 kspace!(psi_0, sim_gpe_1d)
 @pack_Sim! sim_gpe_1d
 
 # =========================================================
 ## NPSE (unable to copy)
-L = (40.0,)
+L = (20.0,)
 N = (N_axial_steps,)
 sim_npse = Sim{length(L), Array{Complex{Float64}}}(L=L, N=N)
 initial_state = zeros(N[1])
@@ -87,6 +89,7 @@ tf = Inf
 psi_0 .= exp.(-(x/1e2).^2)
 psi_0 = psi_0 / sqrt(ns(psi_0, sim_gpe_1d))
 initial_state .= psi_0
+@. V0 =  1/2*x.^2
 kspace!(psi_0, sim_gpe_1d)
 if g_param > 2/3
     @warn "we should expect NPSE collapse"
@@ -96,7 +99,7 @@ sigma2 = init_sigma2(g)
 
 # =========================================================
 ## NPSE (unable to copy)
-L = (40.0,)
+L = (20.0,)
 N = (N_axial_steps,)
 sim_npse_plus = Sim{length(L), Array{Complex{Float64}}}(L=L, N=N)
 initial_state = zeros(N[1])
@@ -125,6 +128,7 @@ tf = Inf
 psi_0 .= exp.(-(x/1e2).^2)
 psi_0 = psi_0 / sqrt(ns(psi_0, sim_gpe_1d))
 initial_state .= psi_0
+@. V0 =  1/2*x.^2
 kspace!(psi_0, sim_gpe_1d)
 if g_param > 2/3
     @warn "we should expect NPSE collapse"
@@ -135,7 +139,7 @@ sigma2 = init_sigma2(g)
 # =========================================================
 ## 3D-GPE 
 
-L = (40.0,20.0,20.0)
+L = (20.0,20.0,20.0)
 N = (N_axial_steps, 64, 64)
 sim_gpe_3d = Sim{length(L), CuArray{Complex{Float64}}}(L=L, N=N)
 initial_state = zeros(N[1])
@@ -148,9 +152,9 @@ solver = SplitStep
 
 g = - g_param * (4*pi)
 
-abstol = 1e-6
-maxiters = 100000
-dt = 0.5
+abstol = 1e-60
+maxiters = 20000
+dt = 1.2
 
 x0 = 0.0
 vv = 0.0
@@ -168,7 +172,7 @@ psi_0 = CuArray(tmp)
 psi_0 .= psi_0 / sqrt(sum(abs2.(psi_0) * dV))
 
 kspace!(psi_0, sim_gpe_3d)
-tmp = [1/2*(y^2 + z^2) for x in x, y in y, z in z]
+tmp = [1/2*(x^2 + y^2 + z^2) for x in x, y in y, z in z]
 V0 = CuArray(tmp)
 
 @pack_Sim! sim_gpe_3d

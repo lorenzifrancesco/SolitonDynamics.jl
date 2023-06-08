@@ -37,9 +37,9 @@ equation = GPE_3D
 solver = SplitStep
 manual = true
 iswitch = -im
-reltol = 1e-5
-abstol = 1e-6
-dt = 1
+reltol = 1e-100
+abstol = 1e-100
+dt = 0.01
 x0 = 0.0
 vv = 0.0
 
@@ -52,9 +52,9 @@ tf = 2.0
 
 Nt = 30
 t = LinRange(ti,tf,Nt)
-maxiters = 30000
+maxiters = 1000
 
-tmp = [exp(-((x-x0)^2+y^2+z^2)/20) * exp(-im*x*vv) for x in x, y in y, z in z]
+tmp = [exp(-((x-x0)^2+y^2+z^2)/10000) * exp(-im*x*vv) for x in x, y in y, z in z]
 psi_0 = CuArray(tmp)
 
 psi_0 .= psi_0 / sqrt(sum(abs2.(psi_0) * dV))
