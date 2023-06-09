@@ -12,7 +12,7 @@ end
 
 function propagate_manual!(psi, sim::Sim{3, CuArray{ComplexF64}}, t; info=false)
    @unpack ksquared, iswitch, dV, Vol,mu,gamma,dt = sim
-   info && @info "dt = " dt 
+   # info && @info "dt = " dt 
    nlin_manual!(psi,sim,t; info=info)
    psi_i = copy(psi) 
    @. psi = exp(dt * (1.0 - im*gamma)*(-im*(1/2*ksquared - mu))) * psi

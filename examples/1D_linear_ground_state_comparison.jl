@@ -9,15 +9,15 @@ import FFTW
 import JLD2
 using Interpolations
 
-gr()
-GR.usecolorscheme(1)
+plotly()
+
 include("plot_axial_evolution.jl")
 save_path = "results/"
 
 gamma_param = 0.0
 use_precomputed = false
 maxiters_1d = 10000
-N_axial_steps = 512
+N_axial_steps = 128 
 # =========================================================
 ## 1D-GPE 
 
@@ -152,9 +152,9 @@ solver = SplitStep
 
 g = - g_param * (4*pi)
 
-abstol = 1e-60
-maxiters = 2000
-dt = 0.01
+abstol = 1e-36
+maxiters = 20000
+dt = 0.003
 
 x0 = 0.0
 vv = 0.0
@@ -179,7 +179,6 @@ V0 = CuArray(tmp)
 
 # @info sim_gpe_3d.g /4/pi
 # @info sim_gpe_1d.g /2
-
 
 # =========================================================
 Plots.CURRENT_PLOT.nullableplot = nothing
@@ -226,7 +225,7 @@ if isfile(join([save_path, "gpe_3d.jld2"])) && use_precomputed
     @info "\t using precomputed solution gpe_3d.jld2" 
     JLD2.@load join([save_path, "gpe_3d.jld2"]) gpe_3d
 else
-    sol = runsim(sim_gpe_3d; info=false)
+    sol = runsim(sim_gpe_3d; info=true)
     gpe_3d = sol.u
     @info size(gpe_3d)
     # JLD2.@save join([save_path, "gpe_3d.jld2"]) gpe_3d
