@@ -17,7 +17,7 @@ save_path = "results/"
 gamma_param = 0.0
 use_precomputed = false
 maxiters_1d = 10000
-N_axial_steps = 128 
+N_axial_steps = 512
 # =========================================================
 ## 1D-GPE 
 
@@ -40,7 +40,7 @@ g = - 2 * g_param
 n = 100
 as = g_param / n
 abstol = 1e-6
-dt = 0.022
+dt = 0.001
 x = X[1]
 k = K[1]
 dV= volume_element(L, N)
@@ -49,10 +49,12 @@ width = 7
 tf = Inf
 # SPR condensate bright soliton t in units of omega_perp^-1
 analytical_gs = zeros(N)
-@. analytical_gs = exp.(-(x).^2/2)
+@. analytical_gs = exp.(-x.^2/2)
 analytical_gs = analytical_gs / sqrt(ns(analytical_gs, sim_gpe_1d))
-psi_0 .= exp.(-(x/1e2).^2)
+
+psi_0 .= exp.(-x.^2/2)
 psi_0 = psi_0 / sqrt(ns(psi_0, sim_gpe_1d))
+
 @. V0 =  1/2*x.^2
 initial_state .= psi_0
 kspace!(psi_0, sim_gpe_1d)
@@ -140,7 +142,7 @@ sigma2 = init_sigma2(g)
 ## 3D-GPE 
 
 L = (20.0,20.0,20.0)
-N = (N_axial_steps, 64, 64)
+N = (N_axial_steps, 128, 128)
 sim_gpe_3d = Sim{length(L), CuArray{Complex{Float64}}}(L=L, N=N)
 initial_state = zeros(N[1])
 
@@ -153,7 +155,7 @@ solver = SplitStep
 g = - g_param * (4*pi)
 
 abstol = 1e-36
-maxiters = 20000
+maxiters = 500
 dt = 0.003
 
 x0 = 0.0
@@ -184,16 +186,16 @@ V0 = CuArray(tmp)
 Plots.CURRENT_PLOT.nullableplot = nothing
 p = plot_final_density([analytical_gs], sim_gpe_1d; label="analytical", color=:green, doifft=false, ls=:dash)
 
-# @info "computing GPE_1D" 
-# if isfile(join([save_path, "gpe_1d.jld2"])) && use_precomputed
-#     @info "\t using precomputed solution gpe_1d.jld2" 
-#     JLD2.@load join([save_path, "gpe_1d.jld2"]) gpe_1d
-# else
-#     sol = runsim(sim_gpe_1d; info=false)
-#     gpe_1d = sol.u
-#     # JLD2.@save join([save_path, "gpe_1d.jld2"]) gpe_1d
-# end
-# plot_final_density!(p, [gpe_1d], sim_gpe_1d; label="GPE_1D", color=:blue, ls=:dash)
+@info "computing GPE_1D" 
+if isfile(join([save_path, "gpe_1d.jld2"])) && use_precomputed
+    @info "\t using precomputed solution gpe_1d.jld2" 
+    JLD2.@load join([save_path, "gpe_1d.jld2"]) gpe_1d
+else
+    sol = runsim(sim_gpe_1d; info=false)
+    gpe_1d = sol.u
+    # JLD2.@save join([save_path, "gpe_1d.jld2"]) gpe_1d
+end
+plot_final_density!(p, [gpe_1d], sim_gpe_1d; label="GPE_1D", color=:blue, ls=:dash)
 
 
 # @info "computing NPSE" 
