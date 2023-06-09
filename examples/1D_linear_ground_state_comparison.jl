@@ -16,7 +16,7 @@ save_path = "results/"
 
 gamma_param = 0.0
 use_precomputed = false
-maxiters_1d = 100000
+maxiters_1d = 10000
 N_axial_steps = 512
 # =========================================================
 ## 1D-GPE 
@@ -153,8 +153,8 @@ solver = SplitStep
 g = - g_param * (4*pi)
 
 abstol = 1e-60
-maxiters = 20000
-dt = 1.2
+maxiters = 2000
+dt = 0.01
 
 x0 = 0.0
 vv = 0.0
@@ -162,7 +162,7 @@ vv = 0.0
 x = Array(X[1])
 y = Array(X[2])
 z = Array(X[3])
-dV= volume_element(L, N)
+dV= volume_element(L, N)    
 
 flags = FFTW.EXHAUSTIVE
 
@@ -172,7 +172,7 @@ psi_0 = CuArray(tmp)
 psi_0 .= psi_0 / sqrt(sum(abs2.(psi_0) * dV))
 
 kspace!(psi_0, sim_gpe_3d)
-tmp = [1/2*(x^2 + y^2 + z^2) for x in x, y in y, z in z]
+tmp = [1/2*(2*x^2 + y^2 + z^2) for x in x, y in y, z in z]
 V0 = CuArray(tmp)
 
 @pack_Sim! sim_gpe_3d
@@ -185,29 +185,28 @@ V0 = CuArray(tmp)
 Plots.CURRENT_PLOT.nullableplot = nothing
 p = plot_final_density([analytical_gs], sim_gpe_1d; label="analytical", color=:green, doifft=false, ls=:dash)
 
+# @info "computing GPE_1D" 
+# if isfile(join([save_path, "gpe_1d.jld2"])) && use_precomputed
+#     @info "\t using precomputed solution gpe_1d.jld2" 
+#     JLD2.@load join([save_path, "gpe_1d.jld2"]) gpe_1d
+# else
+#     sol = runsim(sim_gpe_1d; info=false)
+#     gpe_1d = sol.u
+#     # JLD2.@save join([save_path, "gpe_1d.jld2"]) gpe_1d
+# end
+# plot_final_density!(p, [gpe_1d], sim_gpe_1d; label="GPE_1D", color=:blue, ls=:dash)
 
-@info "computing GPE_1D" 
-if isfile(join([save_path, "gpe_1d.jld2"])) && use_precomputed
-    @info "\t using precomputed solution gpe_1d.jld2" 
-    JLD2.@load join([save_path, "gpe_1d.jld2"]) gpe_1d
-else
-    sol = runsim(sim_gpe_1d; info=false)
-    gpe_1d = sol.u
-    # JLD2.@save join([save_path, "gpe_1d.jld2"]) gpe_1d
-end
-plot_final_density!(p, [gpe_1d], sim_gpe_1d; label="GPE_1D", color=:blue, ls=:dash)
 
-
-@info "computing NPSE" 
-if isfile(join([save_path, "npse.jld2"])) && use_precomputed
-    @info "\t using precomputed solution npse.jld2" 
-    JLD2.@load join([save_path, "npse.jld2"]) npse
-else
-    sol = runsim(sim_npse; info=true)
-    npse = sol.u
-    # JLD2.@save join([save_path, "npse.jld2"]) npse
-end
-plot_final_density!(p, [npse], sim_npse; label="NPSE", color=:blue)
+# @info "computing NPSE" 
+# if isfile(join([save_path, "npse.jld2"])) && use_precomputed
+#     @info "\t using precomputed solution npse.jld2" 
+#     JLD2.@load join([save_path, "npse.jld2"]) npse
+# else
+#     sol = runsim(sim_npse; info=true)
+#     npse = sol.u
+#     # JLD2.@save join([save_path, "npse.jld2"]) npse
+# end
+# plot_final_density!(p, [npse], sim_npse; label="NPSE", color=:blue)
 
 
 # @info "computing NPSE_plus" 
@@ -227,9 +226,9 @@ if isfile(join([save_path, "gpe_3d.jld2"])) && use_precomputed
     @info "\t using precomputed solution gpe_3d.jld2" 
     JLD2.@load join([save_path, "gpe_3d.jld2"]) gpe_3d
 else
-    sol = runsim(sim_gpe_3d; info=true)
-    @info size(gpe_3d)
+    sol = runsim(sim_gpe_3d; info=false)
     gpe_3d = sol.u
+    @info size(gpe_3d)
     # JLD2.@save join([save_path, "gpe_3d.jld2"]) gpe_3d
 end
 
