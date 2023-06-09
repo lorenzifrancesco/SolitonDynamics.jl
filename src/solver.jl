@@ -17,7 +17,7 @@ function manual_run(sim; info=false)
          info && print("\n")
 
          info && @info maxiters
-         decay = 1e-10
+         decay = -1e-5
          info && @info "setting exp decay rate to" decay 
          while norm_diff > abstol_diff && cnt < maxiters
             try

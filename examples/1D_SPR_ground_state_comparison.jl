@@ -14,10 +14,14 @@ plotly()
 include("plot_axial_evolution.jl")
 save_path = "results/"
 
-gamma_param = 0.0
+gamma_param = 0.5
+initial_width = 100 # (squared)
 use_precomputed = false
-maxiters_1d = 500
+
+maxiters_1d = 10000
+maxiters_3d = 10000
 N_axial_steps = 512
+
 # =========================================================
 ## 1D-GPE 
 
@@ -49,13 +53,11 @@ width = 7
 tf = Inf
 # SPR condensate bright soliton t in units of omega_perp^-1
 analytical_gs = zeros(N)
-@. analytical_gs = exp.(-x.^2/2)
-analytical_gs = analytical_gs / sqrt(ns(analytical_gs, sim_gpe_1d))
+@. analytical_gs = sqrt(g_param/2) * 2/(exp(g_param*x) + exp(-x*g_param))
 
-psi_0 .= exp.(-x.^2/4)
+psi_0 .= exp.(-x.^2/initial_width)
 psi_0 = psi_0 / sqrt(ns(psi_0, sim_gpe_1d))
 
-@. V0 =  1/2*x.^2
 initial_state .= psi_0
 kspace!(psi_0, sim_gpe_1d)
 @pack_Sim! sim_gpe_1d
@@ -89,11 +91,10 @@ flags = FFTW.EXHAUSTIVE
 width = 7
 tf = Inf
 
-psi_0 .= exp.(-(x/1).^2/4)
+psi_0 .= exp.(-(x/1).^2/initial_width)
 psi_0 = psi_0 / sqrt(ns(psi_0, sim_gpe_1d))
 initial_state .= psi_0
 
-@. V0 =  1/2*x.^2
 kspace!(psi_0, sim_gpe_1d)
 if g_param > 2/3
     @warn "we should expect NPSE collapse"
@@ -129,10 +130,9 @@ dV= volume_element(L, N)
 flags = FFTW.EXHAUSTIVE
 width = 7
 tf = Inf
-psi_0 .= exp.(-x.^2/4)
+psi_0 .= exp.(-x.^2/initial_width)
 psi_0 = psi_0 / sqrt(ns(psi_0, sim_gpe_1d))
 initial_state .= psi_0
-@. V0 =  1/2*x.^2
 kspace!(psi_0, sim_gpe_1d)
 if g_param > 2/3
     @warn "we should expect NPSE collapse"
@@ -157,7 +157,7 @@ solver = SplitStep
 g = - g_param * (4*pi)
 
 abstol = 1e-36
-maxiters = 500
+maxiters = maxiters_3d
 dt = 0.01
 
 x0 = 0.0
@@ -171,12 +171,13 @@ dV= volume_element(L, N)
 flags = FFTW.EXHAUSTIVE
 
 tf = Inf
-tmp = [exp(-((x-x0)^2/4+(y^2+z^2)/2)) * exp(-im*x*vv) for x in x, y in y, z in z]
+tmp = [exp(-((x-x0)^2/initial_width+(y^2+z^2)/2)) * exp(-im*x*vv) for x in x, y in y, z in z]
 psi_0 = CuArray(tmp)
 psi_0 .= psi_0 / sqrt(sum(abs2.(psi_0) * dV))
 
 kspace!(psi_0, sim_gpe_3d)
-tmp = [1/2*(2*x^2 + y^2 + z^2) for x in x, y in y, z in z]
+
+tmp = [1/2*(y^2 + z^2) for x in x, y in y, z in z]
 V0 = CuArray(tmp)
 
 @pack_Sim! sim_gpe_3d
@@ -212,16 +213,16 @@ end
 plot_final_density!(p, [npse], sim_npse; label="NPSE", color=:green)
 
 
-# @info "computing NPSE_plus" 
-# if isfile(join([save_path, "npse_plus.jld2"])) && use_precomputed
-#     @info "\t using precomputed solution npse_plus.jld2" 
-#     JLD2.@load join([save_path, "npse_plus.jld2"]) npse_plus
-# else
-#     sol = runsim(sim_npse_plus; info=false)
-#     npse_plus = sol.u
-#     # JLD2.@save join([save_path, "npse_plus.jld2"]) npse_plus
-# end
-# plot_final_density!(p, [npse_plus], sim_npse_plus; label="NPSE_der", ls=:dash, color=:green)
+@info "computing NPSE_plus" 
+if isfile(join([save_path, "npse_plus.jld2"])) && use_precomputed
+    @info "\t using precomputed solution npse_plus.jld2" 
+    JLD2.@load join([save_path, "npse_plus.jld2"]) npse_plus
+else
+    sol = runsim(sim_npse_plus; info=false)
+    npse_plus = sol.u
+    # JLD2.@save join([save_path, "npse_plus.jld2"]) npse_plus
+end
+plot_final_density!(p, [npse_plus], sim_npse_plus; label="NPSE_der", ls=:dash, color=:green)
 
 
 @info "computing GPE_3D" 
