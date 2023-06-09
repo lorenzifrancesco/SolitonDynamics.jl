@@ -16,7 +16,7 @@ save_path = "results/"
 
 gamma_param = 0.0
 use_precomputed = false
-maxiters_1d = 10000
+maxiters_1d = 500
 N_axial_steps = 512
 # =========================================================
 ## 1D-GPE 
@@ -40,7 +40,7 @@ g = - 2 * g_param
 n = 100
 as = g_param / n
 abstol = 1e-6
-dt = 0.001
+dt = 0.01
 x = X[1]
 k = K[1]
 dV= volume_element(L, N)
@@ -81,7 +81,7 @@ g = - 2 * g_param
 n = 100
 as = g_param / n
 abstol = 1e-6
-dt = 0.022
+dt = 0.01
 x = X[1]
 k = K[1]
 dV= volume_element(L, N)
@@ -120,7 +120,7 @@ g = - 2 * g_param
 n = 100
 as = g_param / n
 abstol = 1e-6
-dt = 0.022
+dt = 0.01
 x = X[1]
 k = K[1]
 dV= volume_element(L, N)
@@ -156,7 +156,7 @@ g = - g_param * (4*pi)
 
 abstol = 1e-36
 maxiters = 500
-dt = 0.003
+dt = 0.01
 
 x0 = 0.0
 vv = 0.0
@@ -184,7 +184,7 @@ V0 = CuArray(tmp)
 
 # =========================================================
 Plots.CURRENT_PLOT.nullableplot = nothing
-p = plot_final_density([analytical_gs], sim_gpe_1d; label="analytical", color=:green, doifft=false, ls=:dash)
+p = plot_final_density([analytical_gs], sim_gpe_1d; label="analytical", color=:black, doifft=false, ls=:dashdot)
 
 @info "computing GPE_1D" 
 if isfile(join([save_path, "gpe_1d.jld2"])) && use_precomputed
@@ -198,16 +198,16 @@ end
 plot_final_density!(p, [gpe_1d], sim_gpe_1d; label="GPE_1D", color=:blue, ls=:dash)
 
 
-# @info "computing NPSE" 
-# if isfile(join([save_path, "npse.jld2"])) && use_precomputed
-#     @info "\t using precomputed solution npse.jld2" 
-#     JLD2.@load join([save_path, "npse.jld2"]) npse
-# else
-#     sol = runsim(sim_npse; info=true)
-#     npse = sol.u
-#     # JLD2.@save join([save_path, "npse.jld2"]) npse
-# end
-# plot_final_density!(p, [npse], sim_npse; label="NPSE", color=:blue)
+@info "computing NPSE" 
+if isfile(join([save_path, "npse.jld2"])) && use_precomputed
+    @info "\t using precomputed solution npse.jld2" 
+    JLD2.@load join([save_path, "npse.jld2"]) npse
+else
+    sol = runsim(sim_npse; info=true)
+    npse = sol.u
+    # JLD2.@save join([save_path, "npse.jld2"]) npse
+end
+plot_final_density!(p, [npse], sim_npse; label="NPSE", color=:green)
 
 
 # @info "computing NPSE_plus" 
@@ -217,9 +217,9 @@ plot_final_density!(p, [gpe_1d], sim_gpe_1d; label="GPE_1D", color=:blue, ls=:da
 # else
 #     sol = runsim(sim_npse_plus; info=false)
 #     npse_plus = sol.u
-#     JLD2.@save join([save_path, "npse_plus.jld2"]) npse_plus
+#     # JLD2.@save join([save_path, "npse_plus.jld2"]) npse_plus
 # end
-# plot_final_density!(p, [npse_plus], sim_npse_plus; label="NPSE_der", ls=:dash, color=:blue)
+# plot_final_density!(p, [npse_plus], sim_npse_plus; label="NPSE_der", ls=:dash, color=:green)
 
 
 @info "computing GPE_3D" 
@@ -232,7 +232,6 @@ else
     @info size(gpe_3d)
     # JLD2.@save join([save_path, "gpe_3d.jld2"]) gpe_3d
 end
-
 # linear interpolation
 gpe_3d = sim_gpe_3d.psi_0
 x_axis = sim_npse.X[1] |> real
@@ -244,6 +243,6 @@ solution_3d = LinearInterpolation(x_3d_range, final_axial, extrapolation_bc = Li
 plot!(p, x_axis, solution_3d(x_axis), label="GPE_3D", color=:black, linestyle=:dot) 
 
 
-q = plot(x_axis_3d, final_axial, label="GPE_3D", color=:black, linestyle=:dot) 
+q = plot(x_axis_3d, final_axial, label="GPE_3D", color=:red, linestyle=:dot) 
 display(q)
 display(p)
