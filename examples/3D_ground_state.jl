@@ -85,7 +85,7 @@ end
 
 p = plot_final_density([u], sim, 1; info=true, label="final")
 q = plot_final_density([initial_state], sim, 1; info=true, doifft=false, label="initial")
-p = plot(x |> reaa, analytical_gs)
+p = plot(x |> real, analytical_gs)
 
 # transverse view
 aa = Array(abs2.(xspace(initial_state, sim)))
