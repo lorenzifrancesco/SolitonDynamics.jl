@@ -19,7 +19,8 @@ GR.usecolorscheme(1)
 
 # =================== simulation settings
 L = (40.0,40.0,40.0)
-N = (128, 128, 128)
+Nx = 256
+N = (Nx, 128, 128)
 sim = Sim{length(L), CuArray{Complex{Float64}}}(L=L, N=N)
 
 # =================== physical parameters
@@ -67,8 +68,12 @@ alg = BS3()
 
 tmp = [1/2*(x^2 + y^2 + z^2) for x in x, y in y, z in z]
 V0 = CuArray(tmp)
-@pack_Sim! sim
 
+analytical_gs = zeros(Nx)
+@. analytical_gs = exp.(-(x).^2/2)
+analytical_gs = analytical_gs / sqrt(sum(abs2.(analytical_gs)))
+
+@pack_Sim! sim
 
 # ===================== simulation
 @info "computing GPE_3D" 
@@ -76,7 +81,7 @@ if isfile(join([save_path, "3d_gs.jld2"])) && use_precomputed
     @info "\t using precomputed solution 3d_gs.jld2" 
     JLD2.@load join([save_path, "3d_gs.jld2"]) u
 else
-    sol = runsim(sim; info=true)
+    sol = runsim(sim; info=false)
     u = sol.u
     # JLD2.@save join([save_path, "3d_gs.jld2"]) u
 end
@@ -84,38 +89,7 @@ end
 # =================== plotting and collect
 
 p = plot_final_density([u], sim, 1; info=true, label="final")
-q = plot_final_density([initial_state], sim, 1; info=true, doifft=false, label="initial")
-p = plot(x |> real, analytical_gs)
+w = plot(x |> real, analytical_gs)
+display(w)
 
-# transverse view
-aa = Array(abs2.(xspace(initial_state, sim)))
-axial_density = sum(aa, dims=(2, 3))[:, 1, 1] * sim.dV
-dc = 256
-q = heatmap(aa[dc, :, :])
-display(q)
-
-# top view
-# aa = Array(abs2.(xspace(initial_state, sim)))
-# qt = heatmap(aa[:, :, 32])
-# display(qt)
-
-s2 = estimate_sigma2(u, sim)
-@info "estimated sigma2" s2
-@info "minimum   sigma2" minimum(s2)
-k = plot(sim.X[1] |> real, s2)
-display(k)
-
-gaussian = [exp(-(x^2+y^2)/s2[256]) for x in x for y in y]
-gaussian /= sum(abs2.(gaussian))
-(rax, radial_density) = project_radial(u, sim)
-m = plot(rax, radial_density[256, :])
-
-m = heatmap(gaussian)
-display(m)
-# superimpose with gaussian
-
-# q = plot(sim.X[1] |> real, s2, label="bella zio")
-# display(q)
-#@info "Building animation..."
-#isosurface_animation(u, length(u), sim; framerate=5)
 @info "Completed."
