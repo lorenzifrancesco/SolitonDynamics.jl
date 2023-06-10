@@ -30,7 +30,6 @@ function nlin_manual!(psi,sim::Sim{1, Array{ComplexF64}},t)
          append!(sigma2_new, [sigma2_plus])
          append!(sigma2_old, [1 .+ g*abs2.(psi)])
          # === end scientific debug zone
-
       catch  err
          if isa(err, DomainError)
             sigma2_plus = NaN
@@ -55,7 +54,7 @@ function propagate_manual!(psi, sim::Sim{1, Array{ComplexF64}}, t; info=false)
    @. psi = exp(dt * iswitch * (1.0 - im*gamma)*(-im*(1/2*ksquared - mu)))*psi
    if iswitch == -im      
       psi .= psi / sqrt(nsk(psi, sim))
-      print(" - chempot: ", chempotk(psi, sim))
+      info && print(" - chempot: ", chempotk(psi, sim))
       cp_diff = abs(chempotk(psi, sim) - chempotk(psi_i, sim)) / dt
       return cp_diff
    else

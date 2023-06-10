@@ -11,21 +11,20 @@ function estimate_sigma2(psi_k,sim::Sim{3, CuArray{ComplexF64}})
     yax = 1:sim.N[2]
     zax = 1:sim.N[3]
     tmp = zeros(sim.N)
-    axial_density = sum(aa, dims=(2, 3))[:, 1, 1] * sim.dV
+    axial_density = sum(aa, dims=(2, 3))[:, 1, 1]
     for x in xax
         for y in yax
             for z in zax
                 if axial_density[x] < 1e-50
-                    tmp[x, y, z] = aa[x, y, z] / axial_density[x] * sim.dV
+                    tmp[x, y, z] = aa[x, y, z] / axial_density[x]
                     @warn "found small prob"
                 else
-                    tmp[x, y, z] = sim.X[2][y]^2 * sim.X[3][z]^2 * aa[x, y, z] / axial_density[x] * sim.dV
+                    tmp[x, y, z] = sim.X[2][y]^2 * sim.X[3][z]^2 * aa[x, y, z] / axial_density[x]
                 end
             end
         end
     end
-
-    s2 = 2 * sum(tmp, dims=(2, 3))[:, 1, 1]
+    s2 = 4 * sum(tmp, dims=(2, 3))[:, 1, 1]
     return s2
 end
 

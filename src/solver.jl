@@ -209,7 +209,7 @@ end
 function testsim(sim)
    err = false
    sol = try
-           runsim(sim; info=false)
+           runsim(sim; info=true)
        catch e
            err = true
        end

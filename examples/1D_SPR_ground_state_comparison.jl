@@ -14,12 +14,12 @@ plotly()
 include("plot_axial_evolution.jl")
 save_path = "results/"
 
-gamma_param = 0.65
+gamma_param = 0.5
 initial_width = 10 # (squared)
 use_precomputed = false
 
 maxiters_1d = 1e10
-maxiters_3d = 1e10
+maxiters_3d = 2000
 N_axial_steps = 1024
 abstol_all = 1e-4
 # =========================================================
@@ -44,7 +44,7 @@ g = - 2 * g_param
 n = 100
 as = g_param / n
 abstol = abstol_all
-dt = 0.001
+dt = 0.01
 x = X[1]
 k = K[1]
 dV= volume_element(L, N)
@@ -83,7 +83,7 @@ g = - 2 * g_param
 n = 100
 as = g_param / n
 abstol = abstol_all
-dt = 0.001
+dt = 0.01
 x = X[1]
 k = K[1]
 dV= volume_element(L, N)
@@ -144,8 +144,11 @@ sigma2 = init_sigma2(g)
 ## 3D-GPE 
 
 N_axial_steps = 512
-L = (20.0,10.0,10.0)
-N = (N_axial_steps, 128, 128)
+L_axial = 20.0
+L = (L_axial,10.0,10.0)
+N = (N_axial_steps, 64, 64)
+dx = L_axial / N_axial_steps 
+
 sim_gpe_3d = Sim{length(L), CuArray{Complex{Float64}}}(L=L, N=N)
 initial_state = zeros(N[1])
 
@@ -159,7 +162,7 @@ g = - g_param * (4*pi) * 1.2
 
 abstol = abstol_all
 maxiters = maxiters_3d
-dt = 0.001
+dt = 0.01
 
 
 x0 = 0.0
@@ -189,18 +192,18 @@ V0 = CuArray(tmp)
 
 # =========================================================
 Plots.CURRENT_PLOT.nullableplot = nothing
-p = plot_final_density([analytical_gs], sim_gpe_1d; label="analytical", color=:black, doifft=false, ls=:dashdot)
+p = plot_final_density([0.0*analytical_gs], sim_gpe_1d; label="analytical", color=:black, doifft=false, ls=:dashdot)
 
-@info "computing GPE_1D" 
-if isfile(join([save_path, "gpe_1d.jld2"])) && use_precomputed
-    @info "\t using precomputed solution gpe_1d.jld2" 
-    JLD2.@load join([save_path, "gpe_1d.jld2"]) gpe_1d
-else
-    sol = runsim(sim_gpe_1d; info=true)
-    gpe_1d = sol.u
-    # JLD2.@save join([save_path, "gpe_1d.jld2"]) gpe_1d
-end
-plot_final_density!(p, [gpe_1d], sim_gpe_1d; label="GPE_1D", color=:blue, ls=:dash)
+# @info "computing GPE_1D" 
+# if isfile(join([save_path, "gpe_1d.jld2"])) && use_precomputed
+#     @info "\t using precomputed solution gpe_1d.jld2" 
+#     JLD2.@load join([save_path, "gpe_1d.jld2"]) gpe_1d
+# else
+#     sol = runsim(sim_gpe_1d; info=true)
+#     gpe_1d = sol.u
+#     # JLD2.@save join([save_path, "gpe_1d.jld2"]) gpe_1d
+# end
+# plot_final_density!(p, [gpe_1d], sim_gpe_1d; label="GPE_1D", color=:blue, ls=:dash)
 
 
 @info "computing NPSE" 
@@ -242,9 +245,11 @@ x_axis = sim_npse.X[1] |> real
 x_axis_3d = sim_gpe_3d.X[1] |> real
 dx = sim_gpe_3d.X[1][2]-sim_gpe_3d.X[1][1]
 final_axial = Array(sum(abs2.(xspace(gpe_3d, sim_gpe_3d)), dims=(2, 3)))[:, 1, 1] * sim_gpe_3d.dV / dx |> real
+# we need to renormalize (error in the sum??)
+final_axial = final_axial / sum(final_axial * dx) |> real
 x_3d_range = range(-sim_gpe_3d.L[1]/2, sim_gpe_3d.L[1]/2, length(sim_gpe_3d.X[1])) 
 solution_3d = LinearInterpolation(x_3d_range, final_axial, extrapolation_bc = Line())
 plot!(p, x_axis, solution_3d(x_axis), label="GPE_3D", color=:red) 
-q = plot(x_axis_3d, final_axial, label="GPE_3D", color=:red, linestyle=:dot) 
-display(q)
+# q = plot(x_axis_3d, final_axial, label="GPE_3D", color=:red, linestyle=:dot) 
+# display(q)
 display(p)
