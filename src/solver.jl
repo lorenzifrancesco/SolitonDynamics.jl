@@ -11,19 +11,19 @@ function manual_run(sim; info=false)
       # in manual GS mode the maximum number of steps is specified by maxiters
       if solver == SplitStep
          #xspace!(psi_0, sim)
-         norm_diff = 1
+         cp_diff = 1
          abstol_diff = abstol
          cnt = 0 
          info && print("\n")
 
          info && @info maxiters
-         decay = -1e-5
+         decay = 0 * 1e-5
          info && @info "setting exp decay rate to" decay 
-         while norm_diff > abstol_diff && cnt < maxiters
+         while cp_diff > abstol_diff && cnt < maxiters
             try
-               norm_diff = propagate_manual!(psi_0,sim,dt; info=info)
+               cp_diff = propagate_manual!(psi_0,sim,dt; info=info)
                sim.dt *= (1-decay)
-               info && print("\r Interation number: ", cnt, " - norm diff: ", norm_diff)
+               info && print("\n Interation number: ", cnt, " - chempot diff: ", cp_diff, " - dt: ", sim.dt)
             catch err
                if isa(err, NpseCollapse)
                   showerror(stdout, err)
@@ -34,6 +34,7 @@ function manual_run(sim; info=false)
             end
             cnt +=1
          end
+         print("\n")
          info && @info "Computation ended after iterations" cnt
          #kspace!(psi_0, sim)
          sol = CustomSolution(u=psi_0, t=t)
@@ -42,7 +43,7 @@ function manual_run(sim; info=false)
          solvers = [ground_state_nlin!, cn_ground_state!, pc_ground_state!, be_ground_state!]
          func = solvers[solver.number]
          info && @info "Solving using solver" func 
-         norm_diff = 1
+         cp_diff = 1
          abstol_diff = abstol
          taglia = N[1]
          #for i in  1:10000
@@ -51,9 +52,9 @@ function manual_run(sim; info=false)
          tri_fwd = SymTridiagonal(d_central, d_lu) + Diagonal(ones(taglia)) # Dx
          tri_bkw = -SymTridiagonal(d_central, d_lu) + Diagonal(ones(taglia)) # Sx
          cnt = 0 
-         while norm_diff > abstol_diff && cnt < maxiters
-            norm_diff = func(psi_0,sim,dt, tri_fwd, tri_bkw)
-            info && print("\r Interation number: ", cnt, " - norm diff: ", norm_diff)
+         while cp_diff > abstol_diff && cnt < maxiters
+            cp_diff = func(psi_0,sim,dt, tri_fwd, tri_bkw)
+            info && print("\n Interation number: ", cnt, " - chempot diff: ", cp_diff)
             cnt +=1
          end
          info && @info "Computation ended after iterations" cnt

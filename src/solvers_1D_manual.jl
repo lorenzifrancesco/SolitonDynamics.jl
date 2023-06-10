@@ -6,7 +6,8 @@ function nlin_manual!(psi,sim::Sim{1, Array{ComplexF64}},t)
    @unpack ksquared,g,X,V0,dV,Vol,mu,equation,sigma2,dt,iswitch,N = sim; x = X[1]; N = N[1]
    xspace!(psi,sim)
    if equation == GPE_1D
-      @. psi = exp(dt * -im*iswitch* (V0 + V(x, t) + g*abs2(psi))) * psi
+      @. psi = exp(dt * -im*iswitch* (g*abs2(psi))) * psi
+      @. psi *= exp(dt * -im*iswitch* (V0 + V(x, t))) 
    elseif equation == NPSE
       nonlinear = g*abs2.(psi) ./sigma2.(psi) + (1 ./(2*sigma2.(psi)) + 1/2*sigma2.(psi))
       @. psi = exp(dt * -im*iswitch* (V0 + V(x, t) + nonlinear)) * psi
@@ -52,10 +53,11 @@ function propagate_manual!(psi, sim::Sim{1, Array{ComplexF64}}, t; info=false)
    psi_i = copy(psi) 
    nlin_manual!(psi,sim,t)
    @. psi = exp(dt * iswitch * (1.0 - im*gamma)*(-im*(1/2*ksquared - mu)))*psi
-   if iswitch == -im
-      norm_diff = nsk(abs.(psi) - abs.(psi_i), sim)/dt
+   if iswitch == -im      
       psi .= psi / sqrt(nsk(psi, sim))
-      return norm_diff
+      print(" - chempot: ", chempotk(psi, sim))
+      cp_diff = abs(chempotk(psi, sim) - chempotk(psi_i, sim)) / dt
+      return cp_diff
    else
       return nothing
    end
@@ -132,6 +134,7 @@ function cn_ground_state!(psi,sim::Sim{1, Array{ComplexF64}}, dt, tri_fwd, tri_b
    psi .= tri_fwd*psi
    psi .= transpose(\(psi, tri_bkw))
 
+   @warn "Still using old normalization"
    norm_diff = ns(psi - psi_i, sim)/dt
    psi .= psi / sqrt(ns(psi, sim))
    return norm_diff
@@ -161,6 +164,7 @@ function pc_ground_state!(psi,sim::Sim{1, Array{ComplexF64}}, dt, tri_fwd, tri_b
    psi .= 1/2*(tri_fwd*psi_i + tri_fwd*psi) + psi
    info && @info display(sum(psi))
 
+   @warn "Still using old normalization"
    norm_diff = ns(psi - psi_i, sim)/dt
    psi .= psi / sqrt(ns(psi, sim))
    return norm_diff
@@ -179,6 +183,7 @@ function be_ground_state!(psi,sim::Sim{1, Array{ComplexF64}}, dt, tri_fwd, tri_b
    tri_bkw += Diagonal(nonlin)
    psi .= transpose(\(psi, tri_bkw))
 
+   @warn "Still using old normalization"
    norm_diff = ns(psi - psi_i, sim)/dt
    psi .= psi / sqrt(ns(psi, sim))
    return norm_diff

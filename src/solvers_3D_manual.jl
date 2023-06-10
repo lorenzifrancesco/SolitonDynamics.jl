@@ -5,21 +5,23 @@
 function nlin_manual!(psi,sim::Sim{3, CuArray{ComplexF64}},t; info=false)
    @unpack ksquared,g,X,V0,dV,Vol,mu,equation,sigma2,dt,iswitch = sim; x = X[1]; y = X[1]; z = X[1]
    xspace!(psi,sim)
-   @. psi = exp(dt * -im*iswitch* (V0 + V(x,y,z,t) + g*abs2(psi))) * psi
+   @. psi *= exp(dt * -im*iswitch* (V0 + V(x,y,z,t)))
+   @. psi *= exp(dt * -im*iswitch* (g*abs2(psi)))
    kspace!(psi,sim)
    return nothing
 end
 
 function propagate_manual!(psi, sim::Sim{3, CuArray{ComplexF64}}, t; info=false)
    @unpack ksquared, iswitch, dV, Vol,mu,gamma,dt = sim
-   # info && @info "dt = " dt 
-   nlin_manual!(psi,sim,t; info=info)
+   # info && @info "dt = " dt
    psi_i = copy(psi) 
-   @. psi = exp(dt * (1.0 - im*gamma)*(-im*(1/2*ksquared - mu))) * psi
+   nlin_manual!(psi,sim,t; info=info)
+   @. psi = exp(dt * iswitch * (1.0 - im*gamma)*(-im*(1/2*ksquared - mu))) * psi
    if iswitch == -im
-      norm_diff = (nsk(abs.(psi_i) - abs.(psi), sim))/dt
       psi .= psi / sqrt(nsk(psi, sim))
-      return norm_diff
+      print(" - chempot: ", chempotk(psi, sim))
+      cp_diff = abs(chempotk(psi, sim) - chempotk(psi_i, sim)) / dt
+      return cp_diff
    else
       return nothing
    end
@@ -40,6 +42,7 @@ function be_ground_state!(psi,sim::Sim{3, CuArray{ComplexF64}}, dt, tri_fwd, tri
    tri_bkw += Diagonal(nonlin)
    psi .= transpose(\(psi, tri_bkw))
 
+   @warn "Still using old normalization"
    norm_diff = ns(psi - psi_i, sim)/dt
    psi .= psi / sqrt(ns(psi, sim))
    return norm_diff
