@@ -14,14 +14,14 @@ plotly()
 include("plot_axial_evolution.jl")
 save_path = "results/"
 
-gamma_param = 0.5
-initial_width = 100 # (squared)
+gamma_param = 0.65
+initial_width = 10 # (squared)
 use_precomputed = false
 
-maxiters_1d = 10000
-maxiters_3d = 10000
-N_axial_steps = 512
-
+maxiters_1d = 1e10
+maxiters_3d = 1e10
+N_axial_steps = 1024
+abstol_all = 1e-4
 # =========================================================
 ## 1D-GPE 
 
@@ -43,8 +43,8 @@ g = - 2 * g_param
 
 n = 100
 as = g_param / n
-abstol = 1e-6
-dt = 0.01
+abstol = abstol_all
+dt = 0.001
 x = X[1]
 k = K[1]
 dV= volume_element(L, N)
@@ -82,8 +82,8 @@ g = - 2 * g_param
 
 n = 100
 as = g_param / n
-abstol = 1e-6
-dt = 0.01
+abstol = abstol_all
+dt = 0.001
 x = X[1]
 k = K[1]
 dV= volume_element(L, N)
@@ -122,7 +122,7 @@ g = - 2 * g_param
 
 n = 100
 as = g_param / n
-abstol = 1e-6
+abstol = abstol_all
 dt = 0.01
 x = X[1]
 k = K[1]
@@ -143,7 +143,8 @@ sigma2 = init_sigma2(g)
 # =========================================================
 ## 3D-GPE 
 
-L = (20.0,20.0,20.0)
+N_axial_steps = 512
+L = (20.0,10.0,10.0)
 N = (N_axial_steps, 128, 128)
 sim_gpe_3d = Sim{length(L), CuArray{Complex{Float64}}}(L=L, N=N)
 initial_state = zeros(N[1])
@@ -154,11 +155,12 @@ equation = GPE_3D
 manual = true
 solver = SplitStep
 
-g = - g_param * (4*pi)
+g = - g_param * (4*pi) * 1.2
 
-abstol = 1e-36
+abstol = abstol_all
 maxiters = maxiters_3d
-dt = 0.01
+dt = 0.001
+
 
 x0 = 0.0
 vv = 0.0
@@ -171,7 +173,7 @@ dV= volume_element(L, N)
 flags = FFTW.EXHAUSTIVE
 
 tf = Inf
-tmp = [exp(-((x-x0)^2/initial_width+(y^2+z^2)/2)) * exp(-im*x*vv) for x in x, y in y, z in z]
+tmp = [exp(-((x-x0)^2/initial_width + (y^2 + z^2)/2)) * exp(-im*x*vv) for x in x, y in y, z in z]
 psi_0 = CuArray(tmp)
 psi_0 .= psi_0 / sqrt(sum(abs2.(psi_0) * dV))
 
@@ -210,19 +212,19 @@ else
     npse = sol.u
     # JLD2.@save join([save_path, "npse.jld2"]) npse
 end
-plot_final_density!(p, [npse], sim_npse; label="NPSE", color=:green)
+plot_final_density!(p, [npse], sim_npse; label="NPSE", color=:green, ls=:dotted)
 
 
-@info "computing NPSE_plus" 
-if isfile(join([save_path, "npse_plus.jld2"])) && use_precomputed
-    @info "\t using precomputed solution npse_plus.jld2" 
-    JLD2.@load join([save_path, "npse_plus.jld2"]) npse_plus
-else
-    sol = runsim(sim_npse_plus; info=false)
-    npse_plus = sol.u
-    # JLD2.@save join([save_path, "npse_plus.jld2"]) npse_plus
-end
-plot_final_density!(p, [npse_plus], sim_npse_plus; label="NPSE_der", ls=:dash, color=:green)
+# @info "computing NPSE_plus" 
+# if isfile(join([save_path, "npse_plus.jld2"])) && use_precomputed
+#     @info "\t using precomputed solution npse_plus.jld2" 
+#     JLD2.@load join([save_path, "npse_plus.jld2"]) npse_plus
+# else
+#     sol = runsim(sim_npse_plus; info=false)
+#     npse_plus = sol.u
+#     # JLD2.@save join([save_path, "npse_plus.jld2"]) npse_plus
+# end
+# plot_final_density!(p, [npse_plus], sim_npse_plus; label="NPSE_der", ls=:dash, color=:green)
 
 
 @info "computing GPE_3D" 
@@ -242,9 +244,7 @@ dx = sim_gpe_3d.X[1][2]-sim_gpe_3d.X[1][1]
 final_axial = Array(sum(abs2.(xspace(gpe_3d, sim_gpe_3d)), dims=(2, 3)))[:, 1, 1] * sim_gpe_3d.dV / dx |> real
 x_3d_range = range(-sim_gpe_3d.L[1]/2, sim_gpe_3d.L[1]/2, length(sim_gpe_3d.X[1])) 
 solution_3d = LinearInterpolation(x_3d_range, final_axial, extrapolation_bc = Line())
-plot!(p, x_axis, solution_3d(x_axis), label="GPE_3D", color=:red, linestyle=:dot) 
-
-
+plot!(p, x_axis, solution_3d(x_axis), label="GPE_3D", color=:red) 
 q = plot(x_axis_3d, final_axial, label="GPE_3D", color=:red, linestyle=:dot) 
 display(q)
 display(p)
