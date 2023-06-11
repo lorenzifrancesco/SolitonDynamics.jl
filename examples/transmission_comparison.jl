@@ -22,6 +22,7 @@ maxiters_1d = 1e10
 maxiters_3d = 1e10
 N_axial_steps = 4096
 Lx = 40.0
+x0 = Lx / 4
 abstol_all = 1e-7
 
 tiles = 8
@@ -77,10 +78,8 @@ t = LinRange(ti, tf, Nt)
 analytical_gs = zeros(N)
 @. analytical_gs = sqrt(g_param/2) * 2/(exp(g_param*x) + exp(-x*g_param))
 
-psi_0 .= exp.(-x.^2/initial_width)
+psi_0 .= exp.(-x.^2/initial_width) .* exp.(-im*(x .- x0)*vv)
 psi_0 = psi_0 / sqrt(ns(psi_0, sim_gpe_1d))
-
-initial_state .= psi_0
 kspace!(psi_0, sim_gpe_1d)
 
 @. V0 = 1/2 * bb * exp(-(x/bar_width)^2)
@@ -119,9 +118,8 @@ else
 end
 t = LinRange(ti, tf, Nt)
 # load ground state solutions
-psi_0 .= exp.(-(x/1).^2/initial_width)
-psi_0 = psi_0 / sqrt(ns(psi_0, sim_gpe_1d))
-initial_state .= psi_0
+psi_0 .= exp.(-(x/1).^2/initial_width) .* exp.(-im*(x .- x0)*vv)
+psi_0 = psi_0 / sqrt(ns(psi_0, sim_gpe_1d)) 
 
 kspace!(psi_0, sim_gpe_1d)
 if g_param > 2/3
@@ -166,9 +164,9 @@ else
 end
 t = LinRange(ti, tf, Nt)
 
-psi_0 .= exp.(-x.^2/initial_width) * exp(-im*(x-x0)*vv)
+psi_0 .= exp.(-x.^2/initial_width) .* exp.(-im*(x .- x0)*vv)
 psi_0 = psi_0 / sqrt(ns(psi_0, sim_gpe_1d))
-initial_state .= psi_0
+
 kspace!(psi_0, sim_gpe_1d)
 if g_param > 2/3
     @warn "we should expect NPSE collapse"
@@ -215,10 +213,9 @@ else
     tf = 2*x0/vv
 end
 t = LinRange(ti, tf, Nt)
-tmp = [exp(-((x-x0)^2/initial_width + (y^2 + z^2)/2)) * exp(-im*x*vv) for x in x, y in y, z in z]
+tmp = [exp(-((x - x0)^2/initial_width + (y^2 + z^2)/2)) * exp(-im*x*vv) for x in x, y in y, z in z]
 psi_0 = CuArray(tmp)
 psi_0 .= psi_0 / sqrt(sum(abs2.(psi_0) * dV))
-initial_3d = copy(psi_0)
 kspace!(psi_0, sim_gpe_3d)
 
 tmp = [1/2*(y^2 + z^2 + bb * exp(-(x/bar_width)^2)) for x in x, y in y, z in z]
