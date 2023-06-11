@@ -72,7 +72,7 @@ return spatial volume element
 function volume_element(L, N)
     dV=1
     for i in eachindex(L)
-        dV *= L[i]/N[i]
+        dV *= L[i]/(N[i]-1)
     end
     return dV
 end
@@ -89,7 +89,8 @@ end
 compute normalization in k-space
 """
 function nsk(psi, sim)
-    return sum(abs2.(psi)) / sim.Vol
+    dV,dk = measures(sim.L, sim.N)
+    return sum(abs2.(psi)) * dk
 end
 
 """
@@ -240,6 +241,12 @@ function dfft(x,k)
     Dx = dx
     Dk = 1/Dx
     return Dx, Dk
+end
+
+function measures(L, N)
+    dX = L ./ (N .- 1)
+    dK = 1 ./ (dX .* N)
+    return  prod(dX), prod(dK)
 end
 
 """

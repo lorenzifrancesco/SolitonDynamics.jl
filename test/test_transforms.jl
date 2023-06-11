@@ -3,7 +3,7 @@ using CUDA
 using OrdinaryDiffEq
 
 L = (40.0,)
-N = (256,)
+N = (1024,)
 sim = Sim{length(L), Array{Complex{Float64}}}(L=L, N=N)
 
 
@@ -12,11 +12,15 @@ g = 0.0
 equation = GPE_1D
 iswitch = 1
 x = X[1]
+k = K[1]
 dV= volume_element(L, N)
 reltol = 1e-2
 
 @. psi_0 = exp(-x^2/2/5) * exp(-im * x * 0.01)
 psi_0 = psi_0 / sqrt(sum(abs2.(psi_0) * dV))
+
+psi_1 = exp.(-x.^2/2/5) .* exp.(-im * x * 0.01)
+psi_1 = psi_1 / sqrt(sum(abs2.(psi_1) * dV))
 
 initial_state = psi_0
 
@@ -48,15 +52,17 @@ xspace!(psi_0, sim)
 @test isapprox(outofplace - psi_0, zeros(N), atol=1e-9)
 
 # inplace norm conservation
+
 psi_0 = initial_state
 
 kspace!(psi_0, sim)
 xspace!(psi_0, sim)
 
-# out of place norm conservation
-psi_0 = initial_state
+@test isapprox(ns(psi_0, sim) - ns(initial_state, sim), 0.0, atol=1e-9)
 
-kspace!(psi_0, sim)
-xspace!(psi_0, sim)
+# test norms (Parseval's theorem)
 
-@test isapprox(psi_0 - initial_state, zeros(N), atol=1e-3)
+@info ns(psi_1, sim)
+@info nsk(kspace(psi_1, sim), sim)
+
+@test isapprox(ns(psi_1, sim) - nsk(kspace(initial_state, sim), sim), 0.0, atol=1e-9)

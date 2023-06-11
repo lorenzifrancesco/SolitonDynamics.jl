@@ -10,7 +10,6 @@ function manual_run(sim; info=false)
       info && @info "Running on manual GS mode: maxiters =  " maxiters
       # in manual GS mode the maximum number of steps is specified by maxiters
       if solver == SplitStep
-         #xspace!(psi_0, sim)
          cp_diff = 1
          abstol_diff = abstol
          cnt = 0 
@@ -36,10 +35,8 @@ function manual_run(sim; info=false)
          end
          print("\n")
          info && @info "Computation ended after iterations" cnt
-         #kspace!(psi_0, sim)
          sol = CustomSolution(u=psi_0, t=t)
       else # nonspectral methods
-         xspace!(psi_0, sim)
          solvers = [ground_state_nlin!, cn_ground_state!, pc_ground_state!, be_ground_state!]
          func = solvers[solver.number]
          info && @info "Solving using solver" func 
@@ -196,7 +193,7 @@ function runsim(sim; info=false)
                    func_start = true,
                    tdir=1)
 
-   info && @info ns(psi_0, sim)
+   @assert isapprox(nsk(psi_0, sim), 1.0, rtol=1e-9)
    if manual == true
       sol = manual_run(sim; info=info)
    else 
