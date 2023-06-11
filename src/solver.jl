@@ -5,7 +5,7 @@ include("solvers_3D_auto.jl")
 include("solvers_3D_manual.jl")
 
 function manual_run(sim; info=false)
-   @unpack psi_0, dV, dt, ti, tf, t, solver, iswitch, abstol, reltol, N,Nt, V0, maxiters, time_steps = sim
+   @unpack psi_0, dV, dt, ti, tf, t, solver, iswitch, abstol, reltol, N,Nt, V0, maxiters, time_steps, equation = sim
    if iswitch == -im # select solver and run manual convergence routine 
       info && @info "Running on manual GS mode: maxiters =  " maxiters
       # in manual GS mode the maximum number of steps is specified by maxiters
@@ -18,9 +18,15 @@ function manual_run(sim; info=false)
          info && @info maxiters
          decay = 0 * 1e-5
          info && @info "setting exp decay rate to" decay 
+         if equation == NPSE_plus
+            ss_buffer = ones(N[1])
+         else
+            ss_buffer = nothing
+         end
+
          while cp_diff > abstol_diff && cnt < maxiters
             try
-               cp_diff = propagate_manual!(psi_0,sim,dt; info=info)
+               cp_diff = propagate_manual!(psi_0,sim,dt; info=info, ss_buffer=ss_buffer)
                sim.dt *= (1-decay)
                info && print("\n Interation number: ", cnt, " - chempot diff: ", cp_diff, " - dt: ", sim.dt)
             catch err

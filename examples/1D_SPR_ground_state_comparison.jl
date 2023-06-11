@@ -16,12 +16,12 @@ save_path = "results/"
 
 gamma_param = 0.6
 initial_width = 10 # (squared)
-use_precomputed = false
+use_precomputed = true
 
 maxiters_1d = 1e10
 maxiters_3d = 1e10
-N_axial_steps = 512
-abstol_all = 1e-8
+N_axial_steps = 1024
+abstol_all = 1e-7
 
 # For low gamma_param, algorithm can sit in a local minimum
 # =========================================================
@@ -196,10 +196,12 @@ V0 = CuArray(tmp)
 Plots.CURRENT_PLOT.nullableplot = nothing
 p = plot_final_density([analytical_gs], sim_gpe_1d; label="analytical", color=:black, doifft=false, ls=:dashdot)
 
+as = [join(["_gamma_", gamma_param])]
+
 @info "computing GPE_1D" 
 if isfile(join([save_path, "gpe_1d.jld2"])) && use_precomputed
     @info "\t using precomputed solution gpe_1d.jld2" 
-    JLD2.load(join([save_path, "gpe_1d.jld2"]), "gpe_1d",  gpe_1d)
+    gpe_1d = JLD2.load(join([save_path, "gpe_1d.jld2"]))["gpe_1d"]
 else
     sol = runsim(sim_gpe_1d; info=true)
     gpe_1d = sol.u
@@ -208,65 +210,65 @@ end
 plot_final_density!(p, [gpe_1d], sim_gpe_1d; label="GPE_1D", color=:blue, ls=:dash)
 
 
-# @info "computing NPSE" 
-# if isfile(join([save_path, "npse.jld2"])) && use_precomputed
-#     @info "\t using precomputed solution npse.jld2" 
-#     JLD2.load(join([save_path, "npse.jld2"]), "npse",  npse)
-# else
-#     sol = runsim(sim_npse; info=true)
-#     npse = sol.u
-#     JLD2.save(join([save_path, "npse.jld2"]), "npse",  npse)
-# end
-# plot_final_density!(p, [npse], sim_npse; label="NPSE", color=:green, ls=:dotted)
+@info "computing NPSE" 
+if isfile(join([save_path, "npse.jld2"])) && use_precomputed
+    @info "\t using precomputed solution npse.jld2" 
+    npse = JLD2.load(join([save_path, "npse.jld2"]))["npse"]
+else
+    sol = runsim(sim_npse; info=true)
+    npse = sol.u
+    JLD2.save(join([save_path, "npse.jld2"]), "npse",  npse)
+end
+plot_final_density!(p, [npse], sim_npse; label="NPSE", color=:green, ls=:dotted)
 
 
-# @info "computing NPSE_plus" 
-# if isfile(join([save_path, "npse_plus.jld2"])) && use_precomputed
-#     @info "\t using precomputed solution npse_plus.jld2" 
-#     JLD2.load(join([save_path, "npse_plus.jld2"]), "npse_plus",  npse_plus)
-# else
-#     sol = runsim(sim_npse_plus; info=true)
-#     npse_plus = sol.u
-#     JLD2.save(join([save_path, "npse_plus.jld2"]), "npse_plus",  npse_plus)
-# end
-# plot_final_density!(p, [npse_plus], sim_npse_plus; label="NPSE_der", ls=:dash, color=:green)
+@info "computing NPSE_plus" 
+if isfile(join([save_path, "npse_plus.jld2"])) && false
+    @info "\t using precomputed solution npse_plus.jld2" 
+    npse_plus = JLD2.load(join([save_path, "npse_plus.jld2"]))["npse_plus"]
+else
+    sol = runsim(sim_npse_plus; info=true)
+    npse_plus = sol.u
+    JLD2.save(join([save_path, "npse_plus.jld2"]), "npse_plus",  npse_plus)
+end
+plot_final_density!(p, [npse_plus], sim_npse_plus; label="NPSE_der", ls=:dash, color=:green)
 
-# @info "computing GPE_3D" 
-# if isfile(join([save_path, "gpe_3d.jld2"])) && use_precomputed
-#     @info "\t using precomputed solution gpe_3d.jld2" 
-#     JLD2.load(join([save_path, "gpe_3d.jld2"]), "gpe_3d",  gpe_3d)
-# else
-#     sol = runsim(sim_gpe_3d; info=true)
-#     gpe_3d = sol.u
-#     JLD2.save(join([save_path, "gpe_3d.jld2"]), "gpe_3d",  gpe_3d)
-# end
-# # linear interpolation
-# gpe_3d = sim_gpe_3d.psi_0
-# x_axis = sim_npse.X[1] |> real
-# x_axis_3d = sim_gpe_3d.X[1] |> real
-# dx = sim_gpe_3d.X[1][2]-sim_gpe_3d.X[1][1]
-# final_axial = Array(sum(abs2.(xspace(gpe_3d, sim_gpe_3d)), dims=(2, 3)))[:, 1, 1] * sim_gpe_3d.dV / dx |> real
-# # we need to renormalize (error in the sum??)
-# final_axial = final_axial / sum(final_axial * dx) |> real
-# x_3d_range = range(-sim_gpe_3d.L[1]/2, sim_gpe_3d.L[1]/2, length(sim_gpe_3d.X[1])) 
-# solution_3d = LinearInterpolation(x_3d_range, final_axial, extrapolation_bc = Line())
-# plot!(p, x_axis, solution_3d(x_axis), label="GPE_3D", color=:red) 
-# # q = plot(x_axis_3d, final_axial, label="GPE_3D", color=:red, linestyle=:dot) 
-# # display(q)
-# display(p)
+@info "computing GPE_3D" 
+if isfile(join([save_path, "gpe_3d.jld2"])) && use_precomputed
+    @info "\t using precomputed solution gpe_3d.jld2" 
+    gpe_3d = JLD2.load(join([save_path, "gpe_3d.jld2"]))["gpe_3d"]
+else
+    sol = runsim(sim_gpe_3d; info=true)
+    gpe_3d = sol.u
+    JLD2.save(join([save_path, "gpe_3d.jld2"]), "gpe_3d",  gpe_3d)
+end
+# linear interpolation
+gpe_3d = sim_gpe_3d.psi_0
+x_axis = sim_npse.X[1] |> real
+x_axis_3d = sim_gpe_3d.X[1] |> real
+dx = sim_gpe_3d.X[1][2]-sim_gpe_3d.X[1][1]
+final_axial = Array(sum(abs2.(xspace(gpe_3d, sim_gpe_3d)), dims=(2, 3)))[:, 1, 1] * sim_gpe_3d.dV / dx |> real
+# we need to renormalize (error in the sum??)
+final_axial = final_axial / sum(final_axial * dx) |> real
+x_3d_range = range(-sim_gpe_3d.L[1]/2, sim_gpe_3d.L[1]/2, length(sim_gpe_3d.X[1])) 
+solution_3d = LinearInterpolation(x_3d_range, final_axial, extrapolation_bc = Line())
+plot!(p, x_axis, solution_3d(x_axis), label="GPE_3D", color=:red) 
+# q = plot(x_axis_3d, final_axial, label="GPE_3D", color=:red, linestyle=:dot) 
+# display(q)
+display(p)
 
-# s2 = estimate_sigma2(kspace(initial_3d, sim_gpe_3d), sim_gpe_3d)
-# sigma_2 = plot(x_axis_3d, s2, label="sigma2", color=:red, linestyle=:dot)
-# dens = sum(abs2.(initial_3d), dims=(2, 3))[:, 1, 1] * sim_gpe_3d.dV / dx |> real
-# plot!(sigma_2, x_axis_3d, dens, label="psi^2", color=:red)
-# display(sigma_2)
+s2 = estimate_sigma2(kspace(initial_3d, sim_gpe_3d), sim_gpe_3d)
+sigma_2 = plot(x_axis_3d, s2, label="sigma2", color=:red, linestyle=:dot)
+dens = sum(abs2.(initial_3d), dims=(2, 3))[:, 1, 1] * sim_gpe_3d.dV / dx |> real
+plot!(sigma_2, x_axis_3d, dens, label="psi^2", color=:red)
+display(sigma_2)
 
 
-# s2 = estimate_sigma2(gpe_3d, sim_gpe_3d)
-# sigma_2 = plot(x_axis_3d, s2, label="sigma2", color=:red)
-# plot!(sigma_2, x_axis_3d, sigma2_old, label="NPSE", color=:red, linestyle=:dash)
-# plot!(sigma_2, x_axis_3d, sigma2_new, label="NPSE:plus", color=:red, linestyle=:dot)
-# plot!(sigma_2, x_axis_3d, final_axial, label="psi^2", color=:red)
-# display(sigma_2)
+s2 = estimate_sigma2(gpe_3d, sim_gpe_3d)
+sigma_2 = plot(x_axis_3d, s2, label="sigma2", color=:red)
+plot!(sigma_2, x_axis_3d, sigma2_old, label="NPSE", color=:red, linestyle=:dash)
+plot!(sigma_2, x_axis_3d, sigma2_new, label="NPSE:plus", color=:red, linestyle=:dot)
+plot!(sigma_2, x_axis_3d, final_axial, label="psi^2", color=:red)
+display(sigma_2)
 
-# heatmap(abs2.(xspace(gpe_3d, sim_gpe_3d))[3, :, :], aspect_ratio=1, color=:viridis, title="GPE_3D")
+heatmap(abs2.(xspace(gpe_3d, sim_gpe_3d))[3, :, :], aspect_ratio=1, color=:viridis, title="GPE_3D")

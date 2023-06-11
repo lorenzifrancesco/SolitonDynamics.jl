@@ -2,7 +2,7 @@
 
 # ============== Manual SplitStep methods, improved with exp
 
-function nlin_manual!(psi,sim::Sim{1, Array{ComplexF64}},t)
+function nlin_manual!(psi,sim::Sim{1, Array{ComplexF64}},t; ss_buffer=nothing, info=false)
    @unpack ksquared,g,X,V0,dV,Vol,mu,equation,sigma2,dt,iswitch,N = sim; x = X[1]; N = N[1]
    xspace!(psi,sim)
    if equation == GPE_1D
@@ -20,16 +20,23 @@ function nlin_manual!(psi,sim::Sim{1, Array{ComplexF64}},t)
          b[end] += 1.0 * 1/(4*dV)
          a = ones(length(b))
          A0 = 1/(2*dV) * SymTridiagonal(2*a, -a)
-         ss = ones(N)
+         if isnothing(ss_buffer)
+            ss = ones(N)
+         else
+            info && @info "using ss_buffer with min: " minimum(ss_buffer)
+            ss = ss_buffer
+         end
          prob = NonlinearProblem(sigma_eq, ss, [b, A0, dV])
          sol = solve(prob, NewtonRaphson(), reltol=1e-3)
          sigma2_plus = (sol.u).^2
+         ss_buffer .= sol.u
 
          # === scientific debug zone
          append!(time_of_sigma, t)
          append!(sigma2_new, [sigma2_plus])
          append!(sigma2_old, [1 .+ g*abs2.(psi)])
          # === end scientific debug zone
+
       catch  err
          if isa(err, DomainError)
             sigma2_plus = NaN
@@ -38,19 +45,20 @@ function nlin_manual!(psi,sim::Sim{1, Array{ComplexF64}},t)
             throw(err)
          end
       end
-      tmp = copy(sigma2_plus)
-      nonlinear = g*abs2.(psi) ./sigma2_plus +  (1/2 * sigma2_plus .+ (1 ./(2*sigma2_plus)).* (1 .+ (1/dV * diff(prepend!(tmp, 1.0))).^2))
+      temp = copy(sigma2_plus)
+      nonlinear = g*abs2.(psi) ./sigma2_plus +  (1/2 * sigma2_plus .+ (1 ./(2*sigma2_plus)).* (1 .+ (1/dV * diff(prepend!(temp, 1.0))).^2))
       @. psi = exp(dt * -im*iswitch* (V0 + V(x, t) + nonlinear)) * psi
+      Base.GC.gc()
    end
    kspace!(psi,sim)
    return nothing
 end
 
 
-function propagate_manual!(psi, sim::Sim{1, Array{ComplexF64}}, t; info=false)
+function propagate_manual!(psi, sim::Sim{1, Array{ComplexF64}}, t; ss_buffer=nothing, info=false)
    @unpack ksquared, iswitch, dV, Vol,mu,gamma,dt,sigma2, g = sim
    psi_i = copy(psi) 
-   nlin_manual!(psi,sim,t)
+   nlin_manual!(psi,sim,t; ss_buffer=ss_buffer, info=info)
    @. psi = exp(dt * iswitch * (1.0 - im*gamma)*(-im*(1/2*ksquared - mu)))*psi
    if iswitch == -im      
       psi .= psi / sqrt(nsk(psi, sim))

@@ -2,7 +2,7 @@
 
 # ============== Manual SplitStep methods, improved with exp
 
-function nlin_manual!(psi,sim::Sim{3, CuArray{ComplexF64}},t; info=false)
+function nlin_manual!(psi,sim::Sim{3, CuArray{ComplexF64}},t; ss_buffer=nothing, info=false)
    @unpack ksquared,g,X,V0,dV,Vol,mu,equation,sigma2,dt,iswitch = sim; x = X[1]; y = X[1]; z = X[1]
    xspace!(psi,sim)
    @. psi *= exp(dt * -im*iswitch* (V0 + V(x,y,z,t)))
@@ -11,7 +11,7 @@ function nlin_manual!(psi,sim::Sim{3, CuArray{ComplexF64}},t; info=false)
    return nothing
 end
 
-function propagate_manual!(psi, sim::Sim{3, CuArray{ComplexF64}}, t; info=false)
+function propagate_manual!(psi, sim::Sim{3, CuArray{ComplexF64}}, t; ss_buffer=nothing, info=false)
    @unpack ksquared, iswitch, dV, Vol,mu,gamma,dt = sim
    # info && @info "dt = " dt
    psi_i = copy(psi) 
