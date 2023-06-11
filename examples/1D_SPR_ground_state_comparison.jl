@@ -20,7 +20,7 @@ use_precomputed = true
 
 maxiters_1d = 1e10
 maxiters_3d = 1e10
-N_axial_steps = 1024
+N_axial_steps = 512
 abstol_all = 1e-7
 
 # For low gamma_param, algorithm can sit in a local minimum
@@ -199,48 +199,48 @@ p = plot_final_density([analytical_gs], sim_gpe_1d; label="analytical", color=:b
 as = [join(["_gamma_", gamma_param])]
 
 @info "computing GPE_1D" 
-if isfile(join([save_path, "gpe_1d.jld2"])) && use_precomputed
+if isfile(join([save_path, join(["gpe_1d",as, ".jld2"])])) && use_precomputed
     @info "\t using precomputed solution gpe_1d.jld2" 
-    gpe_1d = JLD2.load(join([save_path, "gpe_1d.jld2"]))["gpe_1d"]
+    gpe_1d = JLD2.load(join([save_path, join(["gpe_1d",as, ".jld2"])]))["gpe_1d"]
 else
     sol = runsim(sim_gpe_1d; info=true)
     gpe_1d = sol.u
-    JLD2.save(join([save_path, "gpe_1d.jld2"]), "gpe_1d",  gpe_1d)
+    JLD2.save(join([save_path, join(["gpe_1d",as, ".jld2"])]), "gpe_1d",  gpe_1d)
 end
 plot_final_density!(p, [gpe_1d], sim_gpe_1d; label="GPE_1D", color=:blue, ls=:dash)
 
 
 @info "computing NPSE" 
-if isfile(join([save_path, "npse.jld2"])) && use_precomputed
+if isfile(join([save_path, join(["npse",as, ".jld2"])])) && use_precomputed
     @info "\t using precomputed solution npse.jld2" 
-    npse = JLD2.load(join([save_path, "npse.jld2"]))["npse"]
+    npse = JLD2.load(join([save_path, join(["npse",as, ".jld2"])]))["npse"]
 else
     sol = runsim(sim_npse; info=true)
     npse = sol.u
-    JLD2.save(join([save_path, "npse.jld2"]), "npse",  npse)
+    JLD2.save(join([save_path, join(["npse",as, ".jld2"])]), "npse",  npse)
 end
 plot_final_density!(p, [npse], sim_npse; label="NPSE", color=:green, ls=:dotted)
 
 
 @info "computing NPSE_plus" 
-if isfile(join([save_path, "npse_plus.jld2"])) && false
+if isfile(join([save_path, join(["npse_plus",as, ".jld2"])])) && use_precomputed
     @info "\t using precomputed solution npse_plus.jld2" 
-    npse_plus = JLD2.load(join([save_path, "npse_plus.jld2"]))["npse_plus"]
+    npse_plus = JLD2.load(join([save_path, join(["npse_plus",as, ".jld2"])]))["npse_plus"]
 else
     sol = runsim(sim_npse_plus; info=true)
     npse_plus = sol.u
-    JLD2.save(join([save_path, "npse_plus.jld2"]), "npse_plus",  npse_plus)
+    JLD2.save(join([save_path, join(["npse_plus",as, ".jld2"])]), "npse_plus",  npse_plus)
 end
 plot_final_density!(p, [npse_plus], sim_npse_plus; label="NPSE_der", ls=:dash, color=:green)
 
 @info "computing GPE_3D" 
-if isfile(join([save_path, "gpe_3d.jld2"])) && use_precomputed
+if isfile(join([save_path, join(["gpe_3d",as, ".jld2"])])) && use_precomputed
     @info "\t using precomputed solution gpe_3d.jld2" 
-    gpe_3d = JLD2.load(join([save_path, "gpe_3d.jld2"]))["gpe_3d"]
+    gpe_3d = JLD2.load(join([save_path, join(["gpe_3d",as, ".jld2"])]))["gpe_3d"]
 else
     sol = runsim(sim_gpe_3d; info=true)
     gpe_3d = sol.u
-    JLD2.save(join([save_path, "gpe_3d.jld2"]), "gpe_3d",  gpe_3d)
+    JLD2.save(join([save_path, join(["gpe_3d",as, ".jld2"])]), "gpe_3d",  gpe_3d)
 end
 # linear interpolation
 gpe_3d = sim_gpe_3d.psi_0
