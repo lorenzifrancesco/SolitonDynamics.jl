@@ -21,6 +21,7 @@ equation_list = [GPE_1D, NPSE, NPSE_plus, GPE_3D]
 for gamma_param in gamma_param_list
     initial_width = 50 # (squared)
     use_precomputed = false
+    take_advantage = true
 
     maxiters_1d = 1e5
     maxiters_3d = 1e10
@@ -129,7 +130,7 @@ for gamma_param in gamma_param_list
     n = 100
     as = g_param / n
     abstol = abstol_all
-    dt = 0.1
+    dt = 0.005
     x = X[1]
     k = K[1]
     dV= volume_element(L, N)
@@ -168,7 +169,7 @@ for gamma_param in gamma_param_list
 
     abstol = abstol_all
     maxiters = maxiters_3d
-    dt = 0.001
+    dt = 0.01
 
 
     x0 = 0.0
@@ -214,7 +215,12 @@ for gamma_param in gamma_param_list
     end
     plot_final_density!(p, [gpe_1d], sim_gpe_1d; label="GPE_1D", color=:blue, ls=:dash)
 
-
+    # estimate width
+    initial_sigma_improved = sqrt(sum(abs2.(sim_gpe_1d.X[1])  .* abs2.(gpe_1d) * dV) |> real)
+    @warn initial_sigma_improved
+    if take_advantage 
+        sim_npse.psi_0 = gpe_1d
+    end
     @info "computing NPSE"
     if isfile(join([save_path, join(["npse",as, ".jld2"])])) && use_precomputed
         @info "\t using precomputed solution npse.jld2" 
@@ -226,7 +232,9 @@ for gamma_param in gamma_param_list
     end
     plot_final_density!(p, [npse], sim_npse; label="NPSE", color=:green, ls=:dot)
 
-
+    if take_advantage
+        sim_npse_plus.psi_0 = npse
+    end
     @info "computing NPSE_plus" 
     if isfile(join([save_path, join(["npse_plus",as, ".jld2"])])) && use_precomputed
         @info "\t using precomputed solution npse_plus.jld2" 
@@ -238,29 +246,41 @@ for gamma_param in gamma_param_list
     end
     plot_final_density!(p, [npse_plus], sim_npse_plus; label="NPSE_der", ls=:dash, color=:green)
 
-    # @info "computing GPE_3D" 
-    # if isfile(join([save_path, join(["gpe_3d",as, ".jld2"])])) && use_precomputed
-    #     @info "\t using precomputed solution gpe_3d.jld2" 
-    #     gpe_3d = JLD2.load(join([save_path, join(["gpe_3d",as, ".jld2"])]))["gpe_3d"]
-    # else
-    #     sol = runsim(sim_gpe_3d; info=true)
-    #     gpe_3d = sol.u
-    #     JLD2.save(join([save_path, join(["gpe_3d",as, ".jld2"])]), "gpe_3d",  gpe_3d)
-    # end
-    # # linear interpolation
-    # gpe_3d = sim_gpe_3d.psi_0
-    # x_axis = sim_npse.X[1] |> real
-    # x_axis_3d = sim_gpe_3d.X[1] |> real
-    # dx = sim_gpe_3d.X[1][2]-sim_gpe_3d.X[1][1]
-    # final_axial = Array(sum(abs2.(xspace(gpe_3d, sim_gpe_3d)), dims=(2, 3)))[:, 1, 1] * sim_gpe_3d.dV / dx |> real
-    # # we need to renormalize (error in the sum??)
-    # final_axial = final_axial / sum(final_axial * dx) |> real
-    # x_3d_range = range(-sim_gpe_3d.L[1]/2, sim_gpe_3d.L[1]/2, length(sim_gpe_3d.X[1])) 
-    # solution_3d = LinearInterpolation(x_3d_range, final_axial, extrapolation_bc = Line())
-    # plot!(p, x_axis, solution_3d(x_axis), label="GPE_3D", color=:red) 
-    # # q = plot(x_axis_3d, final_axial, label="GPE_3D", color=:red, linestyle=:dot) 
-    # # display(q)
-    # display(p)
+
+    if take_advantage
+        x = Array(sim_gpe_3d.X[1])
+        y = Array(sim_gpe_3d.X[2])
+        z = Array(sim_gpe_3d.X[3])
+
+        tmp = [exp(-(((x-x0)/initial_sigma_improved)^2 + (y^2 + z^2)/2)) * exp(-im*x*vv) for x in x, y in y, z in z]
+        sim_gpe_3d.psi_0 = CuArray(tmp)
+        sim_gpe_3d.psi_0 .= sim_gpe_3d.psi_0 / sqrt(sum(abs2.(sim_gpe_3d.psi_0) * sim_gpe_3d.dV))
+        initial_3d = copy(sim_gpe_3d.psi_0)
+        kspace!(sim_gpe_3d.psi_0, sim_gpe_3d)
+    end
+    @info "computing GPE_3D" 
+    if isfile(join([save_path, join(["gpe_3d",as, ".jld2"])])) && use_precomputed
+        @info "\t using precomputed solution gpe_3d.jld2" 
+        gpe_3d = JLD2.load(join([save_path, join(["gpe_3d",as, ".jld2"])]))["gpe_3d"]
+    else
+        sol = runsim(sim_gpe_3d; info=true)
+        gpe_3d = sol.u
+        JLD2.save(join([save_path, join(["gpe_3d",as, ".jld2"])]), "gpe_3d",  gpe_3d)
+    end
+    # linear interpolation
+    gpe_3d = sim_gpe_3d.psi_0
+    x_axis = sim_npse.X[1] |> real
+    x_axis_3d = sim_gpe_3d.X[1] |> real
+    dx = sim_gpe_3d.X[1][2]-sim_gpe_3d.X[1][1]
+    final_axial = Array(sum(abs2.(xspace(gpe_3d, sim_gpe_3d)), dims=(2, 3)))[:, 1, 1] * sim_gpe_3d.dV / dx |> real
+    # we need to renormalize (error in the sum??)
+    final_axial = final_axial / sum(final_axial * dx) |> real
+    x_3d_range = range(-sim_gpe_3d.L[1]/2, sim_gpe_3d.L[1]/2, length(sim_gpe_3d.X[1])) 
+    solution_3d = LinearInterpolation(x_3d_range, final_axial, extrapolation_bc = Line())
+    plot!(p, x_axis, solution_3d(x_axis), label="GPE_3D", color=:red) 
+    # q = plot(x_axis_3d, final_axial, label="GPE_3D", color=:red, linestyle=:dot) 
+    # display(q)
+    display(p)
 
     # s2 = estimate_sigma2(kspace(initial_3d, sim_gpe_3d), sim_gpe_3d)
     # sigma_2 = plot(x_axis_3d, s2, label="sigma2", color=:red, linestyle=:dot)
@@ -277,4 +297,5 @@ for gamma_param in gamma_param_list
     # display(sigma_2)
 
     # heatmap(abs2.(xspace(gpe_3d, sim_gpe_3d))[3, :, :], aspect_ratio=1, color=:viridis, title="GPE_3D")
+    savefig(p, "media/comparison_g$(gamma_param).png")
 end

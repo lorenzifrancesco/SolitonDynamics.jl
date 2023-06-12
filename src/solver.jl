@@ -28,7 +28,8 @@ function manual_run(sim; info=false)
             try
                cp_diff = propagate_manual!(psi_0,sim,dt; info=info, ss_buffer=ss_buffer)
                sim.dt *= (1-decay)
-               info && print("\n Interation number: ", cnt, " - chempot diff: ", cp_diff, " - dt: ", sim.dt)
+               info && print("\n Interaction number")
+               info && print("\r", cnt, " - chempot diff: ", cp_diff)
             catch err
                if isa(err, NpseCollapse)
                   showerror(stdout, err)
@@ -57,7 +58,8 @@ function manual_run(sim; info=false)
          cnt = 0 
          while cp_diff > abstol_diff && cnt < maxiters
             cp_diff = func(psi_0,sim,dt, tri_fwd, tri_bkw)
-            info && print("\n Interation number: ", cnt, " - chempot diff: ", cp_diff)
+            info && print("\n Interaction number")
+            info && print("\r", cnt, " - chempot diff: ", cp_diff)
             cnt +=1
          end
          info && @info "Computation ended after iterations" cnt

@@ -24,7 +24,7 @@ function nlin_manual!(psi,sim::Sim{1, Array{ComplexF64}},t; ss_buffer=nothing, i
          if isnothing(ss_buffer)
             ss = ones(N)
          else
-            info && @info "using ss_buffer with min: " minimum(ss_buffer)
+            # info && @info "using ss_buffer with min: " minimum(ss_buffer)
             ss = ss_buffer
          end
          prob = NonlinearProblem(sigma_eq, ss, [b, A0, dV])
@@ -63,7 +63,7 @@ function propagate_manual!(psi, sim::Sim{1, Array{ComplexF64}}, t; ss_buffer=not
    @. psi = exp(dt * iswitch * (1.0 - im*gamma)*(-im*(1/2*ksquared - mu)))*psi
    if iswitch == -im      
       psi .= psi / sqrt(nsk(psi, sim))
-      info && print(" - chempot: ", chempotk(psi, sim))
+      info && print(" - chempot: ", abs(chempotk(psi, sim)))
       cp_diff = abs(chempotk(psi, sim) - chempotk(psi_i, sim)) / dt
       return cp_diff
    else
