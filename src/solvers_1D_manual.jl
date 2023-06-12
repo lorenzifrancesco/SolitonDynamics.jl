@@ -18,6 +18,7 @@ function nlin_manual!(psi,sim::Sim{1, Array{ComplexF64}},t; ss_buffer=nothing, i
          b = (1 .+ g*abs2.(psi))
          b[1]   += 1.0 * 1/(4*dV)
          b[end] += 1.0 * 1/(4*dV)
+         
          a = ones(length(b))
          A0 = 1/(2*dV) * SymTridiagonal(2*a, -a)
          if isnothing(ss_buffer)
@@ -27,7 +28,7 @@ function nlin_manual!(psi,sim::Sim{1, Array{ComplexF64}},t; ss_buffer=nothing, i
             ss = ss_buffer
          end
          prob = NonlinearProblem(sigma_eq, ss, [b, A0, dV])
-         sol = solve(prob, NewtonRaphson(), reltol=1e-3)
+         sol = solve(prob, NewtonRaphson(), reltol=1e-6)
          sigma2_plus = (sol.u).^2
          ss_buffer .= sol.u
 
@@ -48,7 +49,7 @@ function nlin_manual!(psi,sim::Sim{1, Array{ComplexF64}},t; ss_buffer=nothing, i
       temp = copy(sigma2_plus)
       nonlinear = g*abs2.(psi) ./sigma2_plus +  (1/2 * sigma2_plus .+ (1 ./(2*sigma2_plus)).* (1 .+ (1/dV * diff(prepend!(temp, 1.0))).^2))
       @. psi = exp(dt * -im*iswitch* (V0 + V(x, t) + nonlinear)) * psi
-      Base.GC.gc()
+      # Base.GC.gc()    
    end
    kspace!(psi,sim)
    return nothing
