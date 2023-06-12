@@ -9,21 +9,23 @@ import FFTW
 import JLD2
 using Interpolations
 
-# plotly()
-gr()
+plotly()
+# gr()
 
 include("plot_axial_evolution.jl")
 save_path = "results/"
 
-gamma_param_list = [0.2, 0.4, 0.6, 0.8]
-for gamma_param in gamma_param_list
-    initial_width = 10 # (squared)
-    use_precomputed = true
+gamma_param_list = [0.15, 0.4, 0.6]
+equation_list = [GPE_1D, NPSE, NPSE_plus, GPE_3D]
 
-    maxiters_1d = 1e10
+for gamma_param in gamma_param_list
+    initial_width = 50 # (squared)
+    use_precomputed = false
+
+    maxiters_1d = 1e5
     maxiters_3d = 1e10
-    N_axial_steps = 512
-    abstol_all = 1e-7
+    N_axial_steps = 1024
+    abstol_all = 1e-6
 
     # For low gamma_param, algorithm can sit in a local minimum
     # =========================================================
@@ -32,7 +34,7 @@ for gamma_param in gamma_param_list
     L = (40.0,)
     N = (N_axial_steps,)
     sim_gpe_1d = Sim{length(L), Array{Complex{Float64}}}(L=L, N=N)
-    initial_state = zeros(N[1])
+    initial_state_gpe_1d = zeros(N[1])
 
     @unpack_Sim sim_gpe_1d
     iswitch = -im
@@ -48,7 +50,7 @@ for gamma_param in gamma_param_list
     n = 100
     as = g_param / n
     abstol = abstol_all
-    dt = 0.001
+    dt = 0.005
     x = X[1]
     k = K[1]
     dV= volume_element(L, N)
@@ -62,7 +64,7 @@ for gamma_param in gamma_param_list
     psi_0 .= exp.(-x.^2/initial_width)
     psi_0 = psi_0 / sqrt(ns(psi_0, sim_gpe_1d))
 
-    initial_state .= psi_0
+    initial_state_gpe_1d .= psi_0
     kspace!(psi_0, sim_gpe_1d)
     @pack_Sim! sim_gpe_1d
 
@@ -127,7 +129,7 @@ for gamma_param in gamma_param_list
     n = 100
     as = g_param / n
     abstol = abstol_all
-    dt = 0.01
+    dt = 0.1
     x = X[1]
     k = K[1]
     dV= volume_element(L, N)
@@ -166,7 +168,7 @@ for gamma_param in gamma_param_list
 
     abstol = abstol_all
     maxiters = maxiters_3d
-    dt = 0.005
+    dt = 0.001
 
 
     x0 = 0.0
@@ -196,8 +198,9 @@ for gamma_param in gamma_param_list
 
     # =========================================================
     Plots.CURRENT_PLOT.nullableplot = nothing
-    p = plot_final_density([analytical_gs], sim_gpe_1d; label="analytical", color=:black, doifft=false, ls=:dashdot)
-
+    p = plot_final_density([analytical_gs], sim_gpe_1d; label="analytical", color=:orange, doifft=false, ls=:dashdot, title="gamma = $gamma_param")
+    plot_final_density!(p, [initial_state_gpe_1d], sim_gpe_1d; label="initial_GPE_1D", color=:grey, doifft=false, ls=:dashdot)
+    
     as = [join(["_gamma_", gamma_param])]
 
     @info "computing GPE_1D" 
@@ -212,7 +215,7 @@ for gamma_param in gamma_param_list
     plot_final_density!(p, [gpe_1d], sim_gpe_1d; label="GPE_1D", color=:blue, ls=:dash)
 
 
-    @info "computing NPSE" 
+    @info "computing NPSE"
     if isfile(join([save_path, join(["npse",as, ".jld2"])])) && use_precomputed
         @info "\t using precomputed solution npse.jld2" 
         npse = JLD2.load(join([save_path, join(["npse",as, ".jld2"])]))["npse"]
@@ -221,7 +224,7 @@ for gamma_param in gamma_param_list
         npse = sol.u
         JLD2.save(join([save_path, join(["npse",as, ".jld2"])]), "npse",  npse)
     end
-    plot_final_density!(p, [npse], sim_npse; label="NPSE", color=:green, ls=:dotted)
+    plot_final_density!(p, [npse], sim_npse; label="NPSE", color=:green, ls=:dot)
 
 
     @info "computing NPSE_plus" 
@@ -235,43 +238,43 @@ for gamma_param in gamma_param_list
     end
     plot_final_density!(p, [npse_plus], sim_npse_plus; label="NPSE_der", ls=:dash, color=:green)
 
-    @info "computing GPE_3D" 
-    if isfile(join([save_path, join(["gpe_3d",as, ".jld2"])])) && use_precomputed
-        @info "\t using precomputed solution gpe_3d.jld2" 
-        gpe_3d = JLD2.load(join([save_path, join(["gpe_3d",as, ".jld2"])]))["gpe_3d"]
-    else
-        sol = runsim(sim_gpe_3d; info=true)
-        gpe_3d = sol.u
-        JLD2.save(join([save_path, join(["gpe_3d",as, ".jld2"])]), "gpe_3d",  gpe_3d)
-    end
-    # linear interpolation
-    gpe_3d = sim_gpe_3d.psi_0
-    x_axis = sim_npse.X[1] |> real
-    x_axis_3d = sim_gpe_3d.X[1] |> real
-    dx = sim_gpe_3d.X[1][2]-sim_gpe_3d.X[1][1]
-    final_axial = Array(sum(abs2.(xspace(gpe_3d, sim_gpe_3d)), dims=(2, 3)))[:, 1, 1] * sim_gpe_3d.dV / dx |> real
-    # we need to renormalize (error in the sum??)
-    final_axial = final_axial / sum(final_axial * dx) |> real
-    x_3d_range = range(-sim_gpe_3d.L[1]/2, sim_gpe_3d.L[1]/2, length(sim_gpe_3d.X[1])) 
-    solution_3d = LinearInterpolation(x_3d_range, final_axial, extrapolation_bc = Line())
-    plot!(p, x_axis, solution_3d(x_axis), label="GPE_3D", color=:red) 
-    # q = plot(x_axis_3d, final_axial, label="GPE_3D", color=:red, linestyle=:dot) 
-    # display(q)
-    display(p)
+    # @info "computing GPE_3D" 
+    # if isfile(join([save_path, join(["gpe_3d",as, ".jld2"])])) && use_precomputed
+    #     @info "\t using precomputed solution gpe_3d.jld2" 
+    #     gpe_3d = JLD2.load(join([save_path, join(["gpe_3d",as, ".jld2"])]))["gpe_3d"]
+    # else
+    #     sol = runsim(sim_gpe_3d; info=true)
+    #     gpe_3d = sol.u
+    #     JLD2.save(join([save_path, join(["gpe_3d",as, ".jld2"])]), "gpe_3d",  gpe_3d)
+    # end
+    # # linear interpolation
+    # gpe_3d = sim_gpe_3d.psi_0
+    # x_axis = sim_npse.X[1] |> real
+    # x_axis_3d = sim_gpe_3d.X[1] |> real
+    # dx = sim_gpe_3d.X[1][2]-sim_gpe_3d.X[1][1]
+    # final_axial = Array(sum(abs2.(xspace(gpe_3d, sim_gpe_3d)), dims=(2, 3)))[:, 1, 1] * sim_gpe_3d.dV / dx |> real
+    # # we need to renormalize (error in the sum??)
+    # final_axial = final_axial / sum(final_axial * dx) |> real
+    # x_3d_range = range(-sim_gpe_3d.L[1]/2, sim_gpe_3d.L[1]/2, length(sim_gpe_3d.X[1])) 
+    # solution_3d = LinearInterpolation(x_3d_range, final_axial, extrapolation_bc = Line())
+    # plot!(p, x_axis, solution_3d(x_axis), label="GPE_3D", color=:red) 
+    # # q = plot(x_axis_3d, final_axial, label="GPE_3D", color=:red, linestyle=:dot) 
+    # # display(q)
+    # display(p)
 
-    s2 = estimate_sigma2(kspace(initial_3d, sim_gpe_3d), sim_gpe_3d)
-    sigma_2 = plot(x_axis_3d, s2, label="sigma2", color=:red, linestyle=:dot)
-    dens = sum(abs2.(initial_3d), dims=(2, 3))[:, 1, 1] * sim_gpe_3d.dV / dx |> real
-    plot!(sigma_2, x_axis_3d, dens, label="psi^2", color=:red)
-    display(sigma_2)
+    # s2 = estimate_sigma2(kspace(initial_3d, sim_gpe_3d), sim_gpe_3d)
+    # sigma_2 = plot(x_axis_3d, s2, label="sigma2", color=:red, linestyle=:dot)
+    # dens = sum(abs2.(initial_3d), dims=(2, 3))[:, 1, 1] * sim_gpe_3d.dV / dx |> real
+    # plot!(sigma_2, x_axis_3d, dens, label="psi^2", color=:red)
+    # display(sigma_2)
 
 
-    s2 = estimate_sigma2(gpe_3d, sim_gpe_3d)
-    sigma_2 = plot(x_axis_3d, s2, label="sigma2", color=:red)
-    plot!(sigma_2, x_axis_3d, sigma2_old, label="NPSE", color=:red, linestyle=:dash)
-    plot!(sigma_2, x_axis_3d, sigma2_new, label="NPSE:plus", color=:red, linestyle=:dot)
-    plot!(sigma_2, x_axis_3d, final_axial, label="psi^2", color=:red)
-    display(sigma_2)
+    # s2 = estimate_sigma2(gpe_3d, sim_gpe_3d)
+    # sigma_2 = plot(x_axis_3d, s2, label="sigma2", color=:red)
+    # plot!(sigma_2, x_axis_3d, sigma2_old, label="NPSE", color=:red, linestyle=:dash)
+    # plot!(sigma_2, x_axis_3d, sigma2_new, label="NPSE:plus", color=:red, linestyle=:dot)
+    # plot!(sigma_2, x_axis_3d, final_axial, label="psi^2", color=:red)
+    # display(sigma_2)
 
-    heatmap(abs2.(xspace(gpe_3d, sim_gpe_3d))[3, :, :], aspect_ratio=1, color=:viridis, title="GPE_3D")
+    # heatmap(abs2.(xspace(gpe_3d, sim_gpe_3d))[3, :, :], aspect_ratio=1, color=:viridis, title="GPE_3D")
 end
