@@ -7,6 +7,7 @@ using CUDA.CUFFT
 import Makie, GLMakie
 
 include("plot_isosurfaces.jl")
+update_parameters()
 include("plot_axial_evolution.jl")
 
 use_precomputed = false

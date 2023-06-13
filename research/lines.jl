@@ -16,47 +16,6 @@ file = "tran.pdf"
 let sim
 saveto=joinpath("media/1D",file)
 
-L = (50.0,)
-N = (256,)
-
-sim = Sim{length(L), Array{Complex{Float64}}}(L=L, N=N)
-
-# ====== initialization and unpacking
-@unpack_Sim sim
-# ======= simulation custom parameters
-equation = GPE_1D
-solver = SplitStep 
-manual = false 
-time_steps = 2000
-g = -1.17  #corresponds to gamma -0.587
-gamma = 0.0
-tiles = 100
-barrier_width = 0.699 # as in SolitonBEC.jl
-max_vel = 1.17 # CALCULATED VALUE 1.17 FOR CHOOSEN NONLINEARITY
-max_bar = 1.68 # CALCULATED VALUE 1.68 FOR CHOOSEN NONLINEARITY
-reltol = 1e-4
-abstol = 1e-4
-x0 = L[1] / 4
-
-# other computations
-vel_list = LinRange(0, max_vel, tiles)
-bar_list = LinRange(0, max_bar, tiles)
-tran = Array{Float64, 1}(undef, (tiles))
-refl = Array{Float64, 1}(undef, (tiles))
-
-
-iswitch = 1
-g_param = abs(g) / 2
-
-x = X[1] |> real
-k = K[1] |> real
-dV= volume_element(L, N)
-sigma2 = init_sigma2(g)
-
-alg = BS3()
-maxiters = 50000
-
-@pack_Sim! sim
 
 mask_refl = map(xx -> xx>0, x)
 mask_tran = map(xx -> xx<0, x)
