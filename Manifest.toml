@@ -778,9 +778,9 @@ version = "2.8.1+1"
 
 [[deps.HostCPUFeatures]]
 deps = ["BitTwiddlingConvenienceFunctions", "IfElse", "Libdl", "Static"]
-git-tree-sha1 = "734fd90dd2f920a2f1921d5388dcebe805b262dc"
+git-tree-sha1 = "d38bd0d9759e3c6cfa19bdccc314eccf8ce596cc"
 uuid = "3e5b6fbb-0976-4d2c-9146-d79de83f2fb0"
-version = "0.1.14"
+version = "0.1.15"
 
 [[deps.HypergeometricFunctions]]
 deps = ["DualNumbers", "LinearAlgebra", "OpenLibm_jll", "SpecialFunctions"]

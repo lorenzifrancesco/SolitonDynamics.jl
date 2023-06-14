@@ -1,17 +1,19 @@
 using LaTeXStrings, Plots
 import GR
 using CondensateDynamics
+import CondensateDynamics.V
 using OrdinaryDiffEq
 using DiffEqCallbacks
 using LSODA
-import CondensateDynamics.V
 import FFTW
+using CUDA.CUFFT
+using CUDA
 import JLD2
 using Interpolations
 
 plotly()
 
-include("plot_axial_evolution.jl")
+include("../src/plot_axial_evolution.jl")
 save_path = "results/"
 
 gamma_param = 0.0

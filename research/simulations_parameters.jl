@@ -3,9 +3,8 @@ using CondensateDynamics
 import FFTW
 using CUDA
 
-function update_parameters()
-    filename = "simulations.jld2"
-    sim_file = HDF5.h5open(filename, "r")
+    filename = "simulations.h5"
+    HDF5.h5open(filename, "w") do sim_file
     
     maxiters_1d = 1e10
     maxiters_3d = 1e10
@@ -158,5 +157,4 @@ function update_parameters()
     for (k, v) in sim_dictionary
         sim_file[k] = v
     end
-    return nothing
 end

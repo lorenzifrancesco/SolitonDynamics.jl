@@ -3,6 +3,7 @@
 *.png
 *.txt
 *.jld2
+*.h5
 .vscode
 development_notes.md
 media

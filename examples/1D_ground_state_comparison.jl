@@ -11,7 +11,7 @@ using Interpolations
 
 gr()
 GR.usecolorscheme(1)
-include("plot_axial_evolution.jl")
+include("../src/plot_axial_evolution.jl")
 save_path = "results/"
 
 gamma_param = 0.4

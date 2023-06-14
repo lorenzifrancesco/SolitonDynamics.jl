@@ -4,8 +4,8 @@ using OrdinaryDiffEq
 using LSODA
 import CondensateDynamics.V
 
-include("plot_axial_evolution.jl")
-save_path = "results/"
+include("../src/plot_axial_evolution.jl")
+save_path = "../results/"
 
 gamma_param = 0.6
 use_precomputed = false

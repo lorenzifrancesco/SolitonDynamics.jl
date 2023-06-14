@@ -77,112 +77,6 @@ function volume_element(L, N)
     return dV
 end
 
-
-"""
-compute normalization
-"""
-function ns(psi, sim)
-    return sum(abs2.(psi)) * sim.dV
-end
-
-"""
-compute normalization in k-space
-"""
-function nsk(psi, sim)
-    dV,dk = measures(sim.L, sim.N)
-    return sum(abs2.(psi)) * dk
-end
-
-"""
-compute norm squared of a region
-"""
-function ns(psi, sim, mask)
-    return sum(abs2.(psi).* mask) * sim.dV
-end
-
-"""
-return σ^2(ψ) of the NPSE
-"""
-function init_sigma2(g::Float64)
-    function sigma2(psi::ComplexF64)
-        result = psi
-        try
-            result = sqrt(1 + g * abs2(psi))
-        catch  err
-            if isa(err, DomainError)
-                result = NaN
-                throw(NpseCollapse(g * maximum(abs2.(psi))))
-            else
-                throw(err)
-            end
-        end
-        return result
-    end
-    return sigma2
-end
-
-# """
-# check notes, Sigma is sigma^2
-# """
-# function deSigmaLambda!(dsigma, sigma, psi, t)
-#     return 
-# end
-
-# """
-# return the sigma2 function to be called in the ODE loop
-# """
-# function init_sigma2_ode(g::Float64, x::Array{Float64})
-#     function sigma2(psi::Array{ComplexF64}, sigma2_0::Float64, lambda::Float64)
-#         problem = ODEProblem(deSigmaLambda!, Array([sigma2_0, lambda]), (x[1], x[end]), psi)
-#         sol = solve(problem,
-#                     alg=BS3(),
-#                     dense=false,
-#                     maxiters=2000,
-#                     progress=true, 
-#                     )
-#         result = sol.u
-#         try
-#             tmp = sqrt.(result)
-#         catch  err
-#             if isa(err, DomainError)
-#                 result = NaN
-#                 throw(NpseCollapse(NaN))
-#             else
-#                 throw(err)
-#             end
-#         end
-#         return result
-#     end
-#     return sigma2
-# end
-
-"""
-chemical potential in a given configuration
-"""
-function chempotk(psi, sim)
-    @unpack ksquared,dV,V0,Vol,g = sim 
-    mu = 1/Vol * sum(1/2 * ksquared .* abs2.(psi))
-    tmp = xspace(psi, sim)
-    mu += dV * sum((V0 + g*abs2.(tmp)) .* abs2.(tmp))
-    mu *= 1/ns(tmp, sim) 
-    #mu += 1 # add one transverse energy unit (1D-GPE case)
-    return mu
-end
-
-"""
-chemical potential in a given configuration
-"""
-function chempot(psi, sim)
-    @unpack ksquared,dV,V0,Vol,g = sim 
-    mu = dV * sum((V0 + g*abs2.(psi)) .* abs2.(psi))
-    tmp = kspace(psi, sim)
-    mu += 1/Vol * sum(1/2 * ksquared .* abs2.(tmp))
-    mu *= 1/nsk(tmp, sim) 
-    #mu += 1 # add one transverse energy unit (1D-GPE case)
-    return mu
-end
-
-
 """
     X,K,dX,dK = makearrays(L,N)
 
@@ -318,10 +212,15 @@ function definetransforms(funcs,args,meas;kwargs=nothing)
     trans = []
     if kwargs === nothing
         for (fun,arg) in zip(funcs,args)
+            print("AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA\n\n\n")
+            @info arg
             push!(trans, fun(arg...))
         end
     else
         for (fun,arg) in zip(funcs,args)
+            print("\n\n\nAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA")
+            @info typeof(arg)
+
             push!(trans, fun(arg...,flags=kwargs))
         end
     end
@@ -363,52 +262,4 @@ function makeT(X,K,T::Type{CuArray{ComplexF64}};flags=FFTW.MEASURE)
     args = ((psi_test,),(psi_test,),(psi_test,),(psi_test,))
     Txk,Txk!,Tkx,Tkx! = definetransforms(trans,args,meas)
     return GPUTransforms{D,N,T}(Txk,Txk!,Tkx,Tkx!)
-end
-
-
-function npse_expr(mu) 
-    f =  ((1-mu)^(3/2) - 3/2*(1-mu)^(1/2))*(2*sqrt(2))/3
-    return f
-end
-
-"""
-Compute the ground state energy normalized to the harmonic energy unit
-"""
-function npse_energy(n, as)
-    steps = 500
-    dn = n/steps
-    energy = 0
-    for n_int in LinRange(0, n, steps)
-        gamma = as * n_int
-        a = roots(x->npse_expr(x)+gamma, 0.5..1, Newton, 1e-4)
-        mu = mid(a[1].interval)
-        energy += mu
-    end
-    return energy * dn
-end
-
-function gpe_energy(n, as)
-    steps = 500
-    dn = n/steps
-    energy = 0
-    for n_int in LinRange(0, n, steps)
-        gamma = as * n_int
-        mu = 1-gamma^2/2
-        energy += mu
-    end
-    return energy * dn
-end
-
-"""
-Compute the chemical potential
-"""
-function npse_mu(n, as)
-    gamma = as * n
-    a = roots(x->npse_expr(x)+gamma, 0.5..1, Newton, 1e-4)
-    mu = mid(a[1].interval)
-    return mu - 1
-end
-
-function gpe_mu(n, as)
-    return - (n * as)^2/8
 end

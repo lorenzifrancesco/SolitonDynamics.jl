@@ -4,7 +4,7 @@ using OrdinaryDiffEq
 using LSODA
 import CondensateDynamics.V
 
-include("plot_axial_evolution.jl")
+include("../src/plot_axial_evolution.jl")
 
 L = (70.0,)
 N = (1024,)
