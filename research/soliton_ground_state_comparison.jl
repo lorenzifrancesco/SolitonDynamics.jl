@@ -4,31 +4,33 @@ using CondensateDynamics
 import CondensateDynamics.V
 import FFTW
 using Interpolations
-import HDF5
-
+import JLD2
 plotly(size=(800, 400))
 # gr()
 
+@info "Loading parameters..."
 include("simulations_parameters.jl")
-update_parameters()
 
-simulation = HDF5.open("simulations.jld2", "r")
-sim_gpe_1d    = simulation["GPE_1D_GS"]
-sim_npse      = simulation["NPSE_GS"]
-sim_gpe_3d    = simulations["GPE_3D_GS"]
-sim_npse_plus = simulations["NPSE_plus_GS"]
+simulation_dict = get_parameters() 
+sim_gpe_1d    = simulation_dict["GPE_1D_GS"]
+sim_npse      = simulation_dict["NPSE_GS"]
+sim_gpe_3d    = simulation_dict["GPE_3D_GS"]
+sim_npse_plus = simulation_dict["NPSE_plus_GS"]
 
 include("../src/plot_axial_evolution.jl")
 save_path = "results/"
 
-gamma_param_list = [0.15] 
+gamma_param_list = [0.15, 0.4, 0.6]
+use_precomputed = false
+take_advantage = true
+@info "Starting simulations..."
 
 for gamma_param in gamma_param_list
     # update simulation parameters
-    sim_gpe_1d.g_param = gamma_param
-    sim_npse.g_param = gamma_param
-    sim_npse_plus.g_param = gamma_param
-    sim_gpe_3d.g_param = gamma_param
+    sim_gpe_1d.g    = -2 * gamma_param 
+    sim_npse.g      = -2 * gamma_param
+    sim_npse_plus.g = -2 * gamma_param
+    sim_gpe_3d.g    = - 4 * pi * gamma_param
     
     # =========================================================
     Plots.CURRENT_PLOT.nullableplot = nothing
@@ -50,7 +52,7 @@ for gamma_param in gamma_param_list
 
     # estimate width
     initial_sigma_improved = sqrt(sum(abs2.(sim_gpe_1d.X[1])  .* abs2.(gpe_1d) * dV) |> real)
-    @warn initial_sigma_improved
+    @warn "initial sigma improved" initial_sigma_improved
     if take_advantage 
         sim_npse.psi_0 = gpe_1d
     end
@@ -122,7 +124,7 @@ for gamma_param in gamma_param_list
     # display(sigma_2)
 
 
-    # s2 = estimate_sigma2(gpe_3d, sim_gpe_3d)
+    # s2 = estimate_sigma2(gpe_3d, sim_gpe_3d
     # sigma_2 = plot(x_axis_3d, s2, label="sigma2", color=:red)
     # plot!(sigma_2, x_axis_3d, sigma2_old, label="NPSE", color=:red, linestyle=:dash)
     # plot!(sigma_2, x_axis_3d, sigma2_new, label="NPSE:plus", color=:red, linestyle=:dot)

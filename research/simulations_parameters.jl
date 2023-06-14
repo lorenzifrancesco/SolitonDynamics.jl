@@ -1,17 +1,15 @@
-import HDF5
 using CondensateDynamics
+using OrdinaryDiffEq
 import FFTW
 using CUDA
+import HDF5
 
-    filename = "simulations.h5"
-    HDF5.h5open(filename, "w") do sim_file
-    
     maxiters_1d = 1e10
     maxiters_3d = 1e10
     N_axial_steps = 1024
-    abstol_all = 1e-7
+    abstol_all = 1e-8
     gamma_param = 0.15 
-    initial_width = 5
+    initial_width = 100 
     
     # =========================================================
     ## 1D-GPE 
@@ -46,35 +44,15 @@ using CUDA
     initial_state_gpe_1d .= psi_0
     kspace!(psi_0, sim_gpe_1d)
     @pack_Sim! sim_gpe_1d
+
     # =========================================================
     ## NPSE (unable to copy)
-    L = (40.0,)
-    N = (N_axial_steps,)
-    sim_npse = Sim{length(L), Array{Complex{Float64}}}(L=L, N=N)
+
+    sim_npse = deepcopy(sim_gpe_1d)
     initial_state = zeros(N[1])
     @unpack_Sim sim_npse
-    iswitch = -im
     equation = NPSE
-    manual = true
-    solver = SplitStep
     # interaction parameter
-    g_param = gamma_param
-    maxiters = maxiters_1d
-    g = - 2 * g_param
-    n = 100
-    as = g_param / n
-    abstol = abstol_all
-    dt = 0.005
-    x = X[1]
-    k = K[1]
-    dV= volume_element(L, N)
-    flags = FFTW.EXHAUSTIVE
-    width = 7
-    tf = 1e10
-    psi_0 .= exp.(-(x/1).^2/initial_width)
-    psi_0 = psi_0 / sqrt(ns(psi_0, sim_gpe_1d))
-    initial_state .= psi_0
-    kspace!(psi_0, sim_gpe_1d)
     if g_param > 2/3
         @warn "we should expect NPSE collapse"
     end
@@ -82,33 +60,10 @@ using CUDA
     @pack_Sim! sim_npse
     # =========================================================
     ## NPSE (unable to copy)
-    L = (40.0,)
-    N = (N_axial_steps,)
-    sim_npse_plus = Sim{length(L), Array{Complex{Float64}}}(L=L, N=N)
-    initial_state = zeros(N[1])
+    sim_npse_plus = deepcopy(sim_npse)
     @unpack_Sim sim_npse_plus
-    iswitch = -im
     equation = NPSE_plus
-    manual = true
-    solver = SplitStep
     # interaction parameter
-    g_param = gamma_param
-    maxiters = maxiters_1d
-    g = - 2 * g_param
-    n = 100
-    as = g_param / n
-    abstol = abstol_all
-    dt = 0.005
-    x = X[1]
-    k = K[1]
-    dV= volume_element(L, N)
-    flags = FFTW.EXHAUSTIVE
-    width = 7
-    tf = 1e10
-    psi_0 .= exp.(-x.^2/initial_width)
-    psi_0 = psi_0 / sqrt(ns(psi_0, sim_gpe_1d))
-    initial_state .= psi_0
-    kspace!(psi_0, sim_gpe_1d)
     if g_param > 2/3
         @warn "we should expect NPSE collapse"
     end
@@ -151,10 +106,15 @@ using CUDA
     # @info sim_gpe_3d.g /4/pi
     # @info sim_gpe_1d.g /2
     # =========================================================
-    
-    sim_dictionary = Dict("GPE_1D_GS" => sim_gpe_1d, "NPSE_1D_GS" => sim_npse, "NPSE_plus_GS" => sim_npse_plus, "GPE_3D_GS" => sim_gpe_3d)
-    @info "saving simulations" keys(sim_dictionary)
-    for (k, v) in sim_dictionary
-        sim_file[k] = v
-    end
-end
+    sim_dictionary = Dict("GPE_1D_GS" => sim_gpe_1d, "NPSE_GS" => sim_npse, "NPSE_plus_GS" => sim_npse_plus, "GPE_3D_GS" => sim_gpe_3d)
+    return sim_dictionary
+
+
+# HDF5.h5open("simulation_list.h5", "w") do ff
+#     dict = get_parameters()
+#     @info dict["GPE_1D_GS"].alg
+#     ff["testalg"] = dict["GPE_1D_GS"].alg
+#     # for (k, v) in dict
+#     #     ff[k] = v
+#     # end
+# end

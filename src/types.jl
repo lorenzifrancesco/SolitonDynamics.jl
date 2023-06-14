@@ -78,7 +78,7 @@ end
     manual::Bool = false
     solver::Solver = SplitStep
     graphics::Bool = false
-    alg::OrdinaryDiffEq.OrdinaryDiffEqAdaptiveAlgorithm = Tsit5() # default solver
+    alg = Tsit5() # default solver
     reltol::Float64 = 1e-3  # default tolerance; may need to use 1e-7 for corner cases
     abstol::Float64 = 1e-3
     maxiters::Int64 = 5000
@@ -106,7 +106,6 @@ end
 
     # === initial value
     psi_0::A = ones(N) |> complex # initial condition
-
 
     # === saving
     nfiles::Bool = false

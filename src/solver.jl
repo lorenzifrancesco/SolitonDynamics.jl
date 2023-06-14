@@ -4,7 +4,7 @@ include("solvers_1D_manual.jl")
 include("solvers_3D_auto.jl")
 include("solvers_3D_manual.jl")
 
-function manual_run(sim; info=false)
+function manual_run(sim; info=false, debug=false)
    @unpack psi_0, dV, dt, ti, tf, t, solver, iswitch, abstol, reltol, N,Nt, V0, maxiters, time_steps, equation = sim
    if iswitch == -im # select solver and run manual convergence routine 
       info && @info "Running on manual GS mode: maxiters =  " maxiters
@@ -15,21 +15,21 @@ function manual_run(sim; info=false)
          cnt = 0 
          info && print("\n")
 
-         info && @info maxiters
+         debug && @info maxiters
          decay = 0 * 1e-5
-         info && @info "setting exp decay rate to" decay 
+         debug && @info "setting exp decay rate to" decay 
          if equation == NPSE_plus
             ss_buffer = ones(N[1])
          else
             ss_buffer = nothing
          end
 
+         info && print("Interaction number")
          while cp_diff > abstol_diff && cnt < maxiters
             try
                cp_diff = propagate_manual!(psi_0,sim,dt; info=info, ss_buffer=ss_buffer)
                sim.dt *= (1-decay)
-               info && print("\n Interaction number")
-               info && print("\r", cnt, " - chempot diff: ", cp_diff)
+               info && print("\r" , cnt, " - chempot diff: ", cp_diff)
             catch err
                if isa(err, NpseCollapse)
                   showerror(stdout, err)
@@ -62,7 +62,6 @@ function manual_run(sim; info=false)
             info && print("\r", cnt, " - chempot diff: ", cp_diff)
             cnt +=1
          end
-         info && @info "Computation ended after iterations" cnt
          kspace!(psi_0, sim)
          sol = CustomSolution(u=psi_0, t=t)
       end
