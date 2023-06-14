@@ -2,8 +2,9 @@ using CondensateDynamics
 using OrdinaryDiffEq
 import FFTW
 using CUDA
-import HDF5
+# import HDF5
 
+function get_parameters()
     maxiters_1d = 1e10
     maxiters_3d = 1e10
     N_axial_steps = 1024
@@ -106,9 +107,15 @@ import HDF5
     # @info sim_gpe_3d.g /4/pi
     # @info sim_gpe_1d.g /2
     # =========================================================
-    sim_dictionary = Dict("GPE_1D_GS" => sim_gpe_1d, "NPSE_GS" => sim_npse, "NPSE_plus_GS" => sim_npse_plus, "GPE_3D_GS" => sim_gpe_3d)
-    return sim_dictionary
+    sim_dictionary = Dict(
+                        "GPE_1D_GS" => sim_gpe_1d, 
+                        "NPSE_GS" => sim_npse, 
+                        # "NPSE_plus_GS" => sim_npse_plus, 
+                        # "GPE_3D_GS" => sim_gpe_3d
+                        )
 
+    return sim_dictionary
+end
 
 # HDF5.h5open("simulation_list.h5", "w") do ff
 #     dict = get_parameters()
