@@ -212,15 +212,10 @@ function definetransforms(funcs,args,meas;kwargs=nothing)
     trans = []
     if kwargs === nothing
         for (fun,arg) in zip(funcs,args)
-            print("AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA\n\n\n")
-            @info arg
             push!(trans, fun(arg...))
         end
     else
         for (fun,arg) in zip(funcs,args)
-            print("\n\n\nAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA")
-            @info typeof(arg)
-
             push!(trans, fun(arg...,flags=kwargs))
         end
     end
