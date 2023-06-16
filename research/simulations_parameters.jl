@@ -17,10 +17,8 @@ function get_parameters()
     L = (40.0,)
     N = (N_axial_steps,)
     sim_gpe_1d = Sim{length(L), Array{Complex{Float64}}}(L=L, N=N)
-    initial_state_gpe_1d = zeros(N[1])
     @unpack_Sim sim_gpe_1d
 
-    @warn "typeof(GPE_1D" typeof(GPE_1D)
     iswitch = -im
     equation = GPE_1D
     manual = true
@@ -44,7 +42,6 @@ function get_parameters()
     @. analytical_gs = sqrt(g_param/2) * 2/(exp(g_param*x) + exp(-x*g_param))
     psi_0 .= exp.(-x.^2/initial_width)
     psi_0 = psi_0 / sqrt(ns(psi_0, sim_gpe_1d))
-    initial_state_gpe_1d .= psi_0
     kspace!(psi_0, sim_gpe_1d)
     @pack_Sim! sim_gpe_1d
 
@@ -78,7 +75,7 @@ function get_parameters()
     L_axial = 40.0
     L = (L_axial,10.0,10.0)
     N = (N_axial_steps, 64, 64)
-    dx = L_axial / N_axial_steps 
+    dx = L_axial / N_axial_steps
     sim_gpe_3d = Sim{length(L), CuArray{Complex{Float64}}}(L=L, N=N)
     initial_state = zeros(N[1])
     @unpack_Sim sim_gpe_3d
@@ -112,18 +109,9 @@ function get_parameters()
     sim_dictionary = Dict(
                         "GPE_1D_GS" => sim_gpe_1d, 
                         "NPSE_GS" => sim_npse, 
-                        # "NPSE_plus_GS" => sim_npse_plus, 
-                        # "GPE_3D_GS" => sim_gpe_3d
+                        "NPSE_plus_GS" => sim_npse_plus, 
+                        "GPE_3D_GS" => sim_gpe_3d,
                         )
 
     return sim_dictionary
 end
-
-# HDF5.h5open("simulation_list.h5", "w") do ff
-#     dict = get_parameters()
-#     @info dict["GPE_1D_GS"].alg
-#     ff["testalg"] = dict["GPE_1D_GS"].alg
-#     # for (k, v) in dict
-#     #     ff[k] = v
-#     # end
-# end

@@ -206,3 +206,8 @@ function chempot(psi, sim)
     #mu += 1 # add one transverse energy unit (1D-GPE case)
     return mu
 end
+
+function sim_info(sim)
+    @unpack_Sim N, L, manual = sim
+    print("\nSimulation in $(length(N))D, with a number of steps $(N)\n")
+end

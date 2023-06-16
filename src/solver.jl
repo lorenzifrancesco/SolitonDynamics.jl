@@ -6,6 +6,7 @@ include("solvers_3D_manual.jl")
 
 function manual_run(sim; info=false, debug=false)
    @unpack psi_0, dV, dt, ti, tf, t, solver, iswitch, abstol, reltol, N,Nt, V0, maxiters, time_steps, equation = sim
+   psi = deepcopy(psi_0)
    if iswitch == -im # select solver and run manual convergence routine 
       info && @info "Running on manual GS mode: maxiters =  " maxiters
       # in manual GS mode the maximum number of steps is specified by maxiters
@@ -27,7 +28,7 @@ function manual_run(sim; info=false, debug=false)
          info && print("Interaction number")
          while cp_diff > abstol_diff && cnt < maxiters
             try
-               cp_diff = propagate_manual!(psi_0,sim,dt; info=info, ss_buffer=ss_buffer)
+               cp_diff = propagate_manual!(psi,sim,dt; info=info, ss_buffer=ss_buffer)
                sim.dt *= (1-decay)
                info && print("\r" , cnt, " - chempot diff: ", cp_diff)
             catch err
@@ -42,7 +43,7 @@ function manual_run(sim; info=false, debug=false)
          end
          print("\n")
          info && @info "Computation ended after iterations" cnt
-         sol = CustomSolution(u=psi_0, t=t)
+         sol = CustomSolution(u=psi, t=t)
       else # nonspectral methods
          solvers = [ground_state_nlin!, cn_ground_state!, pc_ground_state!, be_ground_state!]
          func = solvers[solver.number]
@@ -57,13 +58,13 @@ function manual_run(sim; info=false, debug=false)
          tri_bkw = -SymTridiagonal(d_central, d_lu) + Diagonal(ones(taglia)) # Sx
          cnt = 0 
          while cp_diff > abstol_diff && cnt < maxiters
-            cp_diff = func(psi_0,sim,dt, tri_fwd, tri_bkw)
+            cp_diff = func(psi,sim,dt, tri_fwd, tri_bkw)
             info && print("\n Interaction number")
             info && print("\r", cnt, " - chempot diff: ", cp_diff)
             cnt +=1
          end
-         kspace!(psi_0, sim)
-         sol = CustomSolution(u=psi_0, t=t)
+         kspace!(psi, sim)
+         sol = CustomSolution(u=psi, t=t)
       end
       return sol
    else
@@ -71,8 +72,8 @@ function manual_run(sim; info=false, debug=false)
       # in manual run mode the number of steps is specified by time_steps
       time = 0.0
       if length(N) == 1
-         collection = Array{ComplexF64, 2}(undef, (length(psi_0), Nt))
-         collection[:, 1] = psi_0
+         collection = Array{ComplexF64, 2}(undef, (length(psi), Nt))
+         collection[:, 1] = psi
          save_counter = 1
          solve_time_axis = LinRange(ti, tf, time_steps)         
          
@@ -84,7 +85,7 @@ function manual_run(sim; info=false, debug=false)
          
          for i in 1:time_steps
             try
-               propagate_manual!(psi_0, sim, time; ss_buffer=ss_buffer)
+               propagate_manual!(psi, sim, time; ss_buffer=ss_buffer)
             catch err
                if isa(err, NpseCollapse)
                   showerror(stdout, err)
@@ -94,7 +95,7 @@ function manual_run(sim; info=false, debug=false)
             return nothing
             end
             if t[save_counter] < solve_time_axis[i]
-               collection[:, save_counter] = psi_0
+               collection[:, save_counter] = psi
                save_counter += 1
             end
             time += dt
@@ -103,11 +104,11 @@ function manual_run(sim; info=false, debug=false)
          info && @info sol
       elseif length(N) == 3
          collection = CuArray{ComplexF64, 4}(undef, (N..., Nt))
-         collection[:, :, :, 1] = psi_0
+         collection[:, :, :, 1] = psi
          save_interval = Int(round(time_steps/Nt))
          for i in 1:time_steps
             try
-               propagate_manual!(psi_0, sim, time)
+               propagate_manual!(psi, sim, time)
             catch err
                if isa(err, NpseCollapse)
                   showerror(stdout, err)
@@ -117,7 +118,7 @@ function manual_run(sim; info=false, debug=false)
             return nothing
             end
             if i % save_interval == 0
-               collection[:, :, :, Int(floor(i / save_interval))] = psi_0
+               collection[:, :, :, Int(floor(i / save_interval))] = psi
             end
             time += dt
          end
@@ -129,14 +130,15 @@ end
 
 function auto_run(sim; info=false)
    @unpack psi_0, dV, dt, ti, tf, t, solver, iswitch, abstol, reltol, N,Nt, V0, maxiters, time_steps = sim
+   psi = deepcopy(psi_0)
    @assert solver == SplitStep
    if iswitch == -im # solve a steady state problem
       #sim.iswitch = 1.0 # we should catch NPSE collapse in ground state?
       ssalg = DynamicSS(BS3(); 
       reltol = sim.reltol,
       tspan = Inf)
-      problem = ODEProblem(propagate!, psi_0, (ti, tf), sim)
-      ss_problem = SteadyStateProblem(propagate!, psi_0, sim)
+      problem = ODEProblem(propagate!, psi, (ti, tf), sim)
+      ss_problem = SteadyStateProblem(propagate!, psi, sim)
       sim.nfiles ?
       (sol = solve(ss_problem,
                   alg=ssalg,
@@ -154,7 +156,7 @@ function auto_run(sim; info=false)
                   #dt = 0.001
                   ))
    else # propagate in real time
-      problem = ODEProblem(propagate!, psi_0, (ti, tf), sim)
+      problem = ODEProblem(propagate!, psi, (ti, tf), sim)
       try
       sim.nfiles ?
       (sol = solve(problem,
