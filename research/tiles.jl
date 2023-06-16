@@ -6,8 +6,8 @@ using CUDA.CUFFT
 using ProgressBars
 
 JULIA_CUDA_SOFT_MEMORY_LIMIT ="95%"
-include("plot_isosurfaces.jl")
-include("plot_axial_evolution.jl")
+include("../src/plot_isosurfaces.jl")
+include("../src/plot_axial_evolution.jl")
 
 file = "3Dtran_40.pdf"
 let sim

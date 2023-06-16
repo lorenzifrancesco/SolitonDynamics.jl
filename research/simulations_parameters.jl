@@ -19,6 +19,8 @@ function get_parameters()
     sim_gpe_1d = Sim{length(L), Array{Complex{Float64}}}(L=L, N=N)
     initial_state_gpe_1d = zeros(N[1])
     @unpack_Sim sim_gpe_1d
+
+    @warn "typeof(GPE_1D" typeof(GPE_1D)
     iswitch = -im
     equation = GPE_1D
     manual = true

@@ -74,10 +74,17 @@ function manual_run(sim; info=false, debug=false)
          collection = Array{ComplexF64, 2}(undef, (length(psi_0), Nt))
          collection[:, 1] = psi_0
          save_counter = 1
-         solve_time_axis = LinRange(ti, tf, time_steps)
+         solve_time_axis = LinRange(ti, tf, time_steps)         
+         
+         if equation == NPSE_plus
+            ss_buffer = ones(N[1])
+         else
+            ss_buffer = nothing
+         end
+         
          for i in 1:time_steps
             try
-               propagate_manual!(psi_0, sim, time)
+               propagate_manual!(psi_0, sim, time; ss_buffer=ss_buffer)
             catch err
                if isa(err, NpseCollapse)
                   showerror(stdout, err)
