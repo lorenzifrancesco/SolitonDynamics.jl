@@ -1,9 +1,10 @@
 # Particular solvers to be used manually
 
 # ============== Manual SplitStep methods, improved with exp
+unpack_selection(sim, fields...) = map(x->getfield(sim, x), fields)
 
 function nlin_manual!(psi,sim::Sim{1, Array{ComplexF64}},t; ss_buffer=nothing, info=false)
-   @unpack ksquared,g,X,V0,dV,Vol,mu,equation,sigma2,dt,iswitch,N = sim; x = X[1]; N = N[1]
+   g,X,V0,dV,equation,sigma2,dt,iswitch,N = unpack_selection(sim, :g,:X,:V0,:dV,:equation,:sigma2,:dt,:iswitch,:N); x = X[1]; N = N[1]
    xspace!(psi,sim)
    if equation == GPE_1D
       @. psi = exp(dt * -im*iswitch* (g*abs2(psi))) * psi
@@ -57,7 +58,7 @@ end
 
 
 function propagate_manual!(psi, sim::Sim{1, Array{ComplexF64}}, t; ss_buffer=nothing, info=false)
-   @unpack ksquared, iswitch, dV, Vol,mu,gamma,dt,sigma2, g = sim
+   (ksquared, iswitch, mu,gamma,dt) = unpack_selection(sim, :ksquared, :iswitch, :mu, :gamma, :dt)
    psi_i = copy(psi) 
    nlin_manual!(psi,sim,t; ss_buffer=ss_buffer, info=info)
    @. psi = exp(dt * iswitch * (1.0 - im*gamma)*(-im*(1/2*ksquared - mu)))*psi

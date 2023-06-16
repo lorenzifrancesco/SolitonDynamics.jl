@@ -108,10 +108,12 @@ function get_parameters()
     # =========================================================
     sim_dictionary = Dict(
                         "GPE_1D_GS" => sim_gpe_1d, 
-                        "NPSE_GS" => sim_npse, 
-                        "NPSE_plus_GS" => sim_npse_plus, 
-                        "GPE_3D_GS" => sim_gpe_3d,
+                        # "NPSE_GS" => sim_npse, 
+                        # "NPSE_plus_GS" => sim_npse_plus, 
+                        # "GPE_3D_GS" => sim_gpe_3d,
                         )
 
     return sim_dictionary
 end
+
+# TODO : function to build collision sims for given collision picture
