@@ -7,8 +7,8 @@ using CUDA.CUFFT
 import Makie, GLMakie
 import JLD2
 
-include("../src/plot_axial_evolution.jl")
-include("../src/plot_isosurfaces.jl")
+include("plot_axial_evolution.jl")
+include("plot_isosurfaces.jl")
 
 save_path = "../results/"
 use_precomputed = false

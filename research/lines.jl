@@ -1,16 +1,27 @@
-using LaTeXStrings, Plots
-import GR
-using CondensateDynamics
-using OrdinaryDiffEq
-using LSODA
-import CondensateDynamics.V
-using ProgressBars
-import JLD2
-using Colors
+function get_lines(precomputed=false)
+    plotly(size=(800, 400))
 
-include("simulations_parameters.jl")
+    # Computing all the lines
+    # if files are already saved, load them
 
-plotly(size=(800, 400))
+    if precomputed && isfile("tran.jld2") && isfile("refl.jld2")
+        tran = JLD2.load("tran.jld2", "tran")
+        refl = JLD2.load("refl.jld2", "refl")
+    else
+        tran, refl = compute_lines()
+        JLD2.save("tran.jld2", "tran", tran)
+        JLD2.save("refl.jld2", "refl", refl)
+    end
+
+    # Plotting
+    p = plot(title = "transmission")
+    for (eq, data) in tran
+        for i in eachindex(data[:, 1])
+            plot!(p, 1:length(data[i, :]), data[i, :], label=eq, lw=2)
+        end
+    end
+    display(p)
+end
 
 function compute_lines(max_vel=0.1, max_bar=1.68, lines=4, spots=10)
     if Threads.nthreads() == 1
@@ -22,11 +33,8 @@ function compute_lines(max_vel=0.1, max_bar=1.68, lines=4, spots=10)
     @info "Loading parameters..."
     
     simulation_dict = get_parameters() 
-    include("../src/plot_axial_evolution.jl")
     save_path = "results/"
-    
     file = "tran.pdf"
-    
     @info "Setting phase space..."
     barrier_width = 0.699 # as in SolitonBEC.jl
     
@@ -112,21 +120,3 @@ function compute_lines(max_vel=0.1, max_bar=1.68, lines=4, spots=10)
     end
     return tran, refl
 end
-
-# Computing all the lines
-tran, refl = compute_lines()
-
-JLD2.save("tran.jld2", "tran", tran)
-JLD2.save("refl.jld2", "refl", refl)
-
-tran = JLD2.load("tran.jld2", "tran")
-refl = JLD2.load("refl.jld2", "refl")
-
-# Plotting
-p = plot(title = "transmission")
-for (eq, data) in tran
-    for i in eachindex(data[:, 1])
-        plot!(p, 1:length(data[i, :]), data[i, :], label=eq, lw=2)
-    end
-end
-display(p)

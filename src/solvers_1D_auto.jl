@@ -1,9 +1,7 @@
 # General solvers to be used with DiffEq
 
 # # ======= begin inset for online
-using LaTeXStrings, Plots
-import GR
-using JLD2
+
 function shit(u, w, sim::Sim{1, Array{ComplexF64}}; info=false)
    @unpack t, X = sim; x = Array(X[1])
    p = plot(real.(x), w, label="initial")

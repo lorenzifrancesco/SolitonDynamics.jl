@@ -1,10 +1,10 @@
 import GR
-using CondensateDynamics
+using CondensateDynamics, CUDA, FFTW, Makie, GLMakie
 using OrdinaryDiffEq
 using LSODA
 import CondensateDynamics.V
 
-include("../src/plot_axial_evolution.jl")
+include("plot_axial_evolution.jl")
 
 L = (70.0,)
 N = (1024,)
@@ -54,6 +54,7 @@ end
 t = LinRange(ti, tf, Nt)
 
 dt = (tf-ti)/time_steps
+@info dt
 maxiters = 20000
 
 @. psi_0 = sqrt(g_param/2) * 2/(exp(g_param*(x-x0)) + exp(-(x-x0)*g_param)) * exp(-im*(x-x0)*vv)

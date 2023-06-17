@@ -82,10 +82,10 @@ including explicit normalization
 #    @unpack ksquared,g,X,V0,dV,Vol,mu,equation,sigma2,dt,iswitch,N = sim; x = X[1]; N = N[1]
 #    xspace!(psi,sim)
 #    if equation == GPE_1D
-#       @. psi = exp(dt * -im*iswitch* (V0 + V(x, t) + g*abs2(psi))) * psi
+#       @.  psi = exp(dt * -im*iswitch* (V0 + V(x, t) + g*abs2(psi))) * psi
 #    elseif equation == NPSE
 #       nonlinear = g*abs2.(psi) ./sigma2.(psi) + (1 ./(2*sigma2.(psi)) + 1/2*sigma2.(psi))
-#       @. psi = exp(dt * -im*iswitch* (V0 + V(x, t) + nonlinear)) * psi
+#       @.  psi = exp(dt * -im*iswitch* (V0 + V(x, t) + nonlinear)) * psi
 #    elseif equation == NPSE_plus
 #       sigma2_plus = zeros(length(x))
 #       try
@@ -109,7 +109,7 @@ including explicit normalization
 #       end
 #       tmp = copy(sigma2_plus)
 #       nonlinear = g*abs2.(psi) ./sigma2_plus +  (1/2 * sigma2_plus .+ (1 ./(2*sigma2_plus)).* (1 .+ (1/dV * diff(prepend!(tmp, 1.0))).^2))
-#       @. psi = exp(dt * -im*iswitch* (V0 + V(x, t) + nonlinear)) * psi
+#       @.  psi = exp(dt * -im*iswitch* (V0 + V(x, t) + nonlinear)) * psi
 #    end
 #    kspace!(psi,sim)
 #    return nothing
@@ -120,7 +120,7 @@ including explicit normalization
 #    @unpack ksquared, iswitch, dV, Vol,mu,gamma,dt = sim
 #    psi_i = copy(psi) 
 #    ground_state_nlin!(psi,sim,t)
-#    @. psi = exp(dt *iswitch* (1.0 - im*gamma)*(-im*(1/2*ksquared - mu)))*psi
+#    @.  psi = exp(dt *iswitch* (1.0 - im*gamma)*(-im*(1/2*ksquared - mu)))*psi
 #    norm_diff = nsk(psi - psi_i, sim)/dt
 #    psi .= psi / sqrt(nsk(psi, sim))
 #    return norm_diff

@@ -7,6 +7,7 @@ using FFTW, CUDA, Adapt # useful for loading sparse matrix in GPU
 using Parameters
 using Reexport
 using OrdinaryDiffEq, DiffEqCallbacks, SteadyStateDiffEq, DiffEqGPU, BoundaryValueDiffEq, NonlinearSolve
+using LoopVectorization
 using LinearAlgebra, RecursiveArrayTools, LazyArrays
 using IntervalRootFinding, IntervalArithmetic
 import JLD2 

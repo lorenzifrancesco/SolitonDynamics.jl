@@ -6,9 +6,9 @@ import GR
 using CUDA.CUFFT
 import Makie, GLMakie
 
-include("../src/plot_isosurfaces.jl")
+include("plot_isosurfaces.jl")
 update_parameters()
-include("../src/plot_axial_evolution.jl")
+include("plot_axial_evolution.jl")
 
 use_precomputed = false
 
