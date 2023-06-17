@@ -1,4 +1,6 @@
-function load_parameters_gs(gamma_param::Float64=0.15)
+function load_parameters_gs(; gamma_param::Float64=0.15, eqs=["G1", "N", "Np", "G3"])
+    sim_dictionary = Dict()
+
     maxiters_1d = 1e10
     maxiters_3d = 1e10
     N_axial_steps = 1024
@@ -19,15 +21,12 @@ function load_parameters_gs(gamma_param::Float64=0.15)
     # interaction parameter
     maxiters = maxiters_1d
     g = - 2 * gamma_param
-    n = 100
-    as = gamma_param / n
     abstol = abstol_all
     dt = 0.005
     x = X[1]
     k = K[1]
     dV= volume_element(L, N)
     flags = FFTW.EXHAUSTIVE
-    width = 7
     tf = 1e10
     # SPR condensate bright soliton t in units of omega_perp^-1
     analytical_gs = zeros(N)
@@ -37,6 +36,9 @@ function load_parameters_gs(gamma_param::Float64=0.15)
     kspace!(psi_0, sim_gpe_1d)
     @pack_Sim! sim_gpe_1d
 
+    if "G1" in eqs
+        push!(sim_dictionary, "G1" => sim_gpe_1d)
+    end
     # =========================================================
     ## NPSE (unable to copy)
     sim_npse = deepcopy(sim_gpe_1d)
@@ -49,7 +51,10 @@ function load_parameters_gs(gamma_param::Float64=0.15)
     end
     sigma2 = init_sigma2(g)
     @pack_Sim! sim_npse
-    
+
+    if "N" in eqs
+        push!(sim_dictionary, "N" => sim_npse)
+    end
     # =========================================================
     ## NPSE plus (unable to copy)
     sim_npse_plus = deepcopy(sim_npse)
@@ -62,6 +67,9 @@ function load_parameters_gs(gamma_param::Float64=0.15)
     sigma2 = init_sigma2(g)
     @pack_Sim! sim_npse_plus
 
+    if "Np" in eqs
+        push!(sim_dictionary, "Np" => sim_npse_plus)
+    end
     # =========================================================
     ## 3D-GPE 
     N_axial_steps = 512
@@ -99,18 +107,14 @@ function load_parameters_gs(gamma_param::Float64=0.15)
     # @info sim_gpe_3d.g /4/pi
     # @info sim_gpe_1d.g /2
 
-    # =========================================================
-    sim_dictionary = Dict(
-                        "GPE_1D_GS" => sim_gpe_1d, 
-                        "NPSE_GS" => sim_npse, 
-                        "NPSE_plus_GS" => sim_npse_plus, 
-                        "GPE_3D_GS" => sim_gpe_3d,
-                        )
-
+    if "G3" in eqs
+        push!(sim_dictionary, "G3" => sim_gpe_3d)
+    end
     return sim_dictionary
 end
 
-function load_parameters_dy(vv::Float64 = 0.5, bb::Float64 = 0.5, gamma_param::Float64=0.15)
+function load_parameters_dy(; vv::Float64 = 0.5, bb::Float64 = 0.5, gamma_param::Float64=0.15, eqs=["G1", "N", "Np", "G3"])
+    sim_dictionary = Dict()
     N_axial_steps = 1024
     abstol_all = 1e-8
     initial_width = 100
@@ -137,6 +141,7 @@ function load_parameters_dy(vv::Float64 = 0.5, bb::Float64 = 0.5, gamma_param::F
     x0 = L[1] / 4
     dV= volume_element(L, N)
     flags = FFTW.EXHAUSTIVE
+    alg = BS3()
 
     time_steps = 500
     Nt = 200
@@ -155,6 +160,9 @@ function load_parameters_dy(vv::Float64 = 0.5, bb::Float64 = 0.5, gamma_param::F
     kspace!(psi_0, sim_gpe_1d)
     @pack_Sim! sim_gpe_1d
 
+    if "G1" in eqs
+        push!(sim_dictionary, "G1" => sim_gpe_1d)
+    end
     # =========================================================
     ## NPSE (unable to copy)
     sim_npse = deepcopy(sim_gpe_1d)
@@ -168,6 +176,9 @@ function load_parameters_dy(vv::Float64 = 0.5, bb::Float64 = 0.5, gamma_param::F
     sigma2 = init_sigma2(g)
     @pack_Sim! sim_npse
 
+    if "N" in eqs
+        push!(sim_dictionary, "N" => sim_npse)
+    end
     # =========================================================
     ## NPSE (unable to copy)
     sim_npse_plus = deepcopy(sim_npse)
@@ -180,6 +191,9 @@ function load_parameters_dy(vv::Float64 = 0.5, bb::Float64 = 0.5, gamma_param::F
     sigma2 = init_sigma2(g)
     @pack_Sim! sim_npse_plus
 
+    if "Np" in eqs
+        push!(sim_dictionary, "Np" => sim_npse_plus)
+    end
     # =========================================================
     ## 3D-GPE 
     Nx = 512
@@ -195,7 +209,8 @@ function load_parameters_dy(vv::Float64 = 0.5, bb::Float64 = 0.5, gamma_param::F
     g = - gamma_param * (4*pi)
     abstol = abstol_all
     dt = 0.05
-
+    alg = BS3()
+    
     x = Array(X[1])
     y = Array(X[2])
     z = Array(X[3])
@@ -220,13 +235,8 @@ function load_parameters_dy(vv::Float64 = 0.5, bb::Float64 = 0.5, gamma_param::F
     # @info sim_gpe_3d.g /4/pi
     # @info sim_gpe_1d.g /2
 
-    # =========================================================
-    sim_dictionary = Dict(
-                        "GPE_1D_DY" => sim_gpe_1d, 
-                        "NPSE_DY" => sim_npse, 
-                        "NPSE_plus_DY" => sim_npse_plus, 
-                        "GPE_3D_DY" => sim_gpe_3d,
-                        )
-
+    if "G3" in eqs
+        push!(sim_dictionary, "G3" => sim_gpe_3d)
+    end
     return sim_dictionary
 end
