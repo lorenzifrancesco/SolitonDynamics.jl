@@ -18,7 +18,8 @@ function get_tiles(eq = "G1")
         sgrid = Array{Sim, 2}(undef, (tiles, tiles))
         for (vx, vv) in enumerate(vel_list)
             for (bx, bb) in enumerate(bar_list)
-                sgrid[bx, vx] = load_parameters_dy(vv=vv, bb=bb, eqs=[eq], Nsaves=2)[eq]
+                # FIXME: we need it only one time for all the tiles!! 
+                sgrid[bx, vx] = prepare_in_ground_state(load_parameters_dy(eqs=[eq], Nsaves=2, bb=bb)[eq]; vv=vv)
             end
         end
     end
@@ -72,4 +73,8 @@ function get_tiles(eq = "G1")
 
     # display(sol.destats)
     # display(sol.retcode)
+end
+
+function all_tiles()
+    return
 end

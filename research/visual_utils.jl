@@ -1,9 +1,6 @@
 plotly(size=(800, 600))
-function single_shot_dynamics()
-    sd = load_parameters_dy(vv = 1., bb = 1., eqs = ["G1"], Nsaves = 5)
-    for (name, sim) in sd
-        plot_axial_heatmap(runsim(sim).u, runsim(sim).t, sim)
-    end
+function single_shot_dynamics(sim::Sim{1, Array{Complex{Float64}}})
+    plot_axial_heatmap(runsim(sim).u, runsim(sim).t, sim)
 end
 
 function show_psi_0(sim::Sim{1, Array{Complex{Float64}}})
@@ -21,4 +18,3 @@ function show_psi_0(sim::Sim{3, CuArray{Complex{Float64}}})
     p = plot(x, axial_density, label = "density")
     display(p)
 end
-

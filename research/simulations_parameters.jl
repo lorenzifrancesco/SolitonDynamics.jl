@@ -1,4 +1,4 @@
-function load_parameters_gs(; gamma_param::Float64=0.15, eqs=["G1", "N", "Np", "G3"])
+function load_parameters_gs(; gamma_param::Float64=0.6, eqs=["G1", "N", "Np", "G3"])
     sim_dictionary = Dict()
 
     maxiters_1d = 1e10
@@ -113,7 +113,7 @@ function load_parameters_gs(; gamma_param::Float64=0.15, eqs=["G1", "N", "Np", "
     return sim_dictionary
 end
 
-function load_parameters_dy(; vv::Float64 = 0.5, bb::Float64 = 0.5, gamma_param::Float64=0.15, Nsaves::Int64=200, eqs=["G1", "N", "Np", "G3"])
+function load_parameters_dy(; vv::Float64 = 0.5, bb::Float64 = 0.5, gamma_param::Float64=0.6, Nsaves::Int64=200, eqs=["G1", "N", "Np", "G3"])
     # SUBOPT max vel set here
     max_vel = 1.0
     
@@ -251,21 +251,36 @@ function load_parameters_dy(; vv::Float64 = 0.5, bb::Float64 = 0.5, gamma_param:
 end
 
 # TODO make it work for 3D
-function prepare_in_ground_state(sim::Sim)
+function prepare_in_ground_state(sim::Sim{1, Array{Complex{Float64}}}; x0::Float64=0.0, vv::Float64=0.0)
     # compute the ground state
+    # start from a convenient initial state (it doesn't matter by the way)
     @unpack_Sim sim
+    x0 = L[1] / 4
     iswitch = -im
     maxiters = 1e10
     abstol = 1e-8
+    initial_width = 5
+    @. psi_0 = exp(-((X[1]-x0)/initial_width)^2)
+    psi_0 = psi_0 / sqrt(ns(psi_0, sim))
+    kspace!(psi_0, sim)
+    x = X[1] |> real
+    @assert isapprox(V0, zeros(N[1]))
     @pack_Sim! sim
+
     @info "Computing ground state..."
-    sol = runsim(sim; info=false)
+    sol = runsim(sim; info=true)
+
     @info "Assigning GS as dynamical sim initial state..."
-    xspace!(sol.u[end], sim)
-    # pack everything back up
+    xspace!(sol.u, sim)
+    display(sol.u)
+
+    # pack everything back up, imprint the correct velocity (suppose x0 stays constant)
     @unpack_Sim sim
     iswitch = 1
-    @. psi_0 = sqrt(abs2(sol.u[end]))
+    x = X[1]
+    vec = circshift(sqrt.(abs2.(sol.u)) , Int(round(N[1] * x0/L[1])))
+    @. psi_0 = sqrt(abs2(sol.u)) * exp(-im*(x-x0)*vv)
+    kspace!(psi_0, sim)
     @info "normalization" ns(psi_0, sim)
     @pack_Sim! sim
     return sim

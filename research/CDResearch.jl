@@ -5,7 +5,7 @@ import Makie, GLMakie
 using HDF5, JLD2
 using FFTW, CUDA, OrdinaryDiffEq
 
-using LoopVectorization
+using LoopVectorization, LinearAlgebra
 
 using ProgressBars, Colors
 
@@ -25,14 +25,12 @@ includet("lines.jl")
 
 ```
     file signature:
-    TODO
 ```
 includet("soliton_ground_state_comparison.jl")
 
 
 ```
     file signature:
-    TODO
 ```
 includet("tiles.jl")
 

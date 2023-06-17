@@ -1,4 +1,4 @@
-function get_lines(precomputed=false)
+function all_lines(precomputed=false)
     plotly(size=(800, 400))
 
     # Computing all the lines

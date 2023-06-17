@@ -12,7 +12,6 @@ function run_benchmarks()
         display(bb)
         push!(bms, bb)
     end
-
-    # TODO implement dynamical simulations
+    # WISH implement also dynamics (most crucial part)
     return bms
 end

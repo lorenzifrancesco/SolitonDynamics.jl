@@ -1,6 +1,4 @@
-function get_ground_states()
-    @assert false
-    # TODO plotly(size=(800, 400))
+function all_ground_states()
     @info "Loading parameters..."
     simulation_dict = get_parameters() 
 
