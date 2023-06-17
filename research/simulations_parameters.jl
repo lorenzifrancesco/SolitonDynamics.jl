@@ -113,11 +113,14 @@ function load_parameters_gs(; gamma_param::Float64=0.15, eqs=["G1", "N", "Np", "
     return sim_dictionary
 end
 
-function load_parameters_dy(; vv::Float64 = 0.5, bb::Float64 = 0.5, gamma_param::Float64=0.15, eqs=["G1", "N", "Np", "G3"])
+function load_parameters_dy(; vv::Float64 = 0.5, bb::Float64 = 0.5, gamma_param::Float64=0.15, Nsaves::Int64=200, eqs=["G1", "N", "Np", "G3"])
+    # SUBOPT max vel set here
+    max_vel = 1.0
+    
     sim_dictionary = Dict()
     N_axial_steps = 1024
     abstol_all = 1e-8
-    initial_width = 100
+    initial_width = 1/2 # FIXME
     
     Lx = 40.0
     # =========================================================
@@ -135,7 +138,6 @@ function load_parameters_dy(; vv::Float64 = 0.5, bb::Float64 = 0.5, gamma_param:
     g = - 2 * gamma_param
     n = 100
     abstol = abstol_all
-    dt = 0.05
     x = X[1]
     k = K[1]
     x0 = L[1] / 4
@@ -144,13 +146,14 @@ function load_parameters_dy(; vv::Float64 = 0.5, bb::Float64 = 0.5, gamma_param:
     alg = BS3()
 
     time_steps = 500
-    Nt = 200
+    Nt = Nsaves
     if vv == 0.0
         tf = 2.0
     else
         tf = 2*x0/vv
-    end
+    end 
     t = LinRange(ti, tf, Nt)
+
     dt = (tf-ti)/time_steps
     # SPR condensate bright soliton t in units of omega_perp^-1
     analytical_gs = zeros(N)
@@ -208,7 +211,6 @@ function load_parameters_dy(; vv::Float64 = 0.5, bb::Float64 = 0.5, gamma_param:
     solver = SplitStep
     g = - gamma_param * (4*pi)
     abstol = abstol_all
-    dt = 0.05
     alg = BS3()
     
     x = Array(X[1])
@@ -217,13 +219,20 @@ function load_parameters_dy(; vv::Float64 = 0.5, bb::Float64 = 0.5, gamma_param:
     dV= volume_element(L, N)    
     flags = FFTW.EXHAUSTIVE
     time_steps = 500
-    Nt = 200
+    Nt = Nsaves
     if vv == 0.0
         tf = 2.0
     else
         tf = 2*x0/vv
     end
     t = LinRange(ti, tf, Nt)
+    if vv > max_vel/2
+        time_steps = 1000
+    elseif vv > max_vel/4
+        time_steps = 2500
+    else
+        time_steps = 4000
+    end
     dt = (tf-ti)/time_steps
     tmp = [exp(-((x-x0)^2/initial_width + (y^2 + z^2)/2)) * exp(-im*(x-x0)*vv) for x in x, y in y, z in z]
     psi_0 = CuArray(tmp)
@@ -240,3 +249,5 @@ function load_parameters_dy(; vv::Float64 = 0.5, bb::Float64 = 0.5, gamma_param:
     end
     return sim_dictionary
 end
+
+# TODO prio 1: prepare dynamic simulations in their ground state

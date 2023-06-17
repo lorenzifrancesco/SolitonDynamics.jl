@@ -11,6 +11,7 @@ using ProgressBars, Colors
 
 includet("../examples/plot_axial_evolution.jl")
 includet("../examples/plot_isosurfaces.jl")
+includet("single_shot_dynamics.jl")
 includet("simulations_parameters.jl")
 
 
