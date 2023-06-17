@@ -250,4 +250,23 @@ function load_parameters_dy(; vv::Float64 = 0.5, bb::Float64 = 0.5, gamma_param:
     return sim_dictionary
 end
 
-# TODO prio 1: prepare dynamic simulations in their ground state
+# TODO make it work for 3D
+function prepare_in_ground_state(sim::Sim)
+    # compute the ground state
+    @unpack_Sim sim
+    iswitch = -im
+    maxiters = 1e10
+    abstol = 1e-8
+    @pack_Sim! sim
+    @info "Computing ground state..."
+    sol = runsim(sim; info=false)
+    @info "Assigning GS as dynamical sim initial state..."
+    xspace!(sol.u[end], sim)
+    # pack everything back up
+    @unpack_Sim sim
+    iswitch = 1
+    @. psi_0 = sqrt(abs2(sol.u[end]))
+    @info "normalization" ns(psi_0, sim)
+    @pack_Sim! sim
+    return sim
+end

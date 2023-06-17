@@ -11,7 +11,7 @@ using ProgressBars, Colors
 
 includet("../examples/plot_axial_evolution.jl")
 includet("../examples/plot_isosurfaces.jl")
-includet("single_shot_dynamics.jl")
+includet("visual_utils.jl")
 includet("simulations_parameters.jl")
 
 
@@ -36,3 +36,5 @@ includet("soliton_ground_state_comparison.jl")
 ```
 includet("tiles.jl")
 
+static_standard = load_parameters_gs()
+dynamic_standard = load_parameters_dy()
