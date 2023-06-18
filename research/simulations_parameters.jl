@@ -264,7 +264,7 @@ function prepare_in_ground_state(sim::Sim{1, Array{Complex{Float64}}}; x0::Float
     psi_0 = psi_0 / sqrt(ns(psi_0, sim))
     kspace!(psi_0, sim)
     x = X[1] |> real
-    @assert isapprox(V0, zeros(N[1]))
+    @assert isapprox(V0, zeros(N[1])) # TODO save potential profile and apply it later
     @pack_Sim! sim
 
     @info "Computing ground state..."
@@ -282,6 +282,48 @@ function prepare_in_ground_state(sim::Sim{1, Array{Complex{Float64}}}; x0::Float
     @. psi_0 = sqrt(abs2(sol.u)) * exp(-im*(x-x0)*vv)
     kspace!(psi_0, sim)
     @info "normalization" ns(psi_0, sim)
+    @pack_Sim! sim
+    return sim
+end
+
+function imprint_vel_set_bar(sim::Sim{1, Array{Complex{Float64}}}; vv::Float64=0.0, bb::Float64=0.0, bw::Float64=0.5)
+    simc = deepcopy(sim)
+    @unpack_Sim simc
+    x = X[1] |> real
+    @. V0 = bb * exp(-(x/bw)^2 /2) # central barrier
+    @. psi_0 = psi_0 * exp(-im*(x)*vv)
+    @pack_Sim! simc
+    return simc
+end
+
+function imprint_vel_set_bar(sim::Sim{3, CuArray{Complex{Float64}}}; vv::Float64=0.0, bb::Float64=0.0, bw::Float64=0.5)
+    simc = deepcopy(sim)
+    @unpack_Sim simc
+    x = X[1] |> real
+    y = X[2] |> real
+    z = X[3] |> real
+    @. V0 = [1/2*(z^2 + y^2) + bb * exp(-(x/bw)^2 /2) for x in x, y in y, z in z] # central barrier
+    @. psi_0 = psi_0 * exp(-im*(x)*vv)
+    @pack_Sim! simc
+    return simc
+end
+
+function imprint_vel_set_bar!(sim::Sim{1, Array{Complex{Float64}}}; vv::Float64=0.0, bb::Float64=0.0, bw::Float64=0.5)
+    @unpack_Sim sim
+    x = X[1] |> real
+    @. V0 = bb * exp(-(x/bw)^2 /2) # central barrier
+    @. psi_0 = abs(psi_0) * exp(-im*(x)*vv)
+    @pack_Sim! sim
+    return sim
+end
+
+function imprint_vel_set_bar!(sim::Sim{3, CuArray{Complex{Float64}}}; vv::Float64=0.0, bb::Float64=0.0, bw::Float64=0.5)
+    @unpack_Sim sim
+    x = X[1] |> real
+    y = X[2] |> real
+    z = X[3] |> real
+    @. V0 = [1/2*(z^2 + y^2) + bb * exp(-(x/bw)^2 /2) for x in x, y in y, z in z] # central barrier
+    @. psi_0 = abs(psi_0) * exp(-im*(x)*vv)
     @pack_Sim! sim
     return sim
 end

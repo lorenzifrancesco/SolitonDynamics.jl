@@ -1,12 +1,13 @@
 JULIA_CUDA_SOFT_MEMORY_LIMIT ="95%"
 
+# XXX remark: good idea to vectorize on equations
 function get_tiles(eq = "G1")
     saveto = "../media/tiles_$(eq).pdf"
     @info "Setting tiles configuration..."    
     tiles = 10
-    barrier_width = 0.5 # as in SolitonBEC.jl
-    max_vel = 1 # CALCULATED VALUE 1.17 FOR CHOOSEN NONLINEARITY
-    max_bar = 1 # CALCULATED VALUE 1.68 FOR CHOOSEN NONLINEARITY
+    barrier_width = 0.5 
+    max_vel = 1
+    max_bar = 1
     #
     vel_list = LinRange(0, max_vel, tiles)
     bar_list = LinRange(0, max_bar, tiles)
@@ -14,12 +15,13 @@ function get_tiles(eq = "G1")
     refl = Array{Float64, 2}(undef, (tiles, tiles))
 
     @info "Loading parameters, filling sim grid..."
+    sgrid = Array{Sim, 2}(undef, (tiles, tiles))
+    archetype = prepare_in_ground_state(load_parameters_dy(eqs=[eq], Nsaves=2)[eq])
+    sgrid[1, 1] = archetype
     @time begin
-        sgrid = Array{Sim, 2}(undef, (tiles, tiles))
         for (vx, vv) in enumerate(vel_list)
             for (bx, bb) in enumerate(bar_list)
-                # FIXME: we need it only one time for all the tiles!! 
-                sgrid[bx, vx] = prepare_in_ground_state(load_parameters_dy(eqs=[eq], Nsaves=2, bb=bb)[eq]; vv=vv)
+                sgrid[bx, vx] = imprint_vel_set_bar(archetype, vv, bb)
             end
         end
     end
