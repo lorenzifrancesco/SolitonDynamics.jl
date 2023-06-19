@@ -1,8 +1,12 @@
 includet("CDResearch.jl")
 
+
+static_standard = load_parameters_gs(gamma=0.6)
+dynamic_standard = load_parameters_dy(gamma=0.6)
+
 if Threads.nthreads() == 1
     @warn "running in single thread mode!"
-else 
+else
     @info "running in multi-thread mode: n_threads =" Threads.nthreads()
 end
 
@@ -22,13 +26,13 @@ else
     JLD3.save("research/sd_syn_prepared.jld2", "sd", sd)
 end
 
-
+# TODO here we can obtain the plots of the GS using the prepared simulations
 
 ## ========= run standardized simulations 
 ## ========= for publication-grade plots
 
-# Ground states 
-pgs = all_ground_states()
+# # -Ground states 
+# pgs = all_ground_states()
 
 # Lines
 pli = all_lines()

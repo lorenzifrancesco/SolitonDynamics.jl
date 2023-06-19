@@ -33,6 +33,3 @@ includet("soliton_ground_state_comparison.jl")
     file signature:
 ```
 includet("tiles.jl")
-
-static_standard = load_parameters_gs()
-dynamic_standard = load_parameters_dy()
