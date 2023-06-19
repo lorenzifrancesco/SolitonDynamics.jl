@@ -62,14 +62,3 @@ function propagate!(dpsi, psi, sim::Sim{1, Array{ComplexF64}}, t; info=false)
    return nothing
 end
 
-function sigma_eq(sigma, params)
-   b = params[1]
-   A0 = params[2]
-   dV = params[3]
-   N = length(sigma)
-   bc = zeros(N)
-   bc[1] = 1
-   bc[end] = 1
-   f = -1/2 *(A0 * sigma.^2) + 2 * sigma .* (A0 * sigma) + sigma.^4 - b - 1/(2*dV) * bc .* sigma 
-   return f
-end

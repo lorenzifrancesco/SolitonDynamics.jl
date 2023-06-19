@@ -27,7 +27,7 @@ end
 
 function compute_lines(max_vel=0.1, max_bar=1.68, lines=4, spots=10)
     @info "Loading parameters..."
-    simulation_dict = load_parameters_dy() # FIXME no import inside functions
+    simulation_dict = load_parameters_dy() 
     @info "Setting phase space..."
     barrier_width = 0.699 # as in SolitonBEC.jl
     

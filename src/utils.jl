@@ -1,7 +1,8 @@
 """
 estimate the Gaussian sigma2 parameter from 3D data
 """
-function estimate_sigma2(psi_k,sim::Sim{3, CuArray{ComplexF64}})
+# FIXME i'm very slow: vectorize me
+function estimate_sigma2(psi_k, sim::Sim{3, CuArray{ComplexF64}})
     s2 = Array{Float64, 1}(undef, sim.N[1])
     # MSE estimator
     psi = xspace(psi_k, sim)
@@ -15,7 +16,7 @@ function estimate_sigma2(psi_k,sim::Sim{3, CuArray{ComplexF64}})
     for x in xax
         for y in yax
             for z in zax
-                if axial_density[x] < 1e-50
+                if axial_density[x] < 1e-20
                     tmp[x, y, z] = aa[x, y, z] / axial_density[x]
                     @warn "found small prob"
                 else
@@ -24,9 +25,45 @@ function estimate_sigma2(psi_k,sim::Sim{3, CuArray{ComplexF64}})
             end
         end
     end
-    s2 = 4 * sum(tmp, dims=(2, 3))[:, 1, 1]
+    s2 = sum(tmp, dims=(2, 3))[:, 1, 1]
     return s2
 end
+
+function sigma_eq(sigma, params)
+   b = params[1]
+   A0 = params[2]
+   dV = params[3]
+   N = length(sigma)
+   bc = zeros(N)
+   bc[1] = 1
+   bc[end] = 1
+   f = -1/2 *(A0 * sigma.^2) + 2 * sigma .* (A0 * sigma) + sigma.^4 - b - 1/(2*dV) * bc .* sigma 
+   return f
+end
+
+function estimate_sigma2(psi_k, sim::Sim{1, Array{ComplexF64}})
+    @unpack equation, N, g, dV = sim
+    psi = xspace(psi_k, sim)
+    s2 = ones(N[1])
+    if equation == NPSE
+        @. s2 = sqrt(1 + sim.g * abs2(psi))
+    elseif equation == NPSE_plus
+        # Nonlinear Finite Element routine
+        b = (1 .+ g*abs2.(psi))
+        b[1]   += 1.0 * 1/(4*dV)
+        b[end] += 1.0 * 1/(4*dV)
+        
+        a = ones(length(b))
+        A0 = 1/(2*dV) * SymTridiagonal(2*a, -a)
+        
+        ss = ones(N[1])
+        prob = NonlinearProblem(sigma_eq, ss, [b, A0, dV])
+        sol = solve(prob, NewtonRaphson(), reltol=1e-6)
+        s2 = (sol.u).^2 
+    end
+    return s2
+end
+
 
 function project_radial(psi_k,sim::Sim{3, CuArray{ComplexF64}})
     # MSE estimator
