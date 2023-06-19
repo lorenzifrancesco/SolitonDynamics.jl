@@ -1,5 +1,5 @@
-function all_ground_states(simulation_dict)
-    sd = deepcopy(simulation_dict)
+function all_ground_states()
+    sd = load_parameters_gs()
     @assert all([s.iswitch for s in values(sd)] .== -im)
     save_path = "results/"
     gamma_param_list = [0.15, 0.4, 0.6]

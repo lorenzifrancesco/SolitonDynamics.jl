@@ -73,6 +73,7 @@ function manual_run(sim; info=false, debug=false)
       time = 0.0
       if length(N) == 1
          collection = Array{ComplexF64, 2}(undef, (length(psi), Nt))
+         collection = zeros((length(psi), Nt)) |> complex
          collection[:, 1] = psi
          save_counter = 1
          solve_time_axis = LinRange(ti, tf, time_steps)         
@@ -92,7 +93,7 @@ function manual_run(sim; info=false, debug=false)
                else
                   throw(err)
                end
-            return nothing
+               return nothing
             end
             if t[save_counter] < solve_time_axis[i]
                collection[:, save_counter] = psi
@@ -100,12 +101,15 @@ function manual_run(sim; info=false, debug=false)
             end
             time += dt
          end
+         collection[:, Nt] = psi # XXX fundamental for filling the last element
          sol = CustomSolution(u=[collection[:, k] for k in 1:Nt], t=t)
          info && @info sol
       elseif length(N) == 3
          collection = CuArray{ComplexF64, 4}(undef, (N..., Nt))
          collection[:, :, :, 1] = psi
          save_interval = Int(round(time_steps/Nt))
+         save_counter = 1
+         solve_time_axis = LinRange(ti, tf, time_steps)         
          for i in 1:time_steps
             try
                propagate_manual!(psi, sim, time)
@@ -115,13 +119,15 @@ function manual_run(sim; info=false, debug=false)
                else
                   throw(err)
                end
-            return nothing
+               return nothing
             end
-            if i % save_interval == 0
-               collection[:, :, :, Int(floor(i / save_interval))] = psi
+            if t[save_counter] < solve_time_axis[i]
+               collection[:, :, :, save_counter] = psi
+               save_counter += 1
             end
             time += dt
          end
+         collection[:,:,:, Nt] = psi # XXX fundamental for filling the last element
          sol = CustomSolution(u=[collection[:,:,:, k] for k in 1:Nt], t=t)
       end
       return sol

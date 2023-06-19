@@ -251,8 +251,7 @@ function load_parameters_dy(; vv::Float64 = 0.0, bb::Float64 = 0.0, gamma_param:
     return sim_dictionary
 end
 
-# TODO make it work for 3D
-function prepare_in_ground_state(sim::Sim{1, Array{Complex{Float64}}}; x0::Float64=0.0, vv::Float64=0.0)
+function prepare_in_ground_state!(sim::Sim{1, Array{Complex{Float64}}})
     # compute the ground state
     # start from a convenient initial state (it doesn't matter by the way)
     @unpack_Sim sim
@@ -269,7 +268,7 @@ function prepare_in_ground_state(sim::Sim{1, Array{Complex{Float64}}}; x0::Float
     @pack_Sim! sim
 
     @info "Computing ground state..."
-    sol = runsim(sim; info=true)
+    sol = runsim(sim; info=false)
 
     @info "Assigning GS as dynamical sim initial state..."
     xspace!(sol.u, sim)
@@ -279,19 +278,65 @@ function prepare_in_ground_state(sim::Sim{1, Array{Complex{Float64}}}; x0::Float
     @unpack_Sim sim
     iswitch = 1
     x = X[1]
-    vec = circshift(sqrt.(abs2.(sol.u)) , Int(round(N[1] * x0/L[1])))
-    @. psi_0 = sqrt(abs2(sol.u)) * exp(-im*(x-x0)*vv)
+    @. psi_0 = sqrt(abs2(sol.u))
     kspace!(psi_0, sim)
     @assert isapprox(nsk(psi_0, sim), 1.0, atol=1e-9)
     @pack_Sim! sim
     return sim
 end
 
+function prepare_in_ground_state!(sim::Sim{3, CuArray{Complex{Float64}}})
+    # compute the ground state
+    # start from a convenient initial state (it doesn't matter by the way)
+    @unpack_Sim sim
+    x = X[1] |> real
+    y = X[2] |> real
+    z = X[3] |> real
+    x0 = L[1] / 4
+    iswitch = -im 
+    maxiters = 1e10
+    abstol = 1e-8
+    initial_width = 5
+    tmp = [exp(-((x-x0)^2/initial_width + (y^2 + z^2)/2)) for x in x, y in y, z in z]
+    psi_0 = CuArray(tmp)
+    psi_0 = psi_0 / sqrt(ns(psi_0, sim))
+    V0 *= 0.0
+    psi_0 = kspace(psi_0, sim) # FIXME strangest behaviour ???!
+    @pack_Sim! sim
+
+    @info "Computing ground state..."
+    sol = runsim(sim; info=true)
+
+    @info "Assigning GS as dynamical sim initial state..."
+    xspace!(sol.u, sim)
+    print("size of sol.u: ", size(sol.u))
+
+    # pack everything back up, imprint the correct velocity (suppose x0 stays constant)
+    @unpack_Sim sim
+    iswitch = 1
+    x = X[1] |> real
+    y = X[2] |> real
+    z = X[3] |> real
+    @. psi_0 = sqrt(abs2.(sol.u))
+    psi_0 = psi_0 / sqrt(ns(psi_0, sim))
+    kspace!(psi_0, sim)
+    @assert isapprox(nsk(psi_0, sim), 1.0, atol=1e-9)
+    @pack_Sim! sim
+    return sim
+end
 function imprint_vel_set_bar(sim::Sim{1, Array{Complex{Float64}}}; vv::Float64=0.0, bb::Float64=0.0, bw::Float64=0.5)
     simc = deepcopy(sim)
     @unpack_Sim simc
     x = X[1] |> real
     @. V0 = bb * exp(-(x/bw)^2 /2) # central barrier
+    x0 = L[1]/4
+    if vv == 0.0
+        tf = 2.0
+    else
+        tf = 2*x0/vv
+    end
+    t = LinRange(ti, tf, Nt)
+    dt = (tf-ti)/time_steps
     xspace!(psi_0, simc)
     @. psi_0 = abs(psi_0) * exp(-im*(x)*vv)
     kspace!(psi_0, simc)
@@ -305,7 +350,15 @@ function imprint_vel_set_bar(sim::Sim{3, CuArray{Complex{Float64}}}; vv::Float64
     x = X[1] |> real
     y = X[2] |> real
     z = X[3] |> real
-    @. V0 = [1/2*(z^2 + y^2) + bb * exp(-(x/bw)^2 /2) for x in x, y in y, z in z] # central barrier
+    V0 = [1/2*(z^2 + y^2) + bb * exp(-(x/bw)^2 /2) for x in x, y in y, z in z] # central barrier
+    x0 = L[1]/4
+    if vv == 0.0
+        tf = 2.0
+    else
+        tf = 2*x0/vv
+    end
+    t = LinRange(ti, tf, Nt)
+    dt = (tf-ti)/time_steps
     xspace!(psi_0, simc)
     @. psi_0 = abs(psi_0) * exp(-im*(x)*vv)
     kspace!(psi_0, simc)
@@ -317,6 +370,14 @@ function imprint_vel_set_bar!(sim::Sim{1, Array{Complex{Float64}}}; vv::Float64=
     @unpack_Sim sim
     x = X[1] |> real
     @. V0 = bb * exp(-(x/bw)^2 /2) # central barrier
+    x0 = L[1]/4
+    if vv == 0.0
+        tf = 2.0
+    else
+        tf = 2*x0/vv
+    end
+    t = LinRange(ti, tf, Nt)
+    dt = (tf-ti)/time_steps
     xspace!(psi_0, sim)
     @. psi_0 = abs(psi_0) * exp(-im*(x)*vv)
     kspace!(psi_0, sim)
@@ -329,7 +390,15 @@ function imprint_vel_set_bar!(sim::Sim{3, CuArray{Complex{Float64}}}; vv::Float6
     x = X[1] |> real
     y = X[2] |> real
     z = X[3] |> real
-    @. V0 = [1/2*(z^2 + y^2) + bb * exp(-(x/bw)^2 /2) for x in x, y in y, z in z] # central barrier
+    x0 = L[1]/4
+    V0 = [1/2*(z^2 + y^2) + bb * exp(-(x/bw)^2 /2) for x in x, y in y, z in z] # central barrier
+    if vv == 0.0
+        tf = 2.0
+    else
+        tf = 2*x0/vv
+    end
+    t = LinRange(ti, tf, Nt)
+    dt = (tf-ti)/time_steps
     xspace!(psi_0, sim)
     @. psi_0 = abs(psi_0) * exp(-im*(x)*vv)
     kspace!(psi_0, sim)
