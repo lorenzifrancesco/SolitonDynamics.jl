@@ -1,25 +1,25 @@
-function all_ground_states()
-    @info "Loading parameters..."
-    simulation_dict = get_parameters() 
-
+function all_ground_states(simulation_dict)
+    sd = deepcopy(simulation_dict)
+    @assert all([s.iswitch for s in values(sd)] .== -im)
     save_path = "results/"
     gamma_param_list = [0.15, 0.4, 0.6]
     use_precomputed = false
     take_advantage = true
     @info "Starting simulations..."
-
     for gamma_param in gamma_param_list
         # update simulation parameters
-        sim_gpe_1d.g    = -2 * gamma_param 
-        sim_npse.g      = -2 * gamma_param
-        sim_npse_plus.g = -2 * gamma_param
-        sim_gpe_3d.g    = - 4 * pi * gamma_param
-        
+        set_g!.(values(sd), gamma_param)
+        sim_gpe_1d =    sd["G1"]
+        sim_npse =      sd["N"]
+        sim_npse_plus = sd["Np"]
+        sim_gpe_3d =    sd["G3"]
         # =========================================================
         Plots.CURRENT_PLOT.nullableplot = nothing
+        x = sim_gpe_1d.X[1] |> real
+        analytical_gs = zeros(sim_gpe_1d.N[1])
+        @. analytical_gs = sqrt(gamma_param/2) * 2/(exp(gamma_param*x) + exp(-x*gamma_param))
         p = plot_final_density([analytical_gs], sim_gpe_1d; label="analytical", color=:orange, doifft=false, ls=:dashdot, title="gamma = $gamma_param")
-        plot_final_density!(p, [initial_state_gpe_1d], sim_gpe_1d; label="initial_GPE_1D", color=:grey, doifft=false, ls=:dashdot)
-        
+        # plot_final_density!(p, [sim_], sim_gpe_1d; label="initial_GPE_1D", color=:grey, doifft=false, ls=:dashdot)
         add_string = [join(["_gamma_", gamma_param])]
 
         @info "computing GPE_1D" 
@@ -34,7 +34,7 @@ function all_ground_states()
         plot_final_density!(p, [gpe_1d], sim_gpe_1d; label="GPE_1D", color=:blue, ls=:dash)
 
         # estimate width
-        initial_sigma_improved = sqrt(sum(abs2.(sim_gpe_1d.X[1])  .* abs2.(gpe_1d) * dV) |> real)
+        initial_sigma_improved = sqrt(sum(abs2.(sim_gpe_1d.X[1])  .* abs2.(gpe_1d) * sim_gpe_1d.dV) |> real)
         @warn "initial sigma improved" initial_sigma_improved
         if take_advantage 
             sim_npse.psi_0 = gpe_1d

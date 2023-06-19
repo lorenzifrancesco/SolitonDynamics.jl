@@ -113,7 +113,8 @@ function load_parameters_gs(; gamma_param::Float64=0.6, eqs=["G1", "N", "Np", "G
     return sim_dictionary
 end
 
-function load_parameters_dy(; vv::Float64 = 0.5, bb::Float64 = 0.5, gamma_param::Float64=0.6, Nsaves::Int64=200, eqs=["G1", "N", "Np", "G3"])
+# TODO implement bb
+function load_parameters_dy(; vv::Float64 = 0.0, bb::Float64 = 0.0, gamma_param::Float64=0.6, Nsaves::Int64=200, eqs=["G1", "N", "Np", "G3"])
     # SUBOPT max vel set here
     max_vel = 1.0
     
@@ -256,7 +257,7 @@ function prepare_in_ground_state(sim::Sim{1, Array{Complex{Float64}}}; x0::Float
     # start from a convenient initial state (it doesn't matter by the way)
     @unpack_Sim sim
     x0 = L[1] / 4
-    iswitch = -im
+    iswitch = -im 
     maxiters = 1e10
     abstol = 1e-8
     initial_width = 5
@@ -264,7 +265,7 @@ function prepare_in_ground_state(sim::Sim{1, Array{Complex{Float64}}}; x0::Float
     psi_0 = psi_0 / sqrt(ns(psi_0, sim))
     kspace!(psi_0, sim)
     x = X[1] |> real
-    @assert isapprox(V0, zeros(N[1])) # TODO save potential profile and apply it later
+    V0 = zeros(N[1])
     @pack_Sim! sim
 
     @info "Computing ground state..."
@@ -281,7 +282,7 @@ function prepare_in_ground_state(sim::Sim{1, Array{Complex{Float64}}}; x0::Float
     vec = circshift(sqrt.(abs2.(sol.u)) , Int(round(N[1] * x0/L[1])))
     @. psi_0 = sqrt(abs2(sol.u)) * exp(-im*(x-x0)*vv)
     kspace!(psi_0, sim)
-    @info "normalization" ns(psi_0, sim)
+    @assert isapprox(nsk(psi_0, sim), 1.0, atol=1e-9)
     @pack_Sim! sim
     return sim
 end
@@ -291,7 +292,9 @@ function imprint_vel_set_bar(sim::Sim{1, Array{Complex{Float64}}}; vv::Float64=0
     @unpack_Sim simc
     x = X[1] |> real
     @. V0 = bb * exp(-(x/bw)^2 /2) # central barrier
-    @. psi_0 = psi_0 * exp(-im*(x)*vv)
+    xspace!(psi_0, simc)
+    @. psi_0 = abs(psi_0) * exp(-im*(x)*vv)
+    kspace!(psi_0, simc)
     @pack_Sim! simc
     return simc
 end
@@ -303,7 +306,9 @@ function imprint_vel_set_bar(sim::Sim{3, CuArray{Complex{Float64}}}; vv::Float64
     y = X[2] |> real
     z = X[3] |> real
     @. V0 = [1/2*(z^2 + y^2) + bb * exp(-(x/bw)^2 /2) for x in x, y in y, z in z] # central barrier
-    @. psi_0 = psi_0 * exp(-im*(x)*vv)
+    xspace!(psi_0, simc)
+    @. psi_0 = abs(psi_0) * exp(-im*(x)*vv)
+    kspace!(psi_0, simc)
     @pack_Sim! simc
     return simc
 end
@@ -312,7 +317,9 @@ function imprint_vel_set_bar!(sim::Sim{1, Array{Complex{Float64}}}; vv::Float64=
     @unpack_Sim sim
     x = X[1] |> real
     @. V0 = bb * exp(-(x/bw)^2 /2) # central barrier
+    xspace!(psi_0, sim)
     @. psi_0 = abs(psi_0) * exp(-im*(x)*vv)
+    kspace!(psi_0, sim)
     @pack_Sim! sim
     return sim
 end
@@ -323,7 +330,23 @@ function imprint_vel_set_bar!(sim::Sim{3, CuArray{Complex{Float64}}}; vv::Float6
     y = X[2] |> real
     z = X[3] |> real
     @. V0 = [1/2*(z^2 + y^2) + bb * exp(-(x/bw)^2 /2) for x in x, y in y, z in z] # central barrier
+    xspace!(psi_0, sim)
     @. psi_0 = abs(psi_0) * exp(-im*(x)*vv)
+    kspace!(psi_0, sim)
     @pack_Sim! sim
     return sim
+end
+
+function set_g!(sim::Sim{1, Array{Complex{Float64}}}, gamma_param::Float64=0.4)
+    @unpack_Sim sim
+    g = -2 * gamma_param
+    @pack_Sim! sim
+    return
+end
+
+function set_g!(sim::Sim{3, CuArray{Complex{Float64}}}, gamma_param::Float64=0.4)
+    @unpack_Sim sim
+    g = - (4 * pi) * gamma_param
+    @pack_Sim! sim
+    return
 end

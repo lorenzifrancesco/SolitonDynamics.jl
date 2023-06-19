@@ -54,10 +54,10 @@ end
 t = LinRange(ti, tf, Nt)
 
 dt = (tf-ti)/time_steps
-@info dt
+@info "dt" dt
 maxiters = 20000
 
-@. psi_0 = sqrt(g_param/2) * 2/(exp(g_param*(x-x0)) + exp(-(x-x0)*g_param)) * exp(-im*(x-x0)*vv)
+@. psi_0 = sqrt(g_param/2) * 2/(exp(g_param*(x-x0)) + exp(-(x-x0)*g_param)) * exp(-im*(x)*vv)
 
 psi_0 = psi_0 / sqrt(sum(abs2.(psi_0) * dV))
 initial_state = psi_0
@@ -67,6 +67,7 @@ alg = BS3()
 @. V0 = bb*exp(-(x/barrier_width)^2)
 
 @pack_Sim! sim
+@info sim
 mask_tran = map(xx -> xx<0, x)
 
 sol = runsim(sim; info=false)
@@ -84,17 +85,15 @@ time_axis = sol.t |> real
 #plot_final_density(sol.u, psi_0, sim)
 plot_axial_heatmap(sol.u, time_axis, sim)
 
-
-
 # sigma heatmaps
 plot_axial_heatmap(sigma2_new , time_of_sigma, sim; doifft = false)
 plot_axial_heatmap(sigma2_old, time_of_sigma, sim; doifft = false)
 
-@info "Building animation..."
-animation_final_density(sol.u, sim)
-animation_final_density(sigma2_new, sim; doifft=false, info=true, file="sigma2_new.gif")
-animation_final_density(sigma2_old, sim; doifft=false, info=true, file="sigma2_old.gif")
-@info "Done!"
+# @info "Building animation..."
+# animation_final_density(sol.u, sim)
+# animation_final_density(sigma2_new, sim; doifft=false, info=true, file="sigma2_new.gif")
+# animation_final_density(sigma2_old, sim; doifft=false, info=true, file="sigma2_old.gif")
+# @info "Done!"
 
 display(sol.destats)
 display(sol.retcode)

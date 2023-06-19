@@ -1,11 +1,11 @@
 JULIA_CUDA_SOFT_MEMORY_LIMIT ="95%"
 
 # XXX remark: good idea to vectorize on equations
-function get_tiles(eq = "G1")
-    saveto = "../media/tiles_$(eq).pdf"
+function get_tiles(sim, name::String="noname")
+    plotly(size=(800, 400))
+    saveto = "../media/tiles_$(name).pdf"
     @info "Setting tiles configuration..."    
     tiles = 10
-    barrier_width = 0.5 
     max_vel = 1
     max_bar = 1
     #
@@ -14,17 +14,18 @@ function get_tiles(eq = "G1")
     tran = Array{Float64, 2}(undef, (tiles, tiles))
     refl = Array{Float64, 2}(undef, (tiles, tiles))
 
-    @info "Loading parameters, filling sim grid..."
+    @info "Filling sim grid..."
     sgrid = Array{Sim, 2}(undef, (tiles, tiles))
-    archetype = prepare_in_ground_state(load_parameters_dy(eqs=[eq], Nsaves=2)[eq])
+    archetype = sim
     sgrid[1, 1] = archetype
     @time begin
         for (vx, vv) in enumerate(vel_list)
             for (bx, bb) in enumerate(bar_list)
-                sgrid[bx, vx] = imprint_vel_set_bar(archetype, vv, bb)
+                sgrid[bx, vx] = imprint_vel_set_bar(archetype; vv=vv, bb=bb)
             end
         end
     end
+    @info sgrid[10, 10]
     # all sims have the same x
     mask_refl = map(xx -> xx>0, sgrid[1, 1].X[1] |> real)
     mask_tran = map(xx -> xx<0, sgrid[1, 1].X[1] |> real)
@@ -65,18 +66,22 @@ function get_tiles(eq = "G1")
     @info "Total time in solver   = " avg_iteration_time
     @info "Average iteration time = " avg_iteration_time / tiles^2
 
-    JLD2.@save("tran.jld2", tran)
-    JLD2.@save("refl.jld2", refl)
+    JLD2.@save("tran_$(name).jld2", tran)
+    JLD2.@save("refl_$(name).jld2", refl)
     norm_bar = bar_list / max_bar
     norm_vel = vel_list / max_vel
     ht = Plots.heatmap(norm_bar, norm_vel, tran')
     display(ht)
     Plots.savefig(ht, saveto)
-
-    # display(sol.destats)
-    # display(sol.retcode)
+    return ht
 end
 
 function all_tiles()
-    return
+    @info "Load parameters... "
+    sd = load_parameters_dy(Nsaves=2)
+    for (name, sim) in sim_dict
+        @info "Computing tiles for $name..."
+        get_tiles(sim, name)
+    end
+    return nothing
 end

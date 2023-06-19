@@ -1,16 +1,16 @@
 function all_lines(precomputed=false)
     plotly(size=(800, 400))
-
+    saveto = "media/lines.pdf"
     # Computing all the lines
     # if files are already saved, load them
 
-    if precomputed && isfile("tran.jld2") && isfile("refl.jld2")
-        tran = JLD2.load("tran.jld2", "tran")
-        refl = JLD2.load("refl.jld2", "refl")
+    if precomputed && isfile("lines_tran.jld2") && isfile("lines_refl.jld2")
+        tran = JLD2.load("lines_tran.jld2", "tran")
+        refl = JLD2.load("lines_refl.jld2", "refl")
     else
         tran, refl = compute_lines()
-        JLD2.save("tran.jld2", "tran", tran)
-        JLD2.save("refl.jld2", "refl", refl)
+        JLD2.save("lines_tran.jld2", "tran", tran)
+        JLD2.save("lines_refl.jld2", "refl", refl)
     end
 
     # Plotting
@@ -21,20 +21,13 @@ function all_lines(precomputed=false)
         end
     end
     display(p)
+    savefig(p, saveto)
+    return nothing
 end
 
 function compute_lines(max_vel=0.1, max_bar=1.68, lines=4, spots=10)
-    if Threads.nthreads() == 1
-        @warn "running in single thread mode!"
-    else 
-        @info "running in multi-thread mode: n_threads =" Threads.nthreads()
-    end
-    
     @info "Loading parameters..."
-    
-    simulation_dict = get_parameters() 
-    save_path = "results/"
-    file = "tran.pdf"
+    simulation_dict = load_parameters_dy() # FIXME no import inside functions
     @info "Setting phase space..."
     barrier_width = 0.699 # as in SolitonBEC.jl
     
