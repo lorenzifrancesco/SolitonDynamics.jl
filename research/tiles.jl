@@ -70,10 +70,7 @@ function get_tiles(sim, name::String="noname")
     JLD2.@save("refl_$(name).jld2", refl)
     norm_bar = bar_list / max_bar
     norm_vel = vel_list / max_vel
-    ht = Plots.heatmap(norm_bar, norm_vel, tran')
-    display(ht)
-    Plots.savefig(ht, saveto)
-    return ht
+    return 0
 end
 
 function all_tiles()

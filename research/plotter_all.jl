@@ -1,8 +1,8 @@
 includet("CDResearch.jl")
 
 
-static_standard = load_parameters_gs(gamma=0.6)
-dynamic_standard = load_parameters_dy(gamma=0.6)
+static_standard = load_parameters_gs(gamma_param=0.6)
+dynamic_standard = load_parameters_dy(gamma_param=0.6)
 
 if Threads.nthreads() == 1
     @warn "running in single thread mode!"

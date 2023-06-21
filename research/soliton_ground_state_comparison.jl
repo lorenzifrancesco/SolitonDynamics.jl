@@ -50,12 +50,12 @@ function all_ground_states()
     @info "Starting simulations..."
     for gamma_param in gamma_param_list
         # update simulation parameters
-        @warn keys(sd)
         set_g!.(values(sd), gamma_param)
         sim_gpe_1d = sd["G1"]
         sim_npse = sd["N"]
         sim_npse_plus = sd["Np"]
         sim_gpe_3d = sd["G3"]
+        @warn sim_gpe_1d.g
         # =========================================================
         Plots.CURRENT_PLOT.nullableplot = nothing
         x = sim_gpe_1d.X[1] |> real
@@ -64,6 +64,7 @@ function all_ground_states()
         p = plot_final_density([analytical_gs], sim_gpe_1d; label="analytical", color=:orange, doifft=false, ls=:dashdot, title="gamma = $gamma_param")
         # plot_final_density!(p, [sim_], sim_gpe_1d; label="initial_GPE_1D", color=:grey, doifft=false, ls=:dashdot)
 
+        # == GPE 1D =======================================================
         if haskey(gs_dict, hs("G1", gamma_param))
             if use_precomputed
                 @info "\t using precomputed solution G1"
@@ -80,15 +81,14 @@ function all_ground_states()
         end
         gpe_1d = gs_dict[hs("G1", gamma_param)]
         plot_final_density!(p, [gpe_1d], sim_gpe_1d; label="GPE_1D", color=:blue, ls=:dash)
-        @warn keys(gs_dict)
         JLD2.save(join([save_path, "gs_dict.jld2"]), gs_dict)
 
         # estimate width
         initial_sigma_improved = sqrt(sum(abs2.(sim_gpe_1d.X[1]) .* abs2.(gpe_1d) * sim_gpe_1d.dV) |> real)
-        @warn "initial sigma improved" initial_sigma_improved
         if take_advantage
             sim_npse.psi_0 = gpe_1d
         end
+        # == NPSE =======================================================
         if haskey(gs_dict, hs("N", gamma_param))
             if use_precomputed
                 @info "\t using precomputed solution N"
@@ -110,6 +110,7 @@ function all_ground_states()
         if take_advantage
             sim_npse_plus.psi_0 = npse
         end
+        # == NPSE plus =======================================================
         if haskey(gs_dict, hs("N", gamma_param))
             if use_precomputed
                 @info "\t using precomputed solution Np"
@@ -132,15 +133,15 @@ function all_ground_states()
             x = Array(sim_gpe_3d.X[1])
             y = Array(sim_gpe_3d.X[2])
             z = Array(sim_gpe_3d.X[3])
-            initial_sigma_improved *= 5
             tmp = [exp(-((x / initial_sigma_improved)^2 + (y^2 + z^2) / 2)) for x in x, y in y, z in z]
             sim_gpe_3d.psi_0 = CuArray(tmp)
             sim_gpe_3d.psi_0 .= sim_gpe_3d.psi_0 / sqrt(sum(abs2.(sim_gpe_3d.psi_0) * sim_gpe_3d.dV))
             initial_3d = copy(sim_gpe_3d.psi_0)
             kspace!(sim_gpe_3d.psi_0, sim_gpe_3d)
         end
+        # == GPE 3D =======================================================
         if haskey(gs_dict, hs("G3", gamma_param))
-            if use_precomputed
+            if use_precomputed && false
                 @info "\t using precomputed solution G3"
             else
                 @info "\t deleting and recomputing solution G3"
