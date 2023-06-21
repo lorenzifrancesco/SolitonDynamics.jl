@@ -14,7 +14,7 @@ function hs(eq::String, g::Float64)
         n += 3000
     end
     n += Int(round(g * 100))
-    print("\nCompute hash: ", n, "\n")
+    # print("\nCompute hash: ", n, "\n")
     return string(n)
 end
 
@@ -45,7 +45,7 @@ function all_ground_states()
     end
 
     gamma_param_list = [0.15, 0.4, 0.6]
-    use_precomputed = true
+    use_precomputed = false
     take_advantage = true
     @info "Starting simulations..."
     for gamma_param in gamma_param_list
@@ -129,11 +129,26 @@ function all_ground_states()
         plot_final_density!(p, [npse_plus], sim_npse_plus; label="NPSE_der", ls=:dash, color=:green)
         JLD2.save(join([save_path, "gs_dict.jld2"]), gs_dict)
 
+        x_3d_range = range(-sim_gpe_3d.L[1] / 2, sim_gpe_3d.L[1] / 2, length(sim_gpe_3d.X[1]))
+        x_axis = sim_npse.X[1] |> real
+        x_axis_3d = sim_gpe_3d.X[1] |> real
+        x_1d_range = range(-sim_npse.L[1] / 2, sim_npse.L[1] / 2, length(sim_npse.X[1]))
         if take_advantage
-            x = Array(sim_gpe_3d.X[1])
-            y = Array(sim_gpe_3d.X[2])
-            z = Array(sim_gpe_3d.X[3])
-            tmp = [exp(-((x / initial_sigma_improved)^2 + (y^2 + z^2) / 2)) for x in x, y in y, z in z]
+            x = Array(sim_gpe_3d.X[1] |> real)
+            y = Array(sim_gpe_3d.X[2] |> real)
+            z = Array(sim_gpe_3d.X[3] |> real)
+
+            # TODO improve the assignment of the initial state
+            tmp = zeros(sim_gpe_3d.N[1], sim_gpe_3d.N[2], sim_gpe_3d.N[3]) |> complex
+            axial = sqrt.(abs2.(xspace(npse_plus, sim_npse_plus)))
+            axial_imprint = LinearInterpolation(x_1d_range, axial, extrapolation_bc=Line())
+            for (ix, x) in enumerate(x)
+                for (iy, y) in enumerate(y)
+                    for (iz, z) in enumerate(z)
+                        tmp[ix, iy, iz] = axial_imprint(x) * exp(-1/2 * (y^2 + z^2))
+                    end
+                end
+            end
             sim_gpe_3d.psi_0 = CuArray(tmp)
             sim_gpe_3d.psi_0 .= sim_gpe_3d.psi_0 / sqrt(sum(abs2.(sim_gpe_3d.psi_0) * sim_gpe_3d.dV))
             initial_3d = copy(sim_gpe_3d.psi_0)
@@ -159,13 +174,11 @@ function all_ground_states()
 
         # linear interpolation
         gpe_3d = sim_gpe_3d.psi_0
-        x_axis = sim_npse.X[1] |> real
         x_axis_3d = sim_gpe_3d.X[1] |> real
         dx = sim_gpe_3d.X[1][2] - sim_gpe_3d.X[1][1]
         final_axial = Array(sum(abs2.(xspace(gpe_3d, sim_gpe_3d)), dims=(2, 3)))[:, 1, 1] * sim_gpe_3d.dV / dx |> real
         # we need to renormalize (error in the sum??)
         final_axial = final_axial / sum(final_axial * dx) |> real
-        x_3d_range = range(-sim_gpe_3d.L[1] / 2, sim_gpe_3d.L[1] / 2, length(sim_gpe_3d.X[1]))
         solution_3d = LinearInterpolation(x_3d_range, final_axial, extrapolation_bc=Line())
         plot!(p, x_axis, solution_3d(x_axis), label="GPE_3D", color=:red)
         display(p)

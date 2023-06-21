@@ -1,12 +1,12 @@
 function load_parameters_gs(; gamma_param::Float64=0.6, eqs=["G1", "N", "Np", "G3"])
     sim_dictionary = Dict()
 
-    maxiters_1d = 1e10
-    maxiters_3d = 1e10
+    maxiters_1d = 1 # e10
+    maxiters_3d = 1 # e10
     N_axial_steps = 1024
     abstol_all = 1e-6
     initial_width = 100 
-    
+    dt_all = 0.1
     # =========================================================
     ## 1D-GPE 
     L = (40.0,)
@@ -22,7 +22,7 @@ function load_parameters_gs(; gamma_param::Float64=0.6, eqs=["G1", "N", "Np", "G
     maxiters = maxiters_1d
     g = - 2 * gamma_param
     abstol = abstol_all
-    dt = 0.005
+    dt = dt_all
     x = X[1]
     k = K[1]
     dV= volume_element(L, N)
@@ -87,7 +87,7 @@ function load_parameters_gs(; gamma_param::Float64=0.6, eqs=["G1", "N", "Np", "G
     g = - gamma_param * (4*pi)
     abstol = abstol_all
     maxiters = maxiters_3d
-    dt = 0.01
+    dt = dt_all
     x0 = 0.0
     vv = 0.0
     x = Array(X[1])
@@ -256,7 +256,7 @@ function prepare_in_ground_state!(sim::Sim{1, Array{Complex{Float64}}})
     x0 = L[1] / 4
     iswitch = -im 
     maxiters = 1e10
-    abstol = 1e-8
+    abstol = 1e-6
     initial_width = 2
     @. psi_0 = exp(-((X[1]-x0)/initial_width)^2/2)
     psi_0 = psi_0 / sqrt(ns(psi_0, sim))
