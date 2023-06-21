@@ -20,7 +20,7 @@ function propagate_manual!(psi, sim::Sim{3, CuArray{ComplexF64}}, t; ss_buffer=n
    if iswitch == -im
       psi .= psi / sqrt(nsk(psi, sim))
       info && print(" - chempot: ", chempotk(psi, sim))
-      cp_diff = abs(chempotk(psi, sim) - chempotk(psi_i, sim)) / dt
+      cp_diff = abs(chempotk(psi, sim) - chempotk(psi_i, sim))/abs(chempotk(psi_i, sim)) / dt
       return cp_diff
    else
       return nothing
