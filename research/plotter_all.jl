@@ -1,41 +1,47 @@
 includet("CDResearch.jl")
 
+function sdmf()
+    if Threads.nthreads() == 1
+        @warn "running in single thread mode!"
+    else
+        @info "running in multi-thread mode: n_threads =" Threads.nthreads()
+    end
 
-static_standard = load_parameters_gs(gamma_param=0.6)
-dynamic_standard = load_parameters_dy(gamma_param=0.6)
 
-if Threads.nthreads() == 1
-    @warn "running in single thread mode!"
-else
-    @info "running in multi-thread mode: n_threads =" Threads.nthreads()
+    ## procedure:
+    # 1- compute ground states
+    # 2- prepare dynamical simulations using GS
+    # 3- compute tiles
+    # 4- compute lines
+    save_path = "results/"
+    gamma_list = [0.15, 0.4, 0.6]
+    for gamma in gamma_list
+        sd = load_parameters(gamma_param=gamma)
+        @info "Using gamma: " gamma
+        @info "Required simulations: " keys(sd)
+        # prepare ground states (saving them)
+        if isfile(save_path * "gs_dict.jld2")
+            @info "Loading GS library..."
+            gs_dict = JLD2.load(save_path * "gs_dict.jld2")
+        else
+            @info "No GS library found!"
+        end
+
+        # preparing all simulations
+        for (name, sim) in sd
+            if haskey(gs_dict, hs(name, gamma))
+                @info "Found in library item " (name, gamma)
+            else
+                @info "Computing item " (name, gamma)
+                uu = get_ground_state(sim)
+                push!(gs_dict, hs(name, gamma) => uu)
+                JLD2.@save(save_path * "gs_dict.jld2", "sd", gs_dict)
+            end
+        end
+
+        # visualize the ground states
+        # TODO
+
+        # run the tiling
+    end
 end
-
-# simulations are already loaded 
-@info "Static simulations: " keys(static_standard)
-@info "Dynamic simulations: " keys(dynamic_standard)
-
-# prepare ground states (saving them)
-if isfile("research/sd_syn_prepared.jld2")
-    @info "Loading prepared simulations..."
-    sd = JLD3.load("research/sd_syn_prepared.jld2", "sd")
-else
-    @info "Preparing dynamical simulations in the ground state..."
-    ksd = keys(dynamic_standard)
-    sl = prepare_in_ground_state!.(values(dynamic_standard))
-    sd = Dict(zip(ksd, sl))
-    JLD3.save("research/sd_syn_prepared.jld2", "sd", sd)
-end
-
-# TODO here we can obtain the plots of the GS using the prepared simulations
-
-## ========= run standardized simulations 
-## ========= for publication-grade plots
-
-# # -Ground states 
-# pgs = all_ground_states()
-
-# Lines
-pli = all_lines()
-
-# Tiles (choose a simulation)
-tiles = all_tiles()

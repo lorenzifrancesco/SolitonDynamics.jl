@@ -35,7 +35,7 @@ function ihs(n::Int)
 end
 
 function all_ground_states()
-    sd = load_parameters_gs()
+    sd = load_parameters()
     @assert all([s.iswitch for s in values(sd)] .== -im)
     save_path = "results/"
 
@@ -189,4 +189,11 @@ function all_ground_states()
         display(p)
     end
     return gs_dict
+end
+
+function get_ground_state(sim)
+    @assert sim.iswitch == -im
+    res = Array(runsim(sim; info=false).u)
+    @assert size(res) == sim.N
+    return res
 end

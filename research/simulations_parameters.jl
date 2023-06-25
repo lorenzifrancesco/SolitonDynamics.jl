@@ -113,14 +113,18 @@ function load_parameters_gs(; gamma_param::Float64=0.6, eqs=["G1", "N", "Np", "G
     return sim_dictionary
 end
 
-function load_parameters_dy(; vv::Float64 = 0.0, bb::Float64 = 0.0, gamma_param::Float64=0.6, Nsaves::Int64=200, eqs=["G1", "N", "Np", "G3"])
-    max_vel = 1.0
-    
+function load_parameters(; vv::Float64 = 0.0, bb::Float64 = 0.0, gamma_param::Float64=0.6, Nsaves::Int64=200, eqs=["G1", "N", "Np", "G3"])
     sim_dictionary = Dict()
+
+    maxiters_1d = 1e10
+    maxiters_3d = 1e10
+    dt_all = 0.1
+    iswitch_all = -im
+
+    max_vel = 1.0
     N_axial_steps = 1024
     abstol_all = 1e-8
-    initial_width = 2
-    
+    initial_width = 100
     Lx = 40.0
     # =========================================================
     ## 1D-GPE 
@@ -129,7 +133,7 @@ function load_parameters_dy(; vv::Float64 = 0.0, bb::Float64 = 0.0, gamma_param:
     sim_gpe_1d = Sim{length(L), Array{Complex{Float64}}}(L=L, N=N)
     @unpack_Sim sim_gpe_1d
 
-    iswitch = 1
+    iswitch = iswitch_all
     equation = GPE_1D
     manual = true
     solver = SplitStep
@@ -144,6 +148,7 @@ function load_parameters_dy(; vv::Float64 = 0.0, bb::Float64 = 0.0, gamma_param:
     flags = FFTW.EXHAUSTIVE
     alg = BS3()
 
+    # will be overwritten
     time_steps = 500
     Nt = Nsaves
     if vv == 0.0
@@ -152,8 +157,12 @@ function load_parameters_dy(; vv::Float64 = 0.0, bb::Float64 = 0.0, gamma_param:
         tf = 2*x0/vv
     end 
     t = LinRange(ti, tf, Nt)
-
     dt = (tf-ti)/time_steps
+
+    # specs for GS sim
+    maxiters = maxiters_1d
+    dt = dt_all
+
     # SPR condensate bright soliton t in units of omega_perp^-1
     analytical_gs = zeros(N)
     @. analytical_gs = sqrt(gamma_param/2) * 2/(exp(gamma_param*x) + exp(-x*gamma_param)) 
@@ -204,7 +213,7 @@ function load_parameters_dy(; vv::Float64 = 0.0, bb::Float64 = 0.0, gamma_param:
     sim_gpe_3d = Sim{length(L), CuArray{Complex{Float64}}}(L=L, N=N)
     initial_state = zeros(N[1])
     @unpack_Sim sim_gpe_3d
-    iswitch = 1
+    iswitch = iswitch_all
     equation = GPE_3D
     manual = true
     solver = SplitStep
@@ -233,6 +242,11 @@ function load_parameters_dy(; vv::Float64 = 0.0, bb::Float64 = 0.0, gamma_param:
         time_steps = 4000
     end
     dt = (tf-ti)/time_steps
+
+    # specs for GS sim
+    maxiters = maxiters_3d
+    dt = dt_all
+
     tmp = [exp(-((x-x0)^2/initial_width + (y^2 + z^2)/2)) * exp(-im*(x-x0)*vv) for x in x, y in y, z in z]
     psi_0 = CuArray(tmp)
     psi_0 .= psi_0 / sqrt(sum(abs2.(psi_0) * dV))

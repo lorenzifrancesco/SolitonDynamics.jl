@@ -77,9 +77,10 @@ function all_tiles()
     @info "Load parameters... "
     sd = load_parameters_dy(Nsaves=2)
     for (name, sim) in sd
+        @info ">>> Computing for $name:"
         @info "Preparing archetype in ground state..."
         prepare_in_ground_state!(sim)
-        @info "Computing tiles for $name..."
+        @info "Computing tiles..."
         get_tiles(sim, name)
     end
     return nothing
