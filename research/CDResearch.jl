@@ -15,6 +15,7 @@ includet("../examples/plot_isosurfaces.jl")
 includet("visual_utils.jl")
 includet("simulations_parameters.jl")
 
+
 ```
     file signature:
 ```
@@ -27,7 +28,6 @@ includet("soliton_ground_state_comparison.jl")
     refl.JLD2
 ```
 includet("lines.jl")
-
 
 
 ```

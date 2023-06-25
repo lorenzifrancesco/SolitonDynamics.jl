@@ -1,10 +1,10 @@
 function load_parameters_gs(; gamma_param::Float64=0.6, eqs=["G1", "N", "Np", "G3"])
     sim_dictionary = Dict()
 
-    maxiters_1d = 1 # e10
-    maxiters_3d = 1 # e10
-    N_axial_steps = 1024
-    abstol_all = 1e-6
+    maxiters_1d = 1e10
+    maxiters_3d = 1e10
+    N_axial_steps = 512
+    abstol_all = 1e-12
     initial_width = 100 
     dt_all = 0.1
     # =========================================================
@@ -87,7 +87,7 @@ function load_parameters_gs(; gamma_param::Float64=0.6, eqs=["G1", "N", "Np", "G
     g = - gamma_param * (4*pi)
     abstol = abstol_all
     maxiters = maxiters_3d
-    dt = dt_all
+    dt = dt_all / 10
     x0 = 0.0
     vv = 0.0
     x = Array(X[1])
