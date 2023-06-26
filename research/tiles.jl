@@ -4,7 +4,6 @@ JULIA_CUDA_SOFT_MEMORY_LIMIT ="95%"
 function get_tiles(sim, name::String="noname")
     plotly(size=(800, 400))
     saveto = "../media/tiles_$(name).pdf"
-    @info "Setting tiles configuration..."    
     tiles = 10
     max_vel = 1
     max_bar = 1
@@ -25,7 +24,6 @@ function get_tiles(sim, name::String="noname")
             end
         end
     end
-    @info sgrid[10, 10]
     # all sims have the same x
     mask_refl = map(xx -> xx>0, sgrid[1, 1].X[1] |> real)
     mask_tran = map(xx -> xx<0, sgrid[1, 1].X[1] |> real)

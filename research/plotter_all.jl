@@ -67,11 +67,12 @@ function sdmf()
 
         # visualize the ground states
         # run the tiling
-        print("\nProceed to tiling? [Y/n]: ")
-        if readline()[1] == 'n'
-            @info "Aborting..."
-            return
-        end
+        
+        # print("\nProceed to tiling? [Y/n]: ")
+        # if readline()[1] == 'n'
+        #     @info "Aborting..."
+        #     return
+        # end
         for (name, sim) in sd
             @info "Tiling " name
             tile = get_tiles(sim, name)

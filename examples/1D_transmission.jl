@@ -21,7 +21,7 @@ Nt = 200
 
 solver = SplitStep
 g = -1.17
-gamma = 0.0
+gamma_damp = 0.0
 tiles = 8
 barrier_width = 0.699 # as in SolitonBEC.jl
 max_vel = 1.17 # CALCULATED VALUE 1.17 FOR CHOOSEN NONLINEARITY

@@ -12,11 +12,11 @@ function nlin_manual!(psi,sim::Sim{3, CuArray{ComplexF64}},t; ss_buffer=nothing,
 end
 
 function propagate_manual!(psi, sim::Sim{3, CuArray{ComplexF64}}, t; ss_buffer=nothing, info=false)
-   @unpack ksquared, iswitch, dV, Vol,mu,gamma,dt = sim
+   @unpack ksquared, iswitch, dV, Vol,mu,gamma_damp,dt = sim
    # info && @info "dt = " dt
    psi_i = copy(psi) 
    nlin_manual!(psi,sim,t; info=info)
-   @. psi = exp(dt * iswitch * (1.0 - im*gamma)*(-im*(1/2*ksquared - mu))) * psi
+   @. psi = exp(dt * iswitch * (1.0 - im*gamma_damp)*(-im*(1/2*ksquared - mu))) * psi
    if iswitch == -im
       psi .= psi / sqrt(nsk(psi, sim))
       info && print(" - chempot: ", chempotk(psi, sim))

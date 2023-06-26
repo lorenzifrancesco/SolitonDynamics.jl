@@ -161,7 +161,7 @@ function all_ground_states()
         end
         # == GPE 3D =======================================================
         if haskey(gs_dict, hs("G3", gamma_param))
-            if use_precomputed && false
+            if use_precomputed 
                 @info "\t using precomputed solution G3"
             else
                 @info "\t deleting and recomputing solution G3"
