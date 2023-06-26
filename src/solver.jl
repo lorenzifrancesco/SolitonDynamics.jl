@@ -4,11 +4,10 @@ include("solvers_1D_manual.jl")
 include("solvers_3D_auto.jl")
 include("solvers_3D_manual.jl")
 
-function manual_run(sim; info=false, debug=false)
+function manual_run(sim; info=false, debug=false, throw_collapse=true)
    @unpack psi_0, dV, dt, ti, tf, t, solver, iswitch, abstol, reltol, N, Nt, V0, maxiters, time_steps, equation = sim
    psi = deepcopy(psi_0)
    if iswitch == -im # select solver and run manual convergence routine 
-      info && @info "Running on manual GS mode: maxiters =  " maxiters
       # in manual GS mode the maximum number of steps is specified by maxiters
       if solver == SplitStep
          cp_diff = 1
@@ -35,7 +34,7 @@ function manual_run(sim; info=false, debug=false)
                #@assert tmp * cp_diff > 0
                tmp = cp_diff
             catch err
-               if isa(err, NpseCollapse)
+               if isa(err, NpseCollapse) && !throw_collapse
                   showerror(stdout, err)
                else
                   throw(err)
@@ -75,7 +74,6 @@ function manual_run(sim; info=false, debug=false)
       end
       return sol
    else
-      info && @info "Running on manual mode: time_steps =  " time_steps
       # in manual run mode the number of steps is specified by time_steps
       time = 0.0
       if length(N) == 1
@@ -95,7 +93,7 @@ function manual_run(sim; info=false, debug=false)
             try
                propagate_manual!(psi, sim, time; ss_buffer=ss_buffer)
             catch err
-               if isa(err, NpseCollapse)
+               if isa(err, NpseCollapse) && !throw_collapse
                   showerror(stdout, err)
                else
                   throw(err)
@@ -108,7 +106,7 @@ function manual_run(sim; info=false, debug=false)
             end
             time += dt
          end
-         collection[:, Nt] = psi # XXX fundamental for filling the last element
+         collection[:, Nt] = psi 
          sol = CustomSolution(u=[collection[:, k] for k in 1:Nt], t=t)
          info && @info sol
       elseif length(N) == 3
@@ -121,7 +119,7 @@ function manual_run(sim; info=false, debug=false)
             try
                propagate_manual!(psi, sim, time)
             catch err
-               if isa(err, NpseCollapse)
+               if isa(err, NpseCollapse) && !throw_collapse
                   showerror(stdout, err)
                else
                   throw(err)
@@ -134,14 +132,14 @@ function manual_run(sim; info=false, debug=false)
             end
             time += dt
          end
-         collection[:, :, :, Nt] = psi # XXX fundamental for filling the last element
+         collection[:, :, :, Nt] = psi 
          sol = CustomSolution(u=[collection[:, :, :, k] for k in 1:Nt], t=t)
       end
       return sol
    end
 end
 
-function auto_run(sim; info=false)
+function auto_run(sim; info=false, throw_collapse=true)
    @unpack psi_0, dV, dt, ti, tf, t, solver, iswitch, abstol, reltol, N, Nt, V0, maxiters, time_steps = sim
    psi = deepcopy(psi_0)
    @assert solver == SplitStep
@@ -190,7 +188,7 @@ function auto_run(sim; info=false)
             maxiters=maxiters,
             progress=true))
       catch err
-         if isa(err, NpseCollapse)
+         if isa(err, NpseCollapse) && !throw_collapse
             showerror(stdout, err)
          else
             throw(err)

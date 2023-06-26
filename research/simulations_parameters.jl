@@ -122,7 +122,7 @@ function load_parameters(; vv::Float64 = 0.0, bb::Float64 = 0.0, gamma_param::Fl
     iswitch_all = -im
 
     max_vel = 1.0
-    N_axial_steps = 1024
+    N_axial_steps = 2048
     abstol_all = 1e-8
     initial_width = 100
     Lx = 40.0
@@ -273,10 +273,10 @@ function load_parameters_alt(; vv::Float64 = 0.0, bb::Float64 = 0.0, gamma_param
     iswitch_all = -im
 
     max_vel = 1.0
-    N_axial_steps = 1024
-    abstol_all = 1e-4
+    N_axial_steps = 2048
+    abstol_all = 1e-6
     initial_width = 10
-    Lx = 100.0
+    Lx = 80.0
     # =========================================================
     ## 1D-GPE 
     L = (Lx,)
@@ -358,7 +358,7 @@ function load_parameters_alt(; vv::Float64 = 0.0, bb::Float64 = 0.0, gamma_param
     end
     # =========================================================
     ## 3D-GPE 
-    Nx = 512
+    Nx = 1024
     L = (Lx,10.0,10.0)
     N = (Nx, 64, 64)
     sim_gpe_3d = Sim{length(L), CuArray{Complex{Float64}}}(L=L, N=N)
@@ -368,7 +368,7 @@ function load_parameters_alt(; vv::Float64 = 0.0, bb::Float64 = 0.0, gamma_param
     equation = GPE_3D
     manual = true
     solver = SplitStep
-    g = - gamma_param * (4*pi)
+    g = - gamma_param * (4 * pi)
     abstol = abstol_all
     alg = BS3()
     
@@ -422,7 +422,7 @@ function prepare_in_ground_state!(sim::Sim{1, Array{Complex{Float64}}})
     iswitch = -im 
     maxiters = 1e10
     abstol = 1e-6
-    initial_width = 2
+    initial_width = 5
     @. psi_0 = exp(-((X[1]-x0)/initial_width)^2/2)
     psi_0 = psi_0 / sqrt(ns(psi_0, sim))
     kspace!(psi_0, sim)
@@ -462,7 +462,7 @@ function prepare_in_ground_state!(sim::Sim{3, CuArray{Complex{Float64}}})
     iswitch = -im 
     maxiters = 1e10
     abstol = 1e-8
-    initial_width = 2
+    initial_width = 5
     tmp_dt = deepcopy(dt)
     dt = 0.005
     tmp = [exp(-(((x-x0)/initial_width)^2 /2 + (y^2 + z^2)/2)) for x in x, y in y, z in z]

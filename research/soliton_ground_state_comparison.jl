@@ -36,7 +36,6 @@ end
 
 
 # FIXME 2 3D-GPE follows only the starting configurations
-# FIXME 1D-GPE still doesn't match with the analytical solution
 
 function all_ground_states()
     sd = load_parameters_alt()
@@ -53,7 +52,7 @@ function all_ground_states()
     end
 
     gamma_param_list = [0.6]
-    use_precomputed = true
+    use_precomputed = false
     take_advantage = true
     @info "Starting simulations..."
     for gamma_param in gamma_param_list

@@ -135,13 +135,30 @@ The most difficult computation to seems to be the radial (linear) component.
 
 NB: in [Helm-Gardiner], they do not use $\mathrm{E}_S$ to set the barrier, they use the parameter $q$.
 
-## SolitonBEC.jl to CondensateDynamics.jl
-in SolitonBEC.jl
-$v = v_{\text{unit}}$
-$$
-\psi_0 \propto e^{i\frac{m}{\hbar} v x}
-$$
+# June 2023: Major refactoring
+We changed radically the workflow, using scripts as standalone units in which we import CondensateDynamics
 
-## sim 3D is broken (1e21 transmission output nonsense) --> FIXED
+##### Ground state issues
+- 1D ground state convergence fails
+ 
+1D-GPE with $N=1024, \, a_{tol}=10^{-4}, \, dt = 0.01 $ 
+---> no advantage in decreasing tolerance or $dt$.
+ Error on $\mu$ of around $1\%$. The only sensible improvement is in increasing $N$.
 
-## remember to remove Plots.jl from the main branch
+- 3D ground state convergence is bound to the initial state, too much
+
+- NPSE_plus smash the RAM
+
+And we don't know why. Using GC.gc() helps but cost too much time.
+
+
+##### Collapse measurements
+- still to implement
+
+##### Tiling 
+Almost ok, but needs to be tested before the armageddon-like simulations.
+
+### TODO
+- [ ] 1D ground state convergence
+- [ ] Fix automatic ground state
+- [ ] Fix CrankNicholson ground state
