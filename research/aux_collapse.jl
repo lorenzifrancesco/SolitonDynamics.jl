@@ -49,17 +49,22 @@ function pinpoint_collapse()
     reltol = 1e-4
     @pack_Sim! gg
 
-    iters = 25
+    iters = 50
     pal = palette([:red, :blue], iters)
     # gamma_list = LinRange(0.0, 0.6, nn)
     # we run a bisection
-    gplus = 1
-    gminus = 0
-    for i in 1:iters
+    decimals = 3
+    
+    gplus = 0.8
+    gminus = 0.55
+    diff = 1.0
+    prev_gmid = 0.0
+    while diff > 10.0^(-decimals)
         gmid = (gplus + gminus) / 2
+        @info "trying" gmid
         gg.g = -2 * gmid
         try
-            sol = runsim(gg; info=true)
+            sol = runsim(gg; info=false)
             @info "going right"
             gminus = gmid
         catch err
@@ -70,6 +75,46 @@ function pinpoint_collapse()
             else
                 throw(err)
             end
+        end
+        diff = abs(gmid - prev_gmid)
+        prev_gmid = gmid
+    end
+    @info "collapse point" (gplus + gminus) / 2
+    return (gplus + gminus) / 2
+end
+
+function pinpoint_collapse_3()
+    gamma = 0.6
+    sd = load_parameters_alt(gamma_param=gamma)
+    gg = sd["G3"]
+
+    @unpack_Sim gg
+    x = X[1] |> real
+    dt = 0.01
+    abstol = 1e-4
+    reltol = 1e-4
+    @pack_Sim! gg
+
+    iters = 50
+    pal = palette([:red, :blue], iters)
+    # gamma_list = LinRange(0.0, 0.6, nn)
+    # we run a bisection
+    gplus = 0.8
+    gminus = 0.55
+    for i in 1:iters
+        gmid = (gplus + gminus) / 2
+        @info "trying" gmid
+        gg.g = -2 * gmid
+        sol = runsim(gg; info=false)
+        @info "going right"
+        gminus = gmid
+        if maximum(abs2.(sol.u)) > 1/gg.dV
+            @warn "collapse at $gmid"
+            @info "going left"
+            gplus = gmid
+        else
+            @info "going right"
+            gminus = gmid
         end
     end
     @info "collapse point" (gplus + gminus) / 2

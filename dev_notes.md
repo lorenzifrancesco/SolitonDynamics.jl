@@ -159,6 +159,17 @@ And we don't know why. Using GC.gc() helps but cost too much time.
 Almost ok, but needs to be tested before the armageddon-like simulations.
 
 ### TODO
-- [ ] 1D ground state convergence
-- [ ] Fix automatic ground state
-- [ ] Fix CrankNicholson ground state
+- [ ] 1D ground state convergence (rinuncio)
+- [ ] Fix automatic ground state (wish)
+- [ ] Fix CrankNicholson ground state (wish)
+
+#### COLLAPSES
+- The collapse gamma found for NPSE is found to be around 0.751, strange enough
+This behavious depends strongly on the spatial discretization.
+N=1024 -> 0.73qualcosa
+N=2048 -> 0.751
+N=4096 -> 0.74533
+
+- NPSE_plus seems to have a higher threshold for collapse.
+N=1024 -> gamma_c>0.75
+> (are we sure we are even collapsing at all in NPSE_plus?) 

@@ -263,7 +263,6 @@ function load_parameters(; vv::Float64 = 0.0, bb::Float64 = 0.0, gamma_param::Fl
     return sim_dictionary
 end
 
-
 function load_parameters_alt(; vv::Float64 = 0.0, bb::Float64 = 0.0, gamma_param::Float64=0.6, Nsaves::Int64=200, eqs=["G1", "N", "Np", "G3"])
     sim_dictionary = Dict()
 
@@ -273,9 +272,9 @@ function load_parameters_alt(; vv::Float64 = 0.0, bb::Float64 = 0.0, gamma_param
     iswitch_all = -im
 
     max_vel = 1.0
-    N_axial_steps = 2048
+    N_axial_steps = 1024
     abstol_all = 1e-6
-    initial_width = 10
+    initial_width = 5
     Lx = 80.0
     # =========================================================
     ## 1D-GPE 
