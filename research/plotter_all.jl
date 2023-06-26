@@ -41,14 +41,13 @@ function sdmf()
             uu = JLD2.load(save_path * "gs_dict.jld2", hs(name, gamma))
             # write the initial state into sim
             # TODO write the method into prepare function
-            @warn gamma
-            @info "Writing ground state into sim..."
+            @info " ---> Writing ground state into sim..."
             if length(sim.N) == 1
                 @unpack_Sim sim
                 iswitch = 1
                 x = X[1]
                 @. psi_0 = sqrt(abs2(uu))
-                psi_0 = psi_0 / sqrt(ns(psi_0, sim))
+                psi_0 .= psi_0 / sqrt(ns(psi_0, sim))
                 kspace!(psi_0, sim)
                 @assert isapprox(nsk(psi_0, sim), 1.0, atol=1e-9)
                 @pack_Sim! sim
@@ -58,18 +57,15 @@ function sdmf()
                 x = X[1] |> real
                 y = X[2] |> real
                 z = X[3] |> real
-                @. psi_0 = sqrt(abs2.(uu))
-                psi_0 = psi_0 / sqrt(ns(psi_0, sim))
+                psi_0 .= CuArray(sqrt.(abs2.(uu))) 
+                psi_0 .= psi_0 / sqrt(ns(psi_0, sim))
                 kspace!(psi_0, sim)
                 @assert isapprox(nsk(psi_0, sim), 1.0, atol=1e-9)
                 @pack_Sim! sim
             end
-            @warn gamma
         end
 
         # visualize the ground states
-
-
         # run the tiling
         print("\nProceed to tiling? [Y/n]: ")
         if readline()[1] == 'n'

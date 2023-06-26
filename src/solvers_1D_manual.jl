@@ -58,10 +58,10 @@ end
 
 
 function propagate_manual!(psi, sim::Sim{1, Array{ComplexF64}}, t; ss_buffer=nothing, info=false)
-   (ksquared, iswitch, mu,gamma,dt) = unpack_selection(sim, :ksquared, :iswitch, :mu, :gamma, :dt)
+   (ksquared, iswitch, mu,gamma_damp,dt) = unpack_selection(sim, :ksquared, :iswitch, :mu, :gamma_damp, :dt)
    psi_i = copy(psi) 
    nlin_manual!(psi,sim,t; ss_buffer=ss_buffer, info=info)
-   @. psi = exp(dt * iswitch * (1.0 - im*gamma)*(-im*(1/2*ksquared - mu)))*psi
+   @. psi = exp(dt * iswitch * (1.0 - im*gamma_damp)*(-im*(1/2*ksquared - mu)))*psi
    if iswitch == -im      
       psi .= psi / sqrt(nsk(psi, sim))
       info && print(" - chempot: ", abs(chempotk(psi, sim)))
@@ -117,10 +117,10 @@ including explicit normalization
   
 
 # function ground_state_evolve!(psi, sim::Sim{1, Array{ComplexF64}}, t; info=false)
-#    @unpack ksquared, iswitch, dV, Vol,mu,gamma,dt = sim
+#    @unpack ksquared, iswitch, dV, Vol,mu,gamma_damp,dt = sim
 #    psi_i = copy(psi) 
 #    ground_state_nlin!(psi,sim,t)
-#    @.  psi = exp(dt *iswitch* (1.0 - im*gamma)*(-im*(1/2*ksquared - mu)))*psi
+#    @.  psi = exp(dt *iswitch* (1.0 - im*gamma_damp)*(-im*(1/2*ksquared - mu)))*psi
 #    norm_diff = nsk(psi - psi_i, sim)/dt
 #    psi .= psi / sqrt(nsk(psi, sim))
 #    return norm_diff
