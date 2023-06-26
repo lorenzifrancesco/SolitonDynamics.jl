@@ -65,66 +65,12 @@ function propagate_manual!(psi, sim::Sim{1, Array{ComplexF64}}, t; ss_buffer=not
    if iswitch == -im      
       psi .= psi / sqrt(nsk(psi, sim))
       info && print(" - chempot: ", abs(chempotk(psi, sim)))
-      cp_diff = abs(chempotk(psi, sim) - chempotk(psi_i, sim))/abs(chempotk(psi_i, sim)) / dt
+      cp_diff = (chempotk(psi, sim) - chempotk(psi_i, sim))/chempotk(psi_i, sim) / dt
       return cp_diff
    else
       return nothing
    end
 end
-
-
-# ============== Manual SplitStep methods for ground state, improved with exp (wait for merge with above methods)
-"""
-Imaginary time evolution in xspace,
-including explicit normalization
-"""
-# function ground_state_nlin!(psi,sim::Sim{1, Array{ComplexF64}},t)
-#    @unpack ksquared,g,X,V0,dV,Vol,mu,equation,sigma2,dt,iswitch,N = sim; x = X[1]; N = N[1]
-#    xspace!(psi,sim)
-#    if equation == GPE_1D
-#       @.  psi = exp(dt * -im*iswitch* (V0 + V(x, t) + g*abs2(psi))) * psi
-#    elseif equation == NPSE
-#       nonlinear = g*abs2.(psi) ./sigma2.(psi) + (1 ./(2*sigma2.(psi)) + 1/2*sigma2.(psi))
-#       @.  psi = exp(dt * -im*iswitch* (V0 + V(x, t) + nonlinear)) * psi
-#    elseif equation == NPSE_plus
-#       sigma2_plus = zeros(length(x))
-#       try
-#          # Nonlinear Finite Element routine
-#          b = (1 .+ g*abs2.(psi))
-#          b[1]   += 1.0 * 1/(4*dV)
-#          b[end] += 1.0 * 1/(4*dV)
-#          a = ones(length(b))
-#          A0 = 1/(2*dV) * SymTridiagonal(2*a, -a)
-#          ss = ones(N)
-#          prob = NonlinearProblem(sigma_eq, ss, [b, A0, dV])
-#          sol = solve(prob, NewtonRaphson(), reltol=1e-3)
-#          sigma2_plus = (sol.u).^2
-#       catch  err
-#          if isa(err, DomainError)
-#             sigma2_plus = NaN
-#             throw(NpseCollapse(-666))
-#          else
-#             throw(err)
-#          end
-#       end
-#       tmp = copy(sigma2_plus)
-#       nonlinear = g*abs2.(psi) ./sigma2_plus +  (1/2 * sigma2_plus .+ (1 ./(2*sigma2_plus)).* (1 .+ (1/dV * diff(prepend!(tmp, 1.0))).^2))
-#       @.  psi = exp(dt * -im*iswitch* (V0 + V(x, t) + nonlinear)) * psi
-#    end
-#    kspace!(psi,sim)
-#    return nothing
-# end
-  
-
-# function ground_state_evolve!(psi, sim::Sim{1, Array{ComplexF64}}, t; info=false)
-#    @unpack ksquared, iswitch, dV, Vol,mu,gamma_damp,dt = sim
-#    psi_i = copy(psi) 
-#    ground_state_nlin!(psi,sim,t)
-#    @.  psi = exp(dt *iswitch* (1.0 - im*gamma_damp)*(-im*(1/2*ksquared - mu)))*psi
-#    norm_diff = nsk(psi - psi_i, sim)/dt
-#    psi .= psi / sqrt(nsk(psi, sim))
-#    return norm_diff
-# end
 
 # ============== Manual CN GS
 
@@ -142,11 +88,9 @@ function cn_ground_state!(psi,sim::Sim{1, Array{ComplexF64}}, dt, tri_fwd, tri_b
    #tri_bkw *= 1/2
    psi .= tri_fwd*psi
    psi .= transpose(\(psi, tri_bkw))
-
-   @warn "Still using old normalization"
-   norm_diff = ns(psi - psi_i, sim)/dt
    psi .= psi / sqrt(ns(psi, sim))
-   return norm_diff
+   cp_diff = (chempot(psi, sim) - chempot(psi_i, sim))/chempot(psi_i, sim) / dt
+   return cp_diff
 end
 
 # ============== Manual PC GS

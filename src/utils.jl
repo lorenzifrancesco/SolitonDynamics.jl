@@ -228,7 +228,7 @@ function chempotk(psi, sim)
     mu += dV * sum((V0 + g*abs2.(tmp)) .* abs2.(tmp))
     mu *= 1/ns(tmp, sim) 
     #mu += 1 # add one transverse energy unit (1D-GPE case)
-    return mu
+    return real(mu)
 end
 
 """
@@ -241,7 +241,7 @@ function chempot(psi, sim)
     mu += 1/Vol * sum(1/2 * ksquared .* abs2.(tmp))
     mu *= 1/nsk(tmp, sim) 
     #mu += 1 # add one transverse energy unit (1D-GPE case)
-    return mu
+    return real(mu)
 end
 
 function sim_info(sim)
@@ -249,6 +249,7 @@ function sim_info(sim)
     print("\nSimulation in $(length(N))D, with a number of steps $(N)\n")
 end
 
-function gpe_analytical(x, gamma)
-    return sqrt(gamma/2) * 2/(exp(gamma*x) + exp(-x * gamma))
+function gpe_analytical(x, gamma; x0::Float64=0.0)
+    @assert gamma > 0
+    return sqrt(gamma/2) * 2/(exp(gamma*(x-x0)) + exp(-(x-x0) * gamma))
 end

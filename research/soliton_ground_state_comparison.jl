@@ -34,8 +34,12 @@ function ihs(n::Int)
     end
 end
 
+
+# FIXME 2 3D-GPE follows only the starting configurations
+# FIXME 1D-GPE still doesn't match with the analytical solution
+
 function all_ground_states()
-    sd = load_parameters()
+    sd = load_parameters_alt()
     @assert all([s.iswitch for s in values(sd)] .== -im)
     save_path = "results/"
 
@@ -48,7 +52,7 @@ function all_ground_states()
         JLD2.save(join([save_path, "gs_dict.jld2"]), gs_dict)
     end
 
-    gamma_param_list = [0.15, 0.4, 0.6]
+    gamma_param_list = [0.6]
     use_precomputed = true
     take_advantage = true
     @info "Starting simulations..."
@@ -64,7 +68,8 @@ function all_ground_states()
         Plots.CURRENT_PLOT.nullableplot = nothing
         x = sim_gpe_1d.X[1] |> real
         analytical_gs = zeros(sim_gpe_1d.N[1])
-        @. analytical_gs = sqrt(gamma_param / 2) * 2 / (exp(gamma_param * x) + exp(-x * gamma_param))
+        offset = sim_gpe_1d.L[1] / 4
+        @. analytical_gs = sqrt(gamma_param / 2) * 2 / (exp(gamma_param * (x-offset)) + exp(-(x-offset) * gamma_param))
         p = plot_final_density([analytical_gs], sim_gpe_1d; label="analytical", color=:orange, doifft=false, ls=:dashdot, title="gamma = $gamma_param")
 
         # == GPE 1D =======================================================
@@ -74,25 +79,25 @@ function all_ground_states()
             else
                 @info "\t deleting and recomputing solution G1"
                 delete!(gs_dict, hs("G1", gamma_param))
-                sol = runsim(sim_gpe_1d; info=false)
+                sol = runsim(sim_gpe_1d; info=true)
                 push!(gs_dict, hs("G1", gamma_param) => sol.u)
             end
         else
             @info "computing G1"
-            sol = runsim(sim_gpe_1d; info=false)
+            sol = runsim(sim_gpe_1d; info=true)
             push!(gs_dict, hs("G1", gamma_param) => sol.u)
         end
         gpe_1d = gs_dict[hs("G1", gamma_param)]
         plot_final_density!(p, [gpe_1d], sim_gpe_1d; label="GPE_1D", color=:blue, ls=:dash)
         JLD2.save(join([save_path, "gs_dict.jld2"]), gs_dict)
 
+
+        # == NPSE =======================================================
         # estimate width
         initial_sigma_improved = sqrt(sum(abs2.(sim_gpe_1d.X[1]) .* abs2.(gpe_1d) * sim_gpe_1d.dV) |> real)
         if take_advantage
             sim_npse.psi_0 = gpe_1d
         end
-        # TODO study of collapse: increment temporal speed at the end (GS sould stay nearly the same)
-        # == NPSE =======================================================
         if haskey(gs_dict, hs("N", gamma_param))
             if use_precomputed
                 @info "\t using precomputed solution N"
@@ -111,10 +116,11 @@ function all_ground_states()
         plot_final_density!(p, [npse], sim_npse; label="NPSE", color=:green, ls=:dot)
         JLD2.save(join([save_path, "gs_dict.jld2"]), gs_dict)
 
+
+        # == NPSE plus =======================================================
         if take_advantage
             sim_npse_plus.psi_0 = npse
         end
-        # == NPSE plus =======================================================
         if haskey(gs_dict, hs("Np", gamma_param))
             if use_precomputed
                 @info "\t using precomputed solution Np"
@@ -133,6 +139,8 @@ function all_ground_states()
         plot_final_density!(p, [npse_plus], sim_npse_plus; label="NPSE_der", ls=:dash, color=:green)
         JLD2.save(join([save_path, "gs_dict.jld2"]), gs_dict)
 
+
+        # == GPE 3D =======================================================
         x_3d_range = range(-sim_gpe_3d.L[1] / 2, sim_gpe_3d.L[1] / 2, length(sim_gpe_3d.X[1]))
         x_axis = sim_npse.X[1] |> real
         x_axis_3d = sim_gpe_3d.X[1] |> real
@@ -144,7 +152,7 @@ function all_ground_states()
 
             tmp = zeros(sim_gpe_3d.N[1], sim_gpe_3d.N[2], sim_gpe_3d.N[3]) |> complex
             # TODO start from NPSE and not NPSE_plus (we want to be unbiased)
-            axial = sqrt.(abs2.(xspace(npse_plus, sim_npse_plus)))
+            axial = sqrt.(abs2.(xspace(npse, sim_npse)))
             axial_imprint = LinearInterpolation(x_1d_range, axial, extrapolation_bc=Line())
             for (ix, x) in enumerate(x)
                 for (iy, y) in enumerate(y)
@@ -158,9 +166,8 @@ function all_ground_states()
             initial_3d = copy(sim_gpe_3d.psi_0)
             kspace!(sim_gpe_3d.psi_0, sim_gpe_3d)
         end
-        # == GPE 3D =======================================================
         if haskey(gs_dict, hs("G3", gamma_param))
-            if use_precomputed && false
+            if use_precomputed
                 @info "\t using precomputed solution G3"
             else
                 @info "\t deleting and recomputing solution G3"
