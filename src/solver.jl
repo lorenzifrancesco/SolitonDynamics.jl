@@ -27,12 +27,12 @@ function manual_run(sim; info=false, debug=false)
 
          info && print("Interaction number")
          while abs(cp_diff) > abstol_diff && cnt < maxiters
-            tmp = 1
+            tmp = chempotk(psi, sim)
             try
                cp_diff = propagate_manual!(psi, sim, dt; info=info, ss_buffer=ss_buffer)
                sim.dt *= (1 - decay)
                info && print("\r", cnt, " - chempot diff: ", cp_diff)
-               @assert tmp * cp_diff > 0
+               #@assert tmp * cp_diff > 0
                tmp = cp_diff
             catch err
                if isa(err, NpseCollapse)

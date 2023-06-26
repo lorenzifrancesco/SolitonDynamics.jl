@@ -4,7 +4,7 @@ JULIA_CUDA_SOFT_MEMORY_LIMIT ="95%"
 function get_tiles(sim, name::String="noname")
     plotly(size=(800, 400))
     saveto = "../media/tiles_$(name).pdf"
-    tiles = 10
+    tiles = 2
     max_vel = 1
     max_bar = 1
     #

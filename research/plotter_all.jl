@@ -34,14 +34,16 @@ function sdmf()
                 @info "Found in library item " (name, gamma)
             else
                 @info "Computing item " (name, gamma)
+                display("With code: " * hs(name, gamma))
                 uu = get_ground_state(sim)
                 push!(gs_dict, hs(name, gamma) => uu)
-                JLD2.save(save_path * "gs_dict.jld2", "sd", gs_dict)
+                JLD2.save(save_path * "gs_dict.jld2", gs_dict)
             end
             uu = JLD2.load(save_path * "gs_dict.jld2", hs(name, gamma))
             # write the initial state into sim
             # TODO write the method into prepare function
             @info " ---> Writing ground state into sim..."
+            @warn gamma
             if length(sim.N) == 1
                 @unpack_Sim sim
                 iswitch = 1
@@ -63,6 +65,7 @@ function sdmf()
                 @assert isapprox(nsk(psi_0, sim), 1.0, atol=1e-9)
                 @pack_Sim! sim
             end
+            @warn gamma
         end
 
         # visualize the ground states
@@ -73,10 +76,12 @@ function sdmf()
         #     @info "Aborting..."
         #     return
         # end
+        tile_dict = Dict()
         for (name, sim) in sd
             @info "Tiling " name
             tile = get_tiles(sim, name)
-            JLD2.save(save_path * "tile_dict.jld2", hs(name, gamma) => tile)
+            push!(tile_dict, hs(name, gamma) => tile)
+            JLD2.save(save_path * "tile_dict.jld2", tile_dict)
         end
     end
 end
