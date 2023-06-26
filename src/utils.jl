@@ -248,3 +248,7 @@ function sim_info(sim)
     @unpack_Sim N, L, manual = sim
     print("\nSimulation in $(length(N))D, with a number of steps $(N)\n")
 end
+
+function gpe_analytical(x, gamma)
+    return sqrt(gamma/2) * 2/(exp(gamma*x) + exp(-x * gamma))
+end

@@ -48,7 +48,7 @@ function all_ground_states()
         JLD2.save(join([save_path, "gs_dict.jld2"]), gs_dict)
     end
 
-    gamma_param_list = [0.6]
+    gamma_param_list = [0.15, 0.4, 0.6]
     use_precomputed = true
     take_advantage = true
     @info "Starting simulations..."
@@ -66,7 +66,6 @@ function all_ground_states()
         analytical_gs = zeros(sim_gpe_1d.N[1])
         @. analytical_gs = sqrt(gamma_param / 2) * 2 / (exp(gamma_param * x) + exp(-x * gamma_param))
         p = plot_final_density([analytical_gs], sim_gpe_1d; label="analytical", color=:orange, doifft=false, ls=:dashdot, title="gamma = $gamma_param")
-        plot_final_density!(p, [sim_gpe_1d.psi_0], sim_gpe_1d; label="initial_GPE_1D", color=:grey, doifft=false, ls=:dashdot)
 
         # == GPE 1D =======================================================
         if haskey(gs_dict, hs("G1", gamma_param))
@@ -161,7 +160,7 @@ function all_ground_states()
         end
         # == GPE 3D =======================================================
         if haskey(gs_dict, hs("G3", gamma_param))
-            if use_precomputed 
+            if use_precomputed && false
                 @info "\t using precomputed solution G3"
             else
                 @info "\t deleting and recomputing solution G3"
