@@ -31,7 +31,7 @@ sim = Sim{length(L), CuArray{Complex{Float64}}}(L=L, N=N)
 g_param = 0.5 * 0
 g = - g_param * 4 * pi
 
-gamma = 0.0
+gamma_damp = 0.0
 mu = 0.0
 
 equation = GPE_3D

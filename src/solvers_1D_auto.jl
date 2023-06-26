@@ -56,9 +56,9 @@ end
 
 
 function propagate!(dpsi, psi, sim::Sim{1, Array{ComplexF64}}, t; info=false)
-   @unpack ksquared, iswitch, dV, Vol,mu,gamma = sim
+   @unpack ksquared, iswitch, dV, Vol,mu,gamma_damp = sim
       nlin!(dpsi,psi,sim,t)
-      @. dpsi = (1.0 - im*gamma)*(-im*(1/2*ksquared - mu)*psi + dpsi)
+      @. dpsi = (1.0 - im*gamma_damp)*(-im*(1/2*ksquared - mu)*psi + dpsi)
    return nothing
 end
 

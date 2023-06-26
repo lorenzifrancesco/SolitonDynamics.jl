@@ -97,7 +97,7 @@ end
     time_steps = 5000   # used in manual solvers
     # === nonlinearity
     g::Float64 = 0.1
-    gamma::Float64 = 0.0; @assert gamma >= 0.0 # damping parameter
+    gamma_damp::Float64 = 0.0; @assert gamma_damp >= 0.0 # damping parameter
     mu::Float64 = 0.0 # fixed chemical potential for ground state solution
     sigma2 = init_sigma2(g) 
     # === potential
