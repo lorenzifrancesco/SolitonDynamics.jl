@@ -152,9 +152,6 @@ We changed radically the workflow, using scripts as standalone units in which we
 And we don't know why. Using GC.gc() helps but cost too much time.
 
 
-##### Collapse measurements
-- still to implement
-
 ##### Tiling 
 Almost ok, but needs to be tested before the armageddon-like simulations.
 
@@ -181,4 +178,5 @@ N=1024 -> gamma_c>0.75
 
 ---> working in kspace, we are "inverted"
 
-  
+27/06/2023
+ ## Debug of strange behaviour of ground states

@@ -1,17 +1,5 @@
 # General solvers to be used with DiffEq
 
-# # ======= begin inset for online
-
-function shit(u, w, sim::Sim{1, Array{ComplexF64}}; info=false)
-   @unpack t, X = sim; x = Array(X[1])
-   p = plot(real.(x), w, label="initial")
-   plot!(p, real.(x), u, label="final")
-   display(p)
-   return p
-end
-# # ======= end inset
-
-
 function nlin!(dpsi,psi,sim::Sim{1, Array{ComplexF64}},t)
    @unpack ksquared,g,X,V0,iswitch,dV,Vol,mu,equation,sigma2,N = sim; x = X[1] |> real; N = N[1]
    dpsi .= psi
