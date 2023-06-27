@@ -13,6 +13,7 @@ function sdmf()
     # 3- compute tiles
     # 4- compute lines
     save_path = "results/"
+    use_precomputed = false
     gamma_list = [0.15, 0.4, 0.6]
     for gamma in gamma_list
         @info "==== Using gamma: " gamma
@@ -30,7 +31,7 @@ function sdmf()
 
         # preparing all simulations
         for (name, sim) in sd
-            if haskey(gs_dict, hs(name, gamma))
+            if haskey(gs_dict, hs(name, gamma)) && use_precomputed
                 @info "Found in library item " (name, gamma)
             else
                 @info "Computing item " (name, gamma)

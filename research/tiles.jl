@@ -73,7 +73,7 @@ end
 
 function all_tiles()
     @info "Load parameters... "
-    sd = load_parameters_dy(Nsaves=2)
+    sd = load_parameters(Nsaves=2)
     for (name, sim) in sd
         @info ">>> Computing for $name:"
         @info "Preparing archetype in ground state..."
