@@ -155,7 +155,7 @@ And we don't know why. Using GC.gc() helps but cost too much time.
 ##### Tiling 
 Almost ok, but needs to be tested before the armageddon-like simulations.
 
-### TODO
+#### TODO
 - [ ] 1D ground state convergence (rinuncio)
 - [ ] Fix automatic ground state (wish)
 - [ ] Fix CrankNicholson ground state (wish)
@@ -172,11 +172,30 @@ N=1024 -> gamma_c>0.75
 > (are we sure we are even collapsing at all in NPSE_plus?) 
 
 
-## DO WE STILL HAVE CORRECTNESS PROBLEMS IN THE TRANSFORMS??? SEEMS SO, SINCE INCREMENTING THE STEPS IN THE SOLITON SIMULATION LEADS TO A DIFFERENT RESULT.
-- Parseval is well tested now.
+#### DO WE STILL HAVE CORRECTNESS PROBLEMS IN THE TRANSFORMS? 
+ SEEMS SO, SINCE INCREMENTING THE STEPS IN THE SOLITON SIMULATION LEADS TO A DIFFERENT RESULT. _yes, but how do they SCALE?_
+ - Parseval is well tested now.
 - Maybe the transform domain is somehow corrupted and not taking into account the right nonlinearity?
 
 ---> working in kspace, we are "inverted"
 
-27/06/2023
- ## Debug of strange behaviour of ground states
+### 27/06/2023
+### Debug of strange behaviour of ground states
+- [x] TEST: CrankNicholson -> seems to be without kinetic term: check initialization of tridiagonal matrices
+- [x] - TEST: CrankNicholson initialized with soliton solution -> broken (seems without kinetic term)
+- [x] TEST: SplitStep initialized with soliton solution -> After relatively few iterations, it converges to the wrong function (slightly below)  
+- [x] BackwardEuler is shifting the ground state (not correct)
+
+- [ ] Quick FIX CrankNicholson (nota available)
+
+- [ ] Check correctness of the tranforms
+
+
+**NB: we still do not have 3D CrankNicholson**
+##### Curiosity
+- [ ] obtain the Thomas-Fermi function simulating without kinetics
+
+#### Why SplitStep is broken? Transforms??
+We should check the kspace, the xspace should be ok (the transforms are inverse of each other)
+- [ ] check using $dk = 1/L$
+- [ ] justify theoretically check the correct version for $dk$ using sampling arguments

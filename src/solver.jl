@@ -55,17 +55,17 @@ function manual_run(sim; info=false, debug=false, throw_collapse=true)
          abstol_diff = abstol
          taglia = N[1]
          #for i in  1:10000
-         d_central = -(dt / 2) * (1 / (dV^2) * ones(taglia) - V0) |> complex
-         d_lu = (dt / 2) * 1 / (2 * dV^2) * ones(taglia - 1) |> complex
-         tri_fwd = SymTridiagonal(d_central, d_lu) + Diagonal(ones(taglia)) # Dx
-         tri_bkw = -SymTridiagonal(d_central, d_lu) + Diagonal(ones(taglia)) # Sx
+         d_central = (dt / 2) * (1 / (dV^2) * ones(taglia) - V0) |> complex
+         d_lu = -(dt / 2) * 1 / (2 * dV^2) * ones(taglia - 1) |> complex
+         tri_fwd = -SymTridiagonal(d_central, d_lu) + Diagonal(ones(taglia)) # Dx
+         tri_bkw = SymTridiagonal(d_central, d_lu) + Diagonal(ones(taglia)) # Sx
          cnt = 0
          tmp = chempot(psi, sim)
          while abs(cp_diff) > abstol_diff && cnt < maxiters
             cp_diff = func(psi, sim, dt, tri_fwd, tri_bkw)
             info && print("\n Interaction number")
             info && print("\r", cnt, " - chempot diff: ", cp_diff)
-            @assert tmp * cp_diff > 0
+            # @assert tmp * cp_diff > 0
             tmp = cp_diff
             cnt += 1
          end

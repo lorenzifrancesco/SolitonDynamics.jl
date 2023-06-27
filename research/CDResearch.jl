@@ -13,7 +13,7 @@ using ProgressBars, Colors
 includet("../examples/plot_axial_evolution.jl")
 includet("../examples/plot_isosurfaces.jl")
 includet("visual_utils.jl")
-includet("simulations_parameters.jl")
+includet("init.jl")
 
 
 ```

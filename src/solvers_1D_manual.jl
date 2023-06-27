@@ -82,10 +82,8 @@ function cn_ground_state!(psi,sim::Sim{1, Array{ComplexF64}}, dt, tri_fwd, tri_b
    @unpack dt,g,X,V0,iswitch,dV,Vol = sim; x = X[1]
    psi_i = copy(psi) 
    nonlin = (dt/2) * g*abs2.(psi)
-   tri_fwd += Diagonal(nonlin)
+   tri_fwd += Diagonal(nonlin) # TODO check nonlinearity here
    tri_bkw += Diagonal(-nonlin)
-   #tri_fwd *= 1/2
-   #tri_bkw *= 1/2
    psi .= tri_fwd*psi
    psi .= transpose(\(psi, tri_bkw))
    psi .= psi / sqrt(ns(psi, sim))
@@ -117,10 +115,9 @@ function pc_ground_state!(psi,sim::Sim{1, Array{ComplexF64}}, dt, tri_fwd, tri_b
    psi .= 1/2*(tri_fwd*psi_i + tri_fwd*psi) + psi
    info && @info display(sum(psi))
 
-   @warn "Still using old normalization"
-   norm_diff = ns(psi - psi_i, sim)/dt
    psi .= psi / sqrt(ns(psi, sim))
-   return norm_diff
+   cp_diff = (chempot(psi, sim) - chempot(psi_i, sim))/chempot(psi_i, sim) / dt
+   return cp_diff
 end
 
 # ============== Manual BE GS
@@ -136,8 +133,7 @@ function be_ground_state!(psi,sim::Sim{1, Array{ComplexF64}}, dt, tri_fwd, tri_b
    tri_bkw += Diagonal(nonlin)
    psi .= transpose(\(psi, tri_bkw))
 
-   @warn "Still using old normalization"
-   norm_diff = ns(psi - psi_i, sim)/dt
    psi .= psi / sqrt(ns(psi, sim))
-   return norm_diff
+   cp_diff = (chempot(psi, sim) - chempot(psi_i, sim))/chempot(psi_i, sim) / dt
+   return cp_diff
 end

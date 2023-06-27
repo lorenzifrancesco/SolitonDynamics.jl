@@ -6,11 +6,15 @@ plotly()
 function go()
     gamma = 0.6
     sd = load_parameters_alt(gamma_param=gamma)
-    gg = sd["G3"]
+    gg = sd["G1"]
 
     @unpack_Sim gg
     x = X[1] |> real
+    solver = CrankNicholson
+    psi_0 .= gpe_analytical.(x, gamma; x0=gg.L[1] / 4)
+    kspace!(psi_0, gg)
     @pack_Sim! gg
+
     true_min = chempot(gpe_analytical.(x, gamma; x0=gg.L[1] / 4), gg)
     @warn true_min
     p = plot(x, abs2.(gpe_analytical.(x, gamma; x0=gg.L[1] / 4)), label="analytical", color=:black)
@@ -19,21 +23,31 @@ function go()
     mm = 5
     meas = []
     pal = palette([:red, :blue], nn)
-    for i in 1:nn
+
+    if true
         @unpack_Sim gg
-        dt = 0.01
-        abstol = 1e-4
-        reltol = 1e-4
+        dt = 0.2
+        abstol = 1e-6
+        reltol = 1e-6
         @pack_Sim! gg
         sol = runsim(gg; info=true)
-        plot!(p, x, abs2.(xspace(sol.u, gg)), color=pal[i])
+        plot!(p, x, abs2.(xspace(sol.u, gg)), color=pal[1])
         push!(meas, chempotk(sol.u, gg))
+    else
+        for i in 1:nn
+            @unpack_Sim gg
+            dt = 0.01
+            abstol = 1e-4
+            reltol = 1e-4
+            @pack_Sim! gg
+            sol = runsim(gg; info=true)
+            plot!(p, x, abs2.(xspace(sol.u, gg)), color=pal[i])
+            push!(meas, chempotk(sol.u, gg))
+            display(q)
+        end
     end
-    @pack_Sim
-    q = plot(1:nn, meas)
-    plot!(q, 1:nn, ones(nn) * true_min, label="true min", color=:red)
+
     display(meas)
     display(p)
-    display(q)
     return
 end
