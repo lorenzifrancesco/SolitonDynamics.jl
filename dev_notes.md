@@ -197,5 +197,26 @@ N=1024 -> gamma_c>0.75
 
 #### Why SplitStep is broken? Transforms??
 We should check the kspace, the xspace should be ok (the transforms are inverse of each other)
-- [ ] check using $dk = 1/L$
+- [ ] check using $dk = 2\pi/L$. It is used like that!
 - [ ] justify theoretically check the correct version for $dk$ using sampling arguments
+
+**NB: in our code the multiplicative constant to have the correct sampling of the transform are written in a counterintuitive way (DX, DK)**.
+
+- in measures() the $dk$ is not corresponding to $2/pi$
+- [ ] check also chempot functions
+
+#### we are using a naive kvec!! 
+- [x] try to replace the correct version, the tests survives
+- [x] try to see if something changes in the soliton simulation: NOTHING CHANGES
+
+There are two different $dk$, one used for norm in kspace - **modified** ($dk=\frac{2\pi}{dx \,N }$), and one which is the official one of the discretization **official** ($dk = \frac{2\pi}{L}$). 
+WHY?
+
+- the one used in kvecs (official) affects also the phyisics: it is contained in k^2. 
+- In the FFT the only effect of the choice of $dk$ is the prefactor chosen for the normalization of the transform. In such a factor the "$dk$" is the modified
+
+
+
+##### find the scaling of the error
+Error scales strangely like $\sim 1/N^2$. This is expected for the SplitStep ??
+- [ ] check in the literature: is this scaling expected?

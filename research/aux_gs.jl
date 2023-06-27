@@ -10,13 +10,13 @@ function go()
 
     @unpack_Sim gg
     x = X[1] |> real
-    solver = CrankNicholson
+    solver = SplitStep
     psi_0 .= gpe_analytical.(x, gamma; x0=gg.L[1] / 4)
     kspace!(psi_0, gg)
     @pack_Sim! gg
 
     true_min = chempot(gpe_analytical.(x, gamma; x0=gg.L[1] / 4), gg)
-    @warn true_min
+    @info true_min
     p = plot(x, abs2.(gpe_analytical.(x, gamma; x0=gg.L[1] / 4)), label="analytical", color=:black)
     plot!(p, x, abs2.(xspace(gg.psi_0, gg)), label="initial", color=:grey)
     nn = 2
@@ -26,12 +26,13 @@ function go()
 
     if true
         @unpack_Sim gg
-        dt = 0.2
-        abstol = 1e-6
-        reltol = 1e-6
+        dt = 0.01
+        abstol = 1e-10
+        reltol = 1e-10
         @pack_Sim! gg
-        sol = runsim(gg; info=true)
+        sol = runsim(gg; info=false)
         plot!(p, x, abs2.(xspace(sol.u, gg)), color=pal[1])
+        @warn (chempotk(sol.u, gg) - true_min) / true_min
         push!(meas, chempotk(sol.u, gg))
     else
         for i in 1:nn
@@ -46,8 +47,7 @@ function go()
             display(q)
         end
     end
-
-    display(meas)
-    display(p)
+    # display(meas)
+    # display(p)
     return
 end
