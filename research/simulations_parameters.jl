@@ -272,9 +272,9 @@ function load_parameters_alt(; vv::Float64 = 0.0, bb::Float64 = 0.0, gamma_param
     iswitch_all = -im
 
     max_vel = 1.0
-    N_axial_steps = 1024
+    N_axial_steps = 2048
     abstol_all = 1e-6
-    initial_width = 5
+    initial_width = 4
     Lx = 80.0
     # =========================================================
     ## 1D-GPE 

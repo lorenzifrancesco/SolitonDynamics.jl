@@ -173,3 +173,12 @@ N=4096 -> 0.74533
 - NPSE_plus seems to have a higher threshold for collapse.
 N=1024 -> gamma_c>0.75
 > (are we sure we are even collapsing at all in NPSE_plus?) 
+
+
+## DO WE STILL HAVE CORRECTNESS PROBLEMS IN THE TRANSFORMS??? SEEMS SO, SINCE INCREMENTING THE STEPS IN THE SOLITON SIMULATION LEADS TO A DIFFERENT RESULT.
+- Parseval is well tested now.
+- Maybe the transform domain is somehow corrupted and not taking into account the right nonlinearity?
+
+---> working in kspace, we are "inverted"
+
+  

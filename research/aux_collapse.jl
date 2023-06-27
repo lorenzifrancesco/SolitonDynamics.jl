@@ -65,12 +65,10 @@ function pinpoint_collapse()
         gg.g = -2 * gmid
         try
             sol = runsim(gg; info=false)
-            @info "going right"
             gminus = gmid
         catch err
             if isa(err, NpseCollapse)
                 @warn "collapse at $gmid"
-                @info "going left"
                 gplus = gmid
             else
                 throw(err)
@@ -101,19 +99,16 @@ function pinpoint_collapse_3()
     # we run a bisection
     gplus = 0.8
     gminus = 0.55
+    @assert false
     for i in 1:iters
         gmid = (gplus + gminus) / 2
         @info "trying" gmid
         gg.g = -2 * gmid
         sol = runsim(gg; info=false)
-        @info "going right"
-        gminus = gmid
         if maximum(abs2.(sol.u)) > 1/gg.dV
             @warn "collapse at $gmid"
-            @info "going left"
             gplus = gmid
         else
-            @info "going right"
             gminus = gmid
         end
     end
