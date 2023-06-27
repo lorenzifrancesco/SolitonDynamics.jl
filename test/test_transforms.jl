@@ -65,4 +65,4 @@ xspace!(psi_0, sim)
 @info ns(psi_1, sim)
 @info nsk(kspace(psi_1, sim), sim)
 
-@test isapprox(ns(psi_1, sim) - nsk(kspace(initial_state, sim), sim), 0.0, atol=1e-9)
+@test isapprox(ns(psi_1, sim), nsk(kspace(initial_state, sim), sim), atol=1e-9)

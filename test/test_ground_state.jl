@@ -58,7 +58,7 @@ kspace!(psi_0, sim)
 
 @pack_Sim! sim
 
-# Analytical solution: Gaussian
+# Analytical solution: soliton
 analytical_gs = zeros(N)
 @. analytical_gs = sqrt(g_param/2) * 2/(exp(g_param*x) + exp(-x*g_param))
 
@@ -66,4 +66,4 @@ sol, err = testsim(sim)
 @test err == false
 numerical_gs = xspace(sol.u, sim)
 @warn "too loose nonlinear 1D soliton test"
-@test isapprox(ns((numerical_gs-analytical_gs), sim), 0.0, atol=1e-2)
+@test isapprox(ns((numerical_gs-analytical_gs), sim), 0.0, atol=1e-6)

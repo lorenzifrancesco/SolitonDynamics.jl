@@ -215,8 +215,8 @@ WHY?
 - the one used in kvecs (official) affects also the phyisics: it is contained in k^2. 
 - In the FFT the only effect of the choice of $dk$ is the prefactor chosen for the normalization of the transform. In such a factor the "$dk$" is the modified
 
-
+- [ ] can we modify the kvec in the FFT to have the correct $dk$? without breaking down everything?
 
 ##### find the scaling of the error
 Error scales strangely like $\sim 1/N^2$. This is expected for the SplitStep ??
-- [ ] check in the literature: is this scaling expected?
+- [ ] check in the literature: is this scaling expected? (curiosity)

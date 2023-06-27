@@ -23,7 +23,7 @@ function kvec(L,N)
     # @assert iseven(N)
     # nk = 0:Int(N/2)
     # k = [nk[1:end-1];-reverse(nk[2:end])]*2*π/λ
-    k = fftfreq(N)*N*2*π/L
+    k = fftfreq(N)*N*2*π/L * (N-1)/N
     return k
 end
 
@@ -130,13 +130,18 @@ end
 Measures that make `fft`, `ifft` 2-norm preserving.
 Correct measures for mapping between `x`- and `k`-space.
 """
+# TODO 1
+# --> into transforms
 function dfft(x,k)
     dx = x[2]-x[1]
-    Dx = dx
+    N = length(x)
+    Dx = dx 
     Dk = 1/Dx
     return Dx, Dk
 end
 
+# TODO 2
+# --> into nsk, ns
 function measures(L, N)
     dX = L ./ (N .- 1)
     dK = 1 ./ (dX .* N)
