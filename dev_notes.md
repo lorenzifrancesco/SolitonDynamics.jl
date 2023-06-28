@@ -188,7 +188,7 @@ N=1024 -> gamma_c>0.75
 
 - [ ] Quick FIX CrankNicholson (nota available)
 
-- [ ] Check correctness of the tranforms
+- [x] Check correctness of the tranforms
 
 
 **NB: we still do not have 3D CrankNicholson**
@@ -197,13 +197,13 @@ N=1024 -> gamma_c>0.75
 
 #### Why SplitStep is broken? Transforms??
 We should check the kspace, the xspace should be ok (the transforms are inverse of each other)
-- [ ] check using $dk = 2\pi/L$. It is used like that!
+- [x] check using $dk = 2\pi/L$. It is used like that!
 - [ ] justify theoretically check the correct version for $dk$ using sampling arguments
 
 **NB: in our code the multiplicative constant to have the correct sampling of the transform are written in a counterintuitive way (DX, DK)**.
 
 - in measures() the $dk$ is not corresponding to $2/pi$
-- [ ] check also chempot functions
+- [x] check also chempot functions unnecessary
 
 #### we are using a naive kvec!! 
 - [x] try to replace the correct version, the tests survives
@@ -215,8 +215,17 @@ WHY?
 - the one used in kvecs (official) affects also the phyisics: it is contained in k^2. 
 - In the FFT the only effect of the choice of $dk$ is the prefactor chosen for the normalization of the transform. In such a factor the "$dk$" is the modified
 
-- [ ] can we modify the kvec in the FFT to have the correct $dk$? without breaking down everything?
+- [x] can we modify the kvec to have the correct $dk$? Yes, done 
 
 ##### find the scaling of the error
 Error scales strangely like $\sim 1/N^2$. This is expected for the SplitStep ??
 - [ ] check in the literature: is this scaling expected? (curiosity)
+
+## Conclusion: the error is due to truncation
+-> still we have problems with NPSE collapse, which is quite different to what predicted!!
+- [ ] Why does the NPSE collapse so late?
+- [ ] What is the collapse behaviour of the 3D-GPE
+
+
+### RUNNING NOW: 
+prototype tiling (we hope to get the gs correct)

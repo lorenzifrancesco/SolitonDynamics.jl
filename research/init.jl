@@ -357,7 +357,7 @@ function load_parameters_alt(; vv::Float64 = 0.0, bb::Float64 = 0.0, gamma_param
     end
     # =========================================================
     ## 3D-GPE 
-    Nx = 1024
+    Nx = 512
     L = (Lx,10.0,10.0)
     N = (Nx, 64, 64)
     sim_gpe_3d = Sim{length(L), CuArray{Complex{Float64}}}(L=L, N=N)
