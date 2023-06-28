@@ -272,7 +272,7 @@ function load_parameters_alt(; vv::Float64 = 0.0, bb::Float64 = 0.0, gamma_param
     iswitch_all = -im
 
     max_vel = 1.0
-    N_axial_steps = 512
+    N_axial_steps = 1024
     abstol_all = 1e-4
     initial_width = 10
     Lx = 80.0
@@ -368,7 +368,7 @@ function load_parameters_alt(; vv::Float64 = 0.0, bb::Float64 = 0.0, gamma_param
     manual = true
     solver = SplitStep
     g = - gamma_param * (4 * pi)
-    abstol = abstol_all * 10
+    abstol = abstol_all
     alg = BS3()
     # we can augment the accuracy
 

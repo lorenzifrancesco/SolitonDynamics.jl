@@ -105,7 +105,17 @@ Also changing N does not help.
 - [x] What about changing N_transverse? NOTHING (flat case)
 ![](2023-06-28-14-31-38.png)
 we double 64 -> 128. Very slow iteration speed. 
-- [ ] visualize the transverse distribution (may give a hint).
+- [x] visualize the transverse distribution (may give a hint).
+-> prepared visualization functions. The visualization of the wrong results does not suggest strange behaviours.
 
 
-- In addition, we have that we cannot use low accuracy, as the low-gamma case is settling to a wrong solution.
+##### Make the method converge
+- [x] check for a quick fix -> QUICK FIX: we were plotting the initial condition.
+
+##### Other strange issue
+When we copy the initial state to the 3D routine, then we 
+This could suggest us the reason behind the difference between the analytical and numerical 1D-GPE.
+
+It may be the same problem or not.
+
+- [ ] check for a quick fix.

@@ -73,6 +73,7 @@ end
 end
 
 @with_kw mutable struct Sim{D, A <: AbstractArray}
+    name::String = "default"
     # === solver and algorithm
     equation::EquationType = GPE_1D
     manual::Bool = false
