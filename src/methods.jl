@@ -134,7 +134,6 @@ Correct measures for mapping between `x`- and `k`-space.
 # --> into transforms
 function dfft(x,k)
     dx = x[2]-x[1]
-    N = length(x)
     Dx = dx 
     Dk = 1/Dx
     return Dx, Dk

@@ -41,3 +41,33 @@ function isosurface(sol)
     display(scene)
     return
 end
+
+function show_slice(slice_position::Float64, psi, sim::Sim{3, CuArray{Complex{Float64}}}; file="slice.png")
+    @unpack L, X, N = sim
+    psi = Array(xspace(psi, sim))
+    x = X[1] |> real
+    idx = Int(round((slice_position + L[1]/2) / L[1] * N[1]))
+    @info "idx = $idx"
+    @info "L[1]= $(L[1])"
+    y = X[2] |> real
+    z = X[3] |> real
+    saveto=joinpath("media",file)
+    ht = heatmap(y, z, abs2.(psi[idx,:,:]))
+    display(ht)
+    return ht
+end
+
+function show_profile(slice_position::Float64, psi, sim::Sim{3, CuArray{Complex{Float64}}}; file="slice.png")
+    @unpack L, X, N = sim
+    psi = Array(xspace(psi, sim))
+    y = X[2] |> real
+    idy = Int(round((slice_position + L[2]/2) / L[2] * N[2]))
+    @info "idy = $idy"
+    @info "L[2]= $(L[2])"
+    x = X[1] |> real
+    z = X[3] |> real
+    saveto=joinpath("media",file)
+    ht = heatmap(x, z, abs2.(psi[:,idy,:])', aspectratio=:equal)
+    display(ht)
+    return ht
+end
