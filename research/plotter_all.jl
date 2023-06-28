@@ -1,6 +1,6 @@
 includet("CDResearch.jl")
 
-function sdmf()
+function sdmf(; use_precomputed_tiles=false)
     if Threads.nthreads() == 1
         @warn "running in single thread mode!"
     else
@@ -43,7 +43,6 @@ function sdmf()
             # write the initial state into sim
             # TODO write the method into prepare function
             @info " ---> Writing ground state into sim..."
-            @warn gamma
             if length(sim.N) == 1
                 @unpack_Sim sim
                 iswitch = 1
@@ -65,7 +64,6 @@ function sdmf()
                 @assert isapprox(nsk(psi_0, sim), 1.0, atol=1e-9)
                 @pack_Sim! sim
             end
-            @warn gamma
         end
 
         # visualize the ground states
@@ -76,12 +74,24 @@ function sdmf()
         #     @info "Aborting..."
         #     return
         # end
-        tile_dict = Dict()
+
+        if isfile(save_path * "tile_dict.jld2")
+            @info "Loading Tiles library..."
+            tile_dict = JLD2.load(save_path * "tile_dict.jld2")
+        else
+            @info "No Tiles library found! Saving an empty one..."
+            tile_dict = Dict()
+            JLD2.save(save_path * "tile_dict.jld2", gs_dict)
+        end
         for (name, sim) in sd
             @info "Tiling " name
-            tile = get_tiles(sim, name)
-            push!(tile_dict, hs(name, gamma) => tile)
-            JLD2.save(save_path * "tile_dict.jld2", tile_dict)
+            if haskey(tile_dict, hs(name, gamma)) && use_precomputed_tiles
+                @info "Already found tile for " name, gamma
+            else
+                tile = get_tiles(sim, name)
+                push!(tile_dict, hs(name, gamma) => tile)
+                JLD2.save(save_path * "tile_dict.jld2", tile_dict)
+            end
         end
     end
 end
