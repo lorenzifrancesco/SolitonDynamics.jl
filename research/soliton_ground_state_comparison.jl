@@ -37,7 +37,13 @@ end
 
 # FIXME 2 3D-GPE follows only the starting configurations
 
-function all_ground_states(;plus::Bool=false)
+function all_ground_states(
+    ;plus::Bool=false, 
+    use_precomputed::Bool=true, 
+    take_advantage::Bool=true,
+    saveplots::Bool=false
+    )
+
     sd = load_parameters_alt()
     @assert all([s.iswitch for s in values(sd)] .== -im)
     save_path = "results/"
@@ -51,9 +57,7 @@ function all_ground_states(;plus::Bool=false)
         JLD2.save(join([save_path, "gs_dict.jld2"]), gs_dict)
     end
 
-    gamma_param_list = [0.6]
-    use_precomputed = true
-    take_advantage = false
+    gamma_param_list = [0.6, 0.4, 0.15]
     @info "Starting simulations..."
     for gamma_param in gamma_param_list
         # update simulation parameters
@@ -169,7 +173,7 @@ function all_ground_states(;plus::Bool=false)
             kspace!(sim_gpe_3d.psi_0, sim_gpe_3d)
         end
         if haskey(gs_dict, hs("G3", gamma_param))
-            if use_precomputed && false
+            if use_precomputed
                 @info "\t using precomputed solution G3"
             else
                 @info "\t deleting and recomputing solution G3"
@@ -186,7 +190,6 @@ function all_ground_states(;plus::Bool=false)
         JLD2.save(join([save_path, "gs_dict.jld2"]), gs_dict)
 
         # linear interpolation
-        gpe_3d = sim_gpe_3d.psi_0
         x_axis_3d = sim_gpe_3d.X[1] |> real
         dx = sim_gpe_3d.X[1][2] - sim_gpe_3d.X[1][1]
         final_axial = Array(sum(abs2.(xspace(gpe_3d, sim_gpe_3d)), dims=(2, 3)))[:, 1, 1] * sim_gpe_3d.dV / dx |> real
@@ -195,6 +198,10 @@ function all_ground_states(;plus::Bool=false)
         solution_3d = LinearInterpolation(x_3d_range, final_axial, extrapolation_bc=Line())
         plot!(p, x_axis, solution_3d(x_axis), label="GPE_3D", color=:red)
         display(p)
+        savefig(p, save_path * "ground_states.pdf")
+
+        # focus on particular view
+
     end
     return gs_dict
 end
