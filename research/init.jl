@@ -273,8 +273,8 @@ function load_parameters_alt(; vv::Float64 = 0.0, bb::Float64 = 0.0, gamma_param
 
     max_vel = 1.0
     N_axial_steps = 512
-    abstol_all = 1e-6
-    initial_width = 4
+    abstol_all = 1e-4
+    initial_width = 10
     Lx = 80.0
     # =========================================================
     ## 1D-GPE 
@@ -357,7 +357,7 @@ function load_parameters_alt(; vv::Float64 = 0.0, bb::Float64 = 0.0, gamma_param
     end
     # =========================================================
     ## 3D-GPE 
-    Nx = 1024
+    Nx = 512
     L = (Lx,10.0,10.0)
     N = (Nx, 64, 64)
     sim_gpe_3d = Sim{length(L), CuArray{Complex{Float64}}}(L=L, N=N)
@@ -368,9 +368,11 @@ function load_parameters_alt(; vv::Float64 = 0.0, bb::Float64 = 0.0, gamma_param
     manual = true
     solver = SplitStep
     g = - gamma_param * (4 * pi)
-    abstol = abstol_all
+    abstol = abstol_all * 10
     alg = BS3()
-    
+    # we can augment the accuracy
+
+
     x = Array(X[1])
     y = Array(X[2])
     z = Array(X[3])

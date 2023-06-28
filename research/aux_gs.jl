@@ -32,7 +32,7 @@ function go()
         @pack_Sim! gg
         sol = runsim(gg; info=false)
         plot!(p, x, abs2.(xspace(sol.u, gg)), color=pal[1])
-        @warn (chempotk(sol.u, gg) - true_min) / true_min
+        @warn "chempot relative error" (chempotk(sol.u, gg) - true_min) / true_min
         push!(meas, chempotk(sol.u, gg))
     else
         for i in 1:nn

@@ -37,7 +37,7 @@ end
 
 # FIXME 2 3D-GPE follows only the starting configurations
 
-function all_ground_states()
+function all_ground_states(;plus::Bool=false)
     sd = load_parameters_alt()
     @assert all([s.iswitch for s in values(sd)] .== -im)
     save_path = "results/"
@@ -52,8 +52,8 @@ function all_ground_states()
     end
 
     gamma_param_list = [0.6]
-    use_precomputed = false
-    take_advantage = true
+    use_precomputed = true
+    take_advantage = false
     @info "Starting simulations..."
     for gamma_param in gamma_param_list
         # update simulation parameters
@@ -150,8 +150,11 @@ function all_ground_states()
             z = Array(sim_gpe_3d.X[3] |> real)
 
             tmp = zeros(sim_gpe_3d.N[1], sim_gpe_3d.N[2], sim_gpe_3d.N[3]) |> complex
-            # TODO start from NPSE and not NPSE_plus (we want to be unbiased)
-            axial = sqrt.(abs2.(xspace(npse, sim_npse)))
+            if plus
+                axial = sqrt.(abs2.(xspace(npse_plus, sim_npse_plus)))
+            else
+                axial = sqrt.(abs2.(xspace(npse, sim_npse)))
+            end
             axial_imprint = LinearInterpolation(x_1d_range, axial, extrapolation_bc=Line())
             for (ix, x) in enumerate(x)
                 for (iy, y) in enumerate(y)
@@ -166,7 +169,7 @@ function all_ground_states()
             kspace!(sim_gpe_3d.psi_0, sim_gpe_3d)
         end
         if haskey(gs_dict, hs("G3", gamma_param))
-            if use_precomputed
+            if use_precomputed && false
                 @info "\t using precomputed solution G3"
             else
                 @info "\t deleting and recomputing solution G3"
