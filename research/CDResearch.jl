@@ -9,7 +9,7 @@ using Interpolations
 using LoopVectorization, LinearAlgebra
 
 using ProgressBars, Colors
-
+pyplot()
 includet("../examples/plot_axial_evolution.jl")
 includet("../examples/plot_isosurfaces.jl")
 includet("visual_utils.jl")

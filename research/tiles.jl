@@ -2,7 +2,6 @@ JULIA_CUDA_SOFT_MEMORY_LIMIT ="95%"
 
 # XXX remark: good idea to vectorize on equations
 function get_tiles(sim::Sim{1, Array{Complex{Float64}}}, name::String="noname"; tiles=4)
-    plotly(size=(800, 400))
     saveto = "../media/tiles_$(name).pdf"
     max_vel = 1
     max_bar = 1
@@ -71,7 +70,6 @@ function get_tiles(sim::Sim{1, Array{Complex{Float64}}}, name::String="noname"; 
 end
 
 function get_tiles(archetype::Sim{3, CuArray{Complex{Float64}}}, name::String="noname"; tiles=4)
-    plotly(size=(800, 400))
     saveto = "../media/tiles_$(name).pdf"
     max_vel = 1
     max_bar = 1

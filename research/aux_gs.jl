@@ -1,7 +1,7 @@
 includet("plotter_all.jl")
 using ColorSchemes
-plotly()
 # no saves
+
 
 function go()
     gamma = 0.6

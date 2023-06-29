@@ -1,11 +1,10 @@
 includet("plotter_all.jl")
 using ColorSchemes
-plotly()
 # no saves
 
 function explore_collapse()
     gamma = 0.6
-    sd = load_parameters_alt(gamma_param=gamma)
+    sd = load_parameters_collapse(gamma_param=gamma)
     gg = sd["N"]
 
     @unpack_Sim gg
@@ -37,34 +36,43 @@ function explore_collapse()
     return
 end
 
-function pinpoint_collapse()
+function pinpoint_collapse(; dynamical::Bool=false)
     gamma = 0.6
-    sd = load_parameters_alt(gamma_param=gamma)
+    sd = load_parameters_collapse(gamma_param=gamma)
     gg = sd["N"]
 
     @unpack_Sim gg
     x = X[1] |> real
-    dt = 0.01
+    dt = 0.001
     abstol = 1e-4
+    if dynamical
+        tf = 1000.0
+        iswitch = 1
+        t = LinRange(ti, tf, Nt)
+    end
     reltol = 1e-4
+    display(psi_0)
     @pack_Sim! gg
 
-    iters = 50
+    iters = 15
     pal = palette([:red, :blue], iters)
     # gamma_list = LinRange(0.0, 0.6, nn)
     # we run a bisection
     decimals = 3
     
-    gplus = 0.8
-    gminus = 0.55
+    gplus = 1
+    gminus = 0.5
     diff = 1.0
     prev_gmid = 0.0
-    while diff > 10.0^(-decimals)
+    cnt = 0
+    # while diff > 10.0^(-decimals) && cnt < 30
+    for i in 1:iters
         gmid = (gplus + gminus) / 2
         @info "trying" gmid
         gg.g = -2 * gmid
         try
-            sol = runsim(gg; info=false)
+            sol = runsim(gg; info=true)
+            sol = nothing
             gminus = gmid
         catch err
             if isa(err, NpseCollapse)
@@ -76,6 +84,7 @@ function pinpoint_collapse()
         end
         diff = abs(gmid - prev_gmid)
         prev_gmid = gmid
+        cnt += 1
     end
     @info "collapse point" (gplus + gminus) / 2
     return (gplus + gminus) / 2

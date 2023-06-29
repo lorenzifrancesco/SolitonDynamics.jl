@@ -1,9 +1,14 @@
 # CondensateDynamics.jl dev notes
  We focus on obtaining
- - [ ] ground states
+ - [x] ground states
 [[dev_notes/ground_states]]
+    - still to understand the strange slightly inexact results of the ground states with respect to analytics
+    - [ ] compute some final versions of the plots (mimick paper with [0.15, 0.4, 0.65] strengths)
+    - NB: the 0.15 case does not correspond. Only for $\gamma = 0.65$ we have correspondence.
  - [ ] tiles for the dynamics
 [[dev_notes/tiles]]
+- [ ] Collapse 
+[[dev_notes/collapse]]
  - [ ] sigma 2
 [[dev_notes/sigma2]]
 # June 2023: Major refactoring
