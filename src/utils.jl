@@ -128,12 +128,18 @@ end
 """
 Compute the chemical potential
 """
-function npse_mu(n, as)
-    gamma = as * n
+function npse_mu(gamma)
     a = roots(x->npse_expr(x)+gamma, 0.5..1, Newton, 1e-4)
-    mu = mid(a[1].interval)
+    mu = 0
+    try
+        mu = mid(a[1].interval)
+    catch err
+        throw(NpseCollapse)
+    end
     return mu - 1
 end
+
+npse_mu_full(mu) = npse_mu(mu) + 1
 
 function gpe_mu(n, as)
     return - (n * as)^2/8
@@ -183,43 +189,8 @@ function init_sigma2(g::Float64)
     return sigma2
 end
 
-# """
-# check notes, Sigma is sigma^2
-# """
-# function deSigmaLambda!(dsigma, sigma, psi, t)
-#     return 
-# end
-
-# """
-# return the sigma2 function to be called in the ODE loop
-# """
-# function init_sigma2_ode(g::Float64, x::Array{Float64})
-#     function sigma2(psi::Array{ComplexF64}, sigma2_0::Float64, lambda::Float64)
-#         problem = ODEProblem(deSigmaLambda!, Array([sigma2_0, lambda]), (x[1], x[end]), psi)
-#         sol = solve(problem,
-#                     alg=BS3(),
-#                     dense=false,
-#                     maxiters=2000,
-#                     progress=true, 
-#                     )
-#         result = sol.u
-#         try
-#             tmp = sqrt.(result)
-#         catch  err
-#             if isa(err, DomainError)
-#                 result = NaN
-#                 throw(NpseCollapse(NaN))
-#             else
-#                 throw(err)
-#             end
-#         end
-#         return result
-#     end
-#     return sigma2
-# end
-
 """
-chemical potential in a given configuration
+chemical potential of GPE in a given configuration
 """
 function chempotk(psi, sim)
     @unpack ksquared,dV,V0,Vol,g = sim 
@@ -232,7 +203,7 @@ function chempotk(psi, sim)
 end
 
 """
-chemical potential in a given configuration
+chemical potential of GPE in a given configuration
 """
 function chempot(psi, sim)
     @unpack ksquared,dV,V0,Vol,g = sim 
@@ -252,4 +223,24 @@ end
 function gpe_analytical(x, gamma; x0::Float64=0.0)
     @assert gamma > 0
     return sqrt(gamma/2) * 2/(exp(gamma*(x-x0)) + exp(-(x-x0) * gamma))
+end
+
+"""
+return the analytical (implicit) solution of the NPSE
+"""
+function npse_implicit(gamma, N)
+    mu = npse_mu_full(gamma)
+    positions = zeros(N)
+    max = sqrt((1-mu^2)/(2*gamma))
+    psi = LinRange(0, max, N) |> collect
+    @. positions = 1/sqrt(2) * 1/sqrt(1-mu) * atan(sqrt((sqrt(1-2*gamma*abs2(psi)) - mu)/(1-mu))) - 1/sqrt(2) * 1/sqrt(1+mu) * atanh(sqrt((sqrt(1-2*gamma*abs2(psi)) - mu)/(1+mu)))
+    return (positions, psi)
+end
+
+"""
+in a given NPSE ground state, we expect to have a peak value of psi given by this
+"""
+function max_npse_psi2(gamma)
+    mu = npse_mu_full(gamma)
+    return (1-mu^2)/(2*gamma)
 end
