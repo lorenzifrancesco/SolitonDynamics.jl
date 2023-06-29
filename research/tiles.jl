@@ -89,12 +89,13 @@ function get_tiles(archetype::Sim{3, CuArray{Complex{Float64}}}, name::String="n
     iter = Iterators.product(enumerate(vel_list), enumerate(bar_list))
     full_time = @elapsed for ((vx, vv), (bx, bb)) in ProgressBar(iter)
         sim = deepcopy(archetype)
+        collapse_occured = false
         imprint_vel_set_bar!(sim; vv=vv, bb=bb)
         @info "Computing tile" (vv, bb)
         try
             avg_iteration_time += @elapsed sol = runsim(sim; info=false)
         catch err
-            if isa(err, NpseCollapse)
+            if isa(err, NpseCollapse) || isa(err, Gpe3DCollapse)
                 collapse_occured = true
             else
                 throw(err)
