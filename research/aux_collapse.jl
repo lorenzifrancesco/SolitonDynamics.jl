@@ -125,3 +125,10 @@ function pinpoint_collapse_3()
     @info "collapse point" (gplus + gminus) / 2
     return (gplus + gminus) / 2
 end
+
+function simple(gamma)
+    sdc = load_parameters_collapse(gamma_param=gamma)
+    ggg = sdc["G3"]
+    runsim(ggg;info=true)
+    return
+end
