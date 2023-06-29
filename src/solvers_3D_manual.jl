@@ -2,16 +2,32 @@
 
 # ============== Manual SplitStep methods, improved with exp
 
-function nlin_manual!(psi,sim::Sim{3, CuArray{ComplexF64}},t; ss_buffer=nothing, info=false)
+function nlin_manual!(
+   psi,
+   sim::Sim{3, CuArray{ComplexF64}},
+   t; 
+   ss_buffer=nothing, 
+   info=false, 
+   debug=true)
    @unpack ksquared,g,X,V0,dV,Vol,mu,equation,sigma2,dt,iswitch = sim; x = X[1]; y = X[1]; z = X[1]
    xspace!(psi,sim)
    @. psi *= exp(dt * -im*iswitch* (V0 + V(x,y,z,t)))
-   @. psi *= exp(dt * -im*iswitch* (g*abs2(psi)))
+   @. psi *= exp(dt * -im*iswitch* (g*abs2(psi)))      
+   if maximum(abs2.(psi) * dV) > 0.5
+      throw(Gpe3DCollapse(maximum(abs2.(psi) * dV)))
+   end
+   debug && @warn "max prob" maximum(abs2.(psi) * dV)
    kspace!(psi,sim)
    return nothing
 end
 
-function propagate_manual!(psi, sim::Sim{3, CuArray{ComplexF64}}, t; ss_buffer=nothing, info=false)
+function propagate_manual!(
+   psi, 
+   sim::Sim{3, CuArray{ComplexF64}},
+   t; 
+   ss_buffer=nothing, 
+   info=false, 
+   debug=false)
    @unpack ksquared, iswitch, dV, Vol,mu,gamma_damp,dt = sim
    psi_i = copy(psi) 
    nlin_manual!(psi,sim,t; info=info)
@@ -20,9 +36,6 @@ function propagate_manual!(psi, sim::Sim{3, CuArray{ComplexF64}}, t; ss_buffer=n
       psi .= psi / sqrt(nsk(psi, sim))
       info && print(" - chempot: ", chempotk(psi, sim))
       cp_diff = (chempotk(psi, sim) - chempotk(psi_i, sim))/(chempotk(psi_i, sim)) / dt
-      if maximum(abs2.(psi) * dV) > 0.05
-         throw(Gpe3DCollapse(maximum(abs2.(psi) * dV)))
-      end
       return cp_diff
    else
       return nothing

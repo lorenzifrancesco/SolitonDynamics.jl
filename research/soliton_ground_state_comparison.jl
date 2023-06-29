@@ -218,7 +218,7 @@ function all_ground_states(
         if show_plots
             display(p)
         end
-        savefig(p, save_path * string(gamma_param) *  "_ground_states.pdf")
+        savefig(p, "media/" * string(gamma_param) *  "_ground_states.pdf")
         
         # focus on particular view
         # display and save

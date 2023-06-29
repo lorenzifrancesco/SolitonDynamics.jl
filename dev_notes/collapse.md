@@ -25,7 +25,7 @@ Big problem for prototyping
 ##### $\gamma_c$ is even bigger in the case of a dynamic simulation!!
 
 
-
+##### 29/06/2023
 ##### we can also consider to have a comparison with the analytical chemical potential. (still not done!)
 Intuitively we are ok with the chemical potential given. But we may check explicitly that the chemical potential is the same as the one given by the analytical solution.
 - [x] we can check the analytical solution for the NPSE.
@@ -47,6 +47,8 @@ So how is it possible that we don't collapse in the simulations??
 
 #### How does the NPSE-collapse suggest the true collapse?
 We need to have a solution from below: 
-- [ ] maybe investigating the 3D collapse first would give us a better view of what a true collapse is.
+- [x] maybe investigating the 3D collapse first would give us a better view of what a true collapse is.
 - Currently, our best method for finding the 3D collapse is to stop the simulation when the probability of a point is very high. Let's say $0.05$.
 - [ ] NPSE-collapse can be reached "sharping up" a solution.
+
+##### Lets try to find the collapse in the 3D case
