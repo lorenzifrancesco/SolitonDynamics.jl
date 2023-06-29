@@ -39,7 +39,7 @@ end
 function pinpoint_collapse(; dynamical::Bool=false)
     gamma = 0.6
     sd = load_parameters_collapse(gamma_param=gamma)
-    gg = sd["G3"]
+    gg = sd["N"]
 
     @unpack_Sim gg
     x = X[1] |> real
