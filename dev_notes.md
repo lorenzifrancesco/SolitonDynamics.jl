@@ -9,6 +9,8 @@
 [[dev_notes/tiles]]
 - [ ] Collapse 
 [[dev_notes/collapse]]
+ - Collapse for NPSE is consistent
+ - Collapse for 3D GPE is not ready but single-shot simulations show it.
  - [ ] sigma 2
 [[dev_notes/sigma2]]
 # June 2023: Major refactoring

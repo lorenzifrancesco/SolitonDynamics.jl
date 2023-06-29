@@ -11,7 +11,7 @@ N=1024 -> gamma_c>0.75
 
 
 ##### TODO - Understand the strange collapse behaviour
-- [ ] try different N scales, and different initial conditions -> **nope**, only slight changes
+- [x] try different N scales, and different initial conditions -> **nope**, only slight changes
 - [x] try different number of steps: by increasing the simulation time, we may be able to see the collapse -> **nope**
 ##### what we do dyamical simulations
 > The meaning of the parameter $\gamma_c$ is that for $\gamma > \gamma_c$ there cannot be a stable solitonic solution. 
@@ -31,7 +31,7 @@ Intuitively we are ok with the chemical potential given. But we may check explic
 - [x] we can check the analytical solution for the NPSE.
 -> not easy, the implicit expression doesn't behave well
 
-- [ ] run some test at $\gamma = 2/3$ to see if we can reach collapse for some values
+- [x] run some test at $\gamma = 2/3$ to see if we can reach collapse for some values
 
 ##### we may have problems with sigma2 method
 - we do: when we change gamma we should change also sigma2 through init_sigma_2.
@@ -43,13 +43,13 @@ So how is it possible that we don't collapse in the simulations??
 - we have a way at least to find the maximum value of the solution for a particular gamma:
     - [x] implement it
     - [x] check it against the plots in the paper: correct!
- - [ ] (We can also check better our ground states with respect to the paper)
+ - [x] (We can also check better our ground states with respect to the paper)
 
 #### How does the NPSE-collapse suggest the true collapse?
 We need to have a solution from below: 
 - [x] maybe investigating the 3D collapse first would give us a better view of what a true collapse is.
 - Currently, our best method for finding the 3D collapse is to stop the simulation when the probability of a point is very high. Let's say $0.05$.
-- [ ] NPSE-collapse can be reached "sharping up" a solution.
+- [x] NPSE-collapse can be reached "sharping up" a solution.
 
 ##### Lets try to find the collapse in the 3D case
 -> introduce the Gpe3DCollapse exception: it seems to work well
@@ -62,3 +62,5 @@ Maybe the problem is just the discretization (MAYBE).
 - [x] check the NPSE solutions very near $\gamma_c$. Are they correct with respect to the maximum value?
 
 ##### Now we can focus on the 3D case!!
+
+### Alternative way (faster): start from the ground state and see if the solver moves from that. If it does, it is going to collapse.

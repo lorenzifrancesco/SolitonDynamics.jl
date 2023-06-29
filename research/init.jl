@@ -347,9 +347,6 @@ function load_parameters_collapse(
     @unpack_Sim sim_npse_plus
     equation = NPSE_plus
     # interaction parameter
-    if gamma_param > 2/3
-        @warn "we should expect NPSE collapse"
-    end
     sigma2 = init_sigma2(g)
     @pack_Sim! sim_npse_plus
 
@@ -369,7 +366,7 @@ function load_parameters_collapse(
     manual = true
     solver = SplitStep
     g = - gamma_param * (4 * pi)
-    abstol = abstol_all
+    abstol = 1e-6
     alg = BS3()
     # we can augment the accuracy
 
@@ -394,7 +391,7 @@ function load_parameters_collapse(
 
     # specs for GS sim
     maxiters = maxiters_3d
-    dt = dt_all
+    dt = 0.01
 
     tmp = [exp(-((x-x0)^2/initial_width + (y^2 + z^2)/2)) * exp(-im*(x-x0)*vv) for x in x, y in y, z in z]
     psi_0 = CuArray(tmp)

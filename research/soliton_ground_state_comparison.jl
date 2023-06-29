@@ -22,7 +22,8 @@ function hs(eq::String, g::Float64)
     return string(n)
 end
 
-function ihs(n::Int)
+function ihs(s::String)
+    n = parse(Int, s)
     if n < 500
         return ("G1", n / 1000)
     elseif n < 1500

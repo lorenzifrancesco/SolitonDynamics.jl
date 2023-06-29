@@ -39,12 +39,13 @@ end
 function pinpoint_collapse(; dynamical::Bool=false)
     gamma = 0.6
     sd = load_parameters_collapse(gamma_param=gamma)
-    gg = sd["N"]
+    gg = sd["G3"]
 
     @unpack_Sim gg
     x = X[1] |> real
-    dt = 0.01
-    abstol = 1e-7
+    dt = 0.06
+    ## this parameter is crucial: it sets the amonut of iterations
+    abstol = 1e-6
     if dynamical
         tf = 1000.0
         iswitch = 1
@@ -60,8 +61,8 @@ function pinpoint_collapse(; dynamical::Bool=false)
     # we run a bisection
     decimals = 3
     
-    gplus = 1
-    gminus = 0.5
+    gplus = 0.76
+    gminus = 0.56
     diff = 1.0
     prev_gmid = 0.0
     cnt = 0
@@ -86,41 +87,6 @@ function pinpoint_collapse(; dynamical::Bool=false)
         diff = abs(gmid - prev_gmid)
         prev_gmid = gmid
         cnt += 1
-    end
-    @info "collapse point" (gplus + gminus) / 2
-    return (gplus + gminus) / 2
-end
-
-function pinpoint_collapse_3()
-    gamma = 0.6
-    sd = load_parameters_alt(gamma_param=gamma)
-    gg = sd["G3"]
-
-    @unpack_Sim gg
-    x = X[1] |> real
-    dt = 0.01
-    abstol = 1e-4
-    reltol = 1e-4
-    @pack_Sim! gg
-
-    iters = 50
-    pal = palette([:red, :blue], iters)
-    # gamma_list = LinRange(0.0, 0.6, nn)
-    # we run a bisection
-    gplus = 0.8
-    gminus = 0.55
-    @assert false
-    for i in 1:iters
-        gmid = (gplus + gminus) / 2
-        @info "trying" gmid
-        gg.g = -2 * gmid
-        sol = runsim(gg; info=false)
-        if maximum(abs2.(sol.u)) > 1/gg.dV
-            @warn "collapse at $gmid"
-            gplus = gmid
-        else
-            gminus = gmid
-        end
     end
     @info "collapse point" (gplus + gminus) / 2
     return (gplus + gminus) / 2
