@@ -70,6 +70,7 @@ function pinpoint_collapse(; dynamical::Bool=false)
         gmid = (gplus + gminus) / 2
         @info "trying" gmid
         gg.g = -2 * gmid
+        gg.sigma2 = initi_sigma2(gg.g)
         try
             sol = runsim(gg; info=true)
             sol = nothing
