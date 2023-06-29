@@ -19,7 +19,7 @@ includet("init.jl")
 ```
     file signature:
 ```
-includet("soliton_ground_state_comparison.jl")
+includet("solitons.jl")
 
 
 ```
@@ -34,3 +34,6 @@ includet("lines.jl")
     file signature:
 ```
 includet("tiles.jl")
+
+include("aux_collapse.jl")
+include("aux_gs.jl")
