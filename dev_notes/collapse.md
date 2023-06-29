@@ -52,3 +52,13 @@ We need to have a solution from below:
 - [ ] NPSE-collapse can be reached "sharping up" a solution.
 
 ##### Lets try to find the collapse in the 3D case
+-> introduce the Gpe3DCollapse exception: it seems to work well
+
+##### Go on with NPSE simulations
+- [x] try playing with the accuracy -> increasing the accuracy we seem to pinpoint lesser and lesser $\gamma_c$.
+- [x] do a super accurate $dt=0.001$ $abstol=10^{-8}$ simulation -> we finally have an accurate collapse measurement. Commited as **sim** -> result $\gamma_c = 0.6698$
+Maybe the problem is just the discretization (MAYBE).
+
+- [x] check the NPSE solutions very near $\gamma_c$. Are they correct with respect to the maximum value?
+
+##### Now we can focus on the 3D case!!

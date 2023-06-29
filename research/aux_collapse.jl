@@ -39,12 +39,12 @@ end
 function pinpoint_collapse(; dynamical::Bool=false)
     gamma = 0.6
     sd = load_parameters_collapse(gamma_param=gamma)
-    gg = sd["N"]
+    gg = sd["G3"]
 
     @unpack_Sim gg
     x = X[1] |> real
-    dt = 0.001
-    abstol = 1e-4
+    dt = 0.01
+    abstol = 1e-7
     if dynamical
         tf = 1000.0
         iswitch = 1
@@ -54,7 +54,7 @@ function pinpoint_collapse(; dynamical::Bool=false)
     display(psi_0)
     @pack_Sim! gg
 
-    iters = 15
+    iters = 12
     pal = palette([:red, :blue], iters)
     # gamma_list = LinRange(0.0, 0.6, nn)
     # we run a bisection
@@ -70,12 +70,13 @@ function pinpoint_collapse(; dynamical::Bool=false)
         gmid = (gplus + gminus) / 2
         @info "trying" gmid
         gg.g = -2 * gmid
+        gg.sigma2 = init_sigma2(gg.g)
         try
             sol = runsim(gg; info=true)
             sol = nothing
             gminus = gmid
         catch err
-            if isa(err, NpseCollapse)
+            if isa(err, NpseCollapse) || isa(err, Gpe3DCollapse)
                 @warn "collapse at $gmid"
                 gplus = gmid
             else

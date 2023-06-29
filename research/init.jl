@@ -275,12 +275,12 @@ function load_parameters_collapse(
 
     maxiters_1d = 1e10
     maxiters_3d = 1e10
-    dt_all = 0.01
+    dt_all = 0.05
     iswitch_all = -im
 
     max_vel = 1.0
-    N_axial_steps = 512
-    abstol_all = 1e-4
+    N_axial_steps = 1024
+    abstol_all = 1e-3
     Lx = 60.0
     # =========================================================
     ## 1D-GPE
@@ -418,7 +418,7 @@ function load_parameters_alt(; vv::Float64 = 0.0, bb::Float64 = 0.0, gamma_param
 
     maxiters_1d = 1e10
     maxiters_3d = 1e10
-    dt_all = 0.01
+    dt_all = 0.05 # changed
     iswitch_all = -im
 
     max_vel = 1.0
