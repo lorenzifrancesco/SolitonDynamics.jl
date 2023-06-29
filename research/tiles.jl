@@ -83,8 +83,8 @@ function get_tiles(archetype::Sim{3, CuArray{Complex{Float64}}}, name::String="n
 
     @info "Proceeding serially from the archetype..."
     # all sims have the same x
-    mask_refl = map(xx -> xx>0, sgrid[1, 1].X[1] |> real)
-    mask_tran = map(xx -> xx<0, sgrid[1, 1].X[1] |> real)
+    mask_refl = map(xx -> xx>0, archetype.X[1] |> real)
+    mask_tran = map(xx -> xx<0, archetype.X[1] |> real)
 
     @info "Running tiling..."
     avg_iteration_time = 0.0
@@ -93,7 +93,16 @@ function get_tiles(archetype::Sim{3, CuArray{Complex{Float64}}}, name::String="n
         sim = deepcopy(archetype)
         imprint_vel_set_bar!(sim; vv=vv, bb=bb)
         @info "Computing tile" (vv, bb)
-        avg_iteration_time += @elapsed sol = runsim(sim; info=false)
+        try
+            avg_iteration_time += @elapsed sol = runsim(sim; info=false)
+        catch err
+            if isa(err, NpseCollapse)
+                collapse_occured = true
+            else
+                throw(err)
+            end
+        end
+
         # catch maxiters hit and set the transmission to zero
         if sim.manual == false
             if sol.retcode != ReturnCode.Success
@@ -103,20 +112,30 @@ function get_tiles(archetype::Sim{3, CuArray{Complex{Float64}}}, name::String="n
                 refl[bx, vx] = 1.0
                 @info "T = " tran[bx, vx]
             else
+                if !collapse_occured
+                    final = sol.u[end]
+                    @info "Run complete, computing transmission..."
+                    xspace!(final, sim)
+                    tran[bx, vx] = ns(final, sim, mask_tran)
+                    refl[bx, vx] = ns(final, sim, mask_refl)
+                else
+                    @info "Run complete, detected collapse..."
+                    tran[bx, vx] = NaN
+                end
+                    @info "T = " tran[bx, vx]
+            end
+        else
+            if !collapse_occured
                 final = sol.u[end]
                 @info "Run complete, computing transmission..."
                 xspace!(final, sim)
                 tran[bx, vx] = ns(final, sim, mask_tran)
                 refl[bx, vx] = ns(final, sim, mask_refl)
-                @info "T = " tran[bx, vx]
+            else
+                @info "Run complete, detected collapse..."
+                tran[bx, vx] = NaN
             end
-        else
-            final = sol.u[end]
-            @info "Run complete, computing transmission..."
-            xspace!(final, sim)
-            tran[bx, vx] = ns(final, sim, mask_tran)
-            refl[bx, vx] = ns(final, sim, mask_refl)
-            @info "T = " tran[bx, vx]
+                @info "T = " tran[bx, vx]
         end
     end
     @info "Tiling time            = " full_time

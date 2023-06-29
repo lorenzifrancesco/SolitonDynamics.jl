@@ -13,7 +13,7 @@ function sdmf(; use_precomputed_tiles=false)
     # 3- compute tiles
     # 4- compute lines
     save_path = "results/"
-    gamma_list = [0.15, 0.4, 0.6]
+    gamma_list = [0.6, 0.4, 0.15]
     for gamma in gamma_list
         @info "==== Using gamma: " gamma
         sd = load_parameters(gamma_param=gamma)
