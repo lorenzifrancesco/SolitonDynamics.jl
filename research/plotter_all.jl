@@ -13,10 +13,10 @@ function sdmf(; use_precomputed_tiles=false)
     # 3- compute tiles
     # 4- compute lines
     save_path = "results/"
-    gamma_list = [0.6, 0.4, 0.15]
+    gamma_list = [0.65, 0.4, 0.15]
     for gamma in gamma_list
         @info "==== Using gamma: " gamma
-        sd = load_parameters(gamma_param=gamma)
+        sd = load_parameters_alt(gamma_param=gamma)
         @info "Required simulations: " keys(sd)
         # prepare ground states (saving them)
         if isfile(save_path * "gs_dict.jld2")

@@ -92,6 +92,7 @@ function get_tiles(archetype::Sim{3, CuArray{Complex{Float64}}}, name::String="n
         collapse_occured = false
         imprint_vel_set_bar!(sim; vv=vv, bb=bb)
         @info "Computing tile" (vv, bb)
+        sol = nothing
         try
             avg_iteration_time += @elapsed sol = runsim(sim; info=false)
         catch err
@@ -101,7 +102,6 @@ function get_tiles(archetype::Sim{3, CuArray{Complex{Float64}}}, name::String="n
                 throw(err)
             end
         end
-
         # catch maxiters hit and set the transmission to zero
         if sim.manual == false
             if sol.retcode != ReturnCode.Success
