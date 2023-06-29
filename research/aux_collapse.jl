@@ -1,4 +1,3 @@
-includet("plotter_all.jl")
 using ColorSchemes
 # no saves
 

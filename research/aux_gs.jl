@@ -1,7 +1,5 @@
-includet("plotter_all.jl")
 using ColorSchemes
 # no saves
-
 
 function go()
     gamma = 0.6

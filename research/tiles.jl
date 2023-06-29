@@ -1,4 +1,3 @@
-includet("CDResearch.jl")
 JULIA_CUDA_SOFT_MEMORY_LIMIT ="95%"
 
 # XXX remark: good idea to vectorize on equations
@@ -240,5 +239,17 @@ function all_tiles(; use_precomputed_tiles=false)
                 JLD2.save(save_path * "tile_dict.jld2", tile_dict)
             end
         end
+    end
+end
+
+function view_all_tiles()
+    tile_file = "results/tile_dict.jld2"
+    @assert isfile(tile_file)
+    td = load(tile_file)
+    for (k, v) in td
+        @info "found" ihs(k)
+        ht = heatmap(v)
+        savefig(ht, "media/" * string(ihs(k)) *  "_tiles.pdf")
+        #  display(ht)
     end
 end
