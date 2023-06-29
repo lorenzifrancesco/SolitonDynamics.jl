@@ -20,16 +20,6 @@ Almost ok, but needs to be tested before the armageddon-like simulations.
 - [ ] Fix automatic ground state (wish)
 - [ ] Fix CrankNicholson ground state (wish)
 
-#### COLLAPSES
-- The collapse gamma found for NPSE is found to be around 0.751, strange enough
-This behavious depends strongly on the spatial discretization.
-N=1024 -> 0.73qualcosa
-N=2048 -> 0.751
-N=4096 -> 0.74533
-
-- NPSE_plus seems to have a higher threshold for collapse.
-N=1024 -> gamma_c>0.75
-> (are we sure we are even collapsing at all in NPSE_plus?) 
 
 
 #### DO WE STILL HAVE CORRECTNESS PROBLEMS IN THE TRANSFORMS? 
@@ -84,8 +74,7 @@ Error scales strangely like $\sim 1/N^2$. This is expected for the SplitStep ??
 _NB: test still fails with 1D GPE GS_
 ##### 28/06/2023
 #### MACRO problem: convergence is too much dependent on the initial condition.
-##### TODO - Understand the strange collapse behaviour
-- [ ] try different N scales, and different initial conditions
+
 ##### TODO - Fix of the 3D covergence
 The 3D result stays too close to the initial state in the axial profile. Maybe it adjusts in the radial dimension, but how?
 > we work in a seqential way using as initial conditions the ground states of the previous simulations.
@@ -105,7 +94,17 @@ Also changing N does not help.
 - [x] What about changing N_transverse? NOTHING (flat case)
 ![](2023-06-28-14-31-38.png)
 we double 64 -> 128. Very slow iteration speed. 
-- [ ] visualize the transverse distribution (may give a hint).
+- [x] visualize the transverse distribution (may give a hint).
+-> prepared visualization functions. The visualization of the wrong results does not suggest strange behaviours.
 
 
-- In addition, we have that we cannot use low accuracy, as the low-gamma case is settling to a wrong solution.
+##### Make the method converge
+- [x] check for a quick fix -> QUICK FIX: we were plotting the initial condition.
+
+##### Other strange issue
+When we copy the initial state to the 3D routine, then we 
+This could suggest us the reason behind the difference between the analytical and numerical 1D-GPE.
+
+It may be the same problem or not.
+
+- [ ] check for a quick fix.

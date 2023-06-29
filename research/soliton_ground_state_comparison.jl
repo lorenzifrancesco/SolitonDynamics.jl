@@ -37,7 +37,14 @@ end
 
 # FIXME 2 3D-GPE follows only the starting configurations
 
-function all_ground_states(;plus::Bool=false)
+function all_ground_states(
+    ;plus::Bool=false, 
+    use_precomputed::Bool=true, 
+    take_advantage::Bool=true,
+    saveplots::Bool=false,
+    show_plots::Bool=true
+    )
+    pyplot(size=(1500, 800))
     sd = load_parameters_alt()
     @assert all([s.iswitch for s in values(sd)] .== -im)
     save_path = "results/"
@@ -51,9 +58,7 @@ function all_ground_states(;plus::Bool=false)
         JLD2.save(join([save_path, "gs_dict.jld2"]), gs_dict)
     end
 
-    gamma_param_list = [0.6]
-    use_precomputed = true
-    take_advantage = false
+    gamma_param_list = [0.15, 0.4, 0.65]
     @info "Starting simulations..."
     for gamma_param in gamma_param_list
         # update simulation parameters
@@ -68,6 +73,7 @@ function all_ground_states(;plus::Bool=false)
         x = sim_gpe_1d.X[1] |> real
         analytical_gs = zeros(sim_gpe_1d.N[1])
         offset = sim_gpe_1d.L[1] / 4
+        offset *= 0.0
         @. analytical_gs = sqrt(gamma_param / 2) * 2 / (exp(gamma_param * (x-offset)) + exp(-(x-offset) * gamma_param))
         p = plot_final_density([analytical_gs], sim_gpe_1d; label="analytical", color=:orange, doifft=false, ls=:dashdot, title="gamma = $gamma_param")
 
@@ -164,12 +170,12 @@ function all_ground_states(;plus::Bool=false)
                 end
             end
             sim_gpe_3d.psi_0 = CuArray(tmp)
-            sim_gpe_3d.psi_0 .= sim_gpe_3d.psi_0 / sqrt(sum(abs2.(sim_gpe_3d.psi_0) * sim_gpe_3d.dV))
+            sim_gpe_3d.psi_0 .= sim_gpe_3d.psi_0 / sqrt(sum(abs2.(sim_gpe_3d.psi_0) * sim_gpe_3d.dV)) #this may be responsible for the strange behaviour
             initial_3d = copy(sim_gpe_3d.psi_0)
             kspace!(sim_gpe_3d.psi_0, sim_gpe_3d)
         end
         if haskey(gs_dict, hs("G3", gamma_param))
-            if use_precomputed && false
+            if use_precomputed
                 @info "\t using precomputed solution G3"
             else
                 @info "\t deleting and recomputing solution G3"
@@ -186,7 +192,6 @@ function all_ground_states(;plus::Bool=false)
         JLD2.save(join([save_path, "gs_dict.jld2"]), gs_dict)
 
         # linear interpolation
-        gpe_3d = sim_gpe_3d.psi_0
         x_axis_3d = sim_gpe_3d.X[1] |> real
         dx = sim_gpe_3d.X[1][2] - sim_gpe_3d.X[1][1]
         final_axial = Array(sum(abs2.(xspace(gpe_3d, sim_gpe_3d)), dims=(2, 3)))[:, 1, 1] * sim_gpe_3d.dV / dx |> real
@@ -194,7 +199,31 @@ function all_ground_states(;plus::Bool=false)
         final_axial = final_axial / sum(final_axial * dx) |> real
         solution_3d = LinearInterpolation(x_3d_range, final_axial, extrapolation_bc=Line())
         plot!(p, x_axis, solution_3d(x_axis), label="GPE_3D", color=:red)
-        display(p)
+        
+        # set attributes
+        if gamma_param == 0.15
+            @info "special case for gamma = 0.15"
+            plot!(p, xlims=(-20, 20), ylims=(0.0, 0.12))
+        elseif gamma_param == 0.4
+            @info "special case for gamma = 0.4"
+            plot!(p, xlims=(-8, 8), ylims=(0.0, 0.4))
+        elseif gamma_param == 0.65
+            @info "special case for gamma = 0.65"
+            plot!(p, xlims=(-4, 4), ylims=(0.0, 0.6))
+        else 
+            @info "non special case"
+        end
+        plot!(p, xlabel="x", ylabel="density", legend=:bottomright)
+        # display and save
+        if show_plots
+            display(p)
+        end
+        savefig(p, save_path * string(gamma_param) *  "_ground_states.pdf")
+        
+        # focus on particular view
+        # display and save
+        # display(p)
+        # savefig(p, save_path * string(gamma_param) *  "_ground_states_zoom.pdf")
     end
     return gs_dict
 end

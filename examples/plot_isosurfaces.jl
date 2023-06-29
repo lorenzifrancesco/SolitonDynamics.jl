@@ -42,7 +42,7 @@ function isosurface(sol)
     return
 end
 
-function show_slice(slice_position::Float64, psi, sim::Sim{3, CuArray{Complex{Float64}}}; file="slice.png")
+function show_slice(slice_position::Float64, psi, sim::Sim{3, CuArray{Complex{Float64}}}; file="slice.png", display=false)
     @unpack L, X, N = sim
     psi = Array(xspace(psi, sim))
     x = X[1] |> real
@@ -53,11 +53,11 @@ function show_slice(slice_position::Float64, psi, sim::Sim{3, CuArray{Complex{Fl
     z = X[3] |> real
     saveto=joinpath("media",file)
     ht = heatmap(y, z, abs2.(psi[idx,:,:]))
-    display(ht)
+    display ? display(ht) : nothing
     return ht
 end
 
-function show_profile(slice_position::Float64, psi, sim::Sim{3, CuArray{Complex{Float64}}}; file="slice.png")
+function show_profile(slice_position::Float64, psi, sim::Sim{3, CuArray{Complex{Float64}}}; file="profile.png", display=false)
     @unpack L, X, N = sim
     psi = Array(xspace(psi, sim))
     y = X[2] |> real
@@ -68,6 +68,19 @@ function show_profile(slice_position::Float64, psi, sim::Sim{3, CuArray{Complex{
     z = X[3] |> real
     saveto=joinpath("media",file)
     ht = heatmap(x, z, abs2.(psi[:,idy,:])', aspectratio=:equal)
-    display(ht)
+    display ? display(ht) : nothing
     return ht
+end
+
+function show_axial_density(psi, sim::Sim{3, CuArray{Complex{Float64}}}; file="axial_density.png", display=false)
+    @unpack L, X, N = sim
+    psi = Array(xspace(psi, sim))
+    x = X[1] |> real
+    saveto=joinpath("media",file)
+    aa = abs2.(psi)
+    dx = x[2]-x[1]
+    axial_density = sum(aa, dims=(2, 3))[:, 1, 1] * sim.dV / dx
+    p  = plot(x, axial_density, label="axial density", color=:red)
+    display ? display(p) : nothing
+    return p
 end

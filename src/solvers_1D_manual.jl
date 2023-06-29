@@ -10,6 +10,7 @@ function nlin_manual!(psi,sim::Sim{1, Array{ComplexF64}},t; ss_buffer=nothing, i
       @. psi = exp(dt * -im*iswitch* (g*abs2(psi))) * psi
       @. psi *= exp(dt * -im*iswitch* (V0 + V(x, t))) 
    elseif equation == NPSE
+      # @warn "whois sigma2? if appropriate this is zero" sigma2(Complex(sqrt(minimum(abs2.(psi)))))
       nonlinear = g*abs2.(psi) ./sigma2.(psi) + (1 ./(2*sigma2.(psi)) + 1/2*sigma2.(psi))
       @. psi = exp(dt * -im*iswitch* (V0 + V(x, t) + nonlinear)) * psi
    elseif equation == NPSE_plus

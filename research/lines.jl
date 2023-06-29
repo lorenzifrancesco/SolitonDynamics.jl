@@ -1,5 +1,4 @@
 function all_lines(precomputed=false)
-    plotly(size=(800, 400))
     saveto = "media/lines.pdf"
     # Computing all the lines
     # if files are already saved, load them

@@ -184,31 +184,6 @@ function kspace!(ψ,sim)
     return nothing
 end
 
-# """
-#     CuArrays versions
-# """
-# function xspace(ϕ::CuArray,sim)
-#     @unpack T = sim
-#     return CUDA.CUFFT.:(*)(T.Tkx::AbstractFFTs.Plan{T}, ϕ)
-# end
-
-# function xspace!(ψ::CuArray,sim)
-#     @unpack T = sim
-#     T.Tkx!*ψ
-#     return nothing
-# end
-
-# function kspace(ψ::CuArray,sim)
-#     @unpack T = sim
-#     return T.Txk*ψ
-# end
-
-# function kspace!(ψ::CuArray,sim)
-#     @unpack T = sim
-#     T.Txk!*ψ
-#     return nothing
-# end
-
 """
     definetransforms(funcs,args,meas,kwargs)
 """

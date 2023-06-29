@@ -13,7 +13,6 @@ end
 
 function propagate_manual!(psi, sim::Sim{3, CuArray{ComplexF64}}, t; ss_buffer=nothing, info=false)
    @unpack ksquared, iswitch, dV, Vol,mu,gamma_damp,dt = sim
-   # info && @info "dt = " dt
    psi_i = copy(psi) 
    nlin_manual!(psi,sim,t; info=info)
    @. psi = exp(dt * iswitch * (1.0 - im*gamma_damp)*(-im*(1/2*ksquared - mu))) * psi
@@ -21,6 +20,9 @@ function propagate_manual!(psi, sim::Sim{3, CuArray{ComplexF64}}, t; ss_buffer=n
       psi .= psi / sqrt(nsk(psi, sim))
       info && print(" - chempot: ", chempotk(psi, sim))
       cp_diff = (chempotk(psi, sim) - chempotk(psi_i, sim))/(chempotk(psi_i, sim)) / dt
+      if maximum(abs2.(psi) * dV) > 0.05
+         throw(Gpe3DCollapse(maximum(abs2.(psi) * dV)))
+      end
       return cp_diff
    else
       return nothing

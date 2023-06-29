@@ -36,7 +36,9 @@ function manual_run(sim; info=false, debug=false, throw_collapse=true)
             catch err
                if isa(err, NpseCollapse) && !throw_collapse
                   showerror(stdout, err)
-               else
+               elseif isa(err, Gpe3DCollapse) && !throw_collapse
+                  showerror(stdout, err)
+               else   
                   throw(err)
                end
                return nothing
