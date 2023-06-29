@@ -8,7 +8,7 @@ function nlin_manual!(
    t; 
    ss_buffer=nothing, 
    info=false, 
-   debug=true)
+   debug=false)
    @unpack ksquared,g,X,V0,dV,Vol,mu,equation,sigma2,dt,iswitch = sim; x = X[1]; y = X[1]; z = X[1]
    xspace!(psi,sim)
    @. psi *= exp(dt * -im*iswitch* (V0 + V(x,y,z,t)))
