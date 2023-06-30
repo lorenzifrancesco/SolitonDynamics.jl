@@ -197,29 +197,32 @@ function all_tiles(; use_precomputed_tiles=false)
             @info " ---> Writing ground state into sim..."
             if length(sim.N) == 1
                 @unpack_Sim sim
+                x0 = L[1]/4
+                shift = Int(x0/L[1] * N[1])
                 iswitch = 1
                 x = X[1]
-                @. psi_0 = sqrt(abs2(uu))
-                psi_0 .= psi_0 / sqrt(ns(psi_0, sim))
+                psi_0 = uu
+                xspace!(psi_0, sim)
+                psi_0 .= circshift(psi_0, shift)
                 kspace!(psi_0, sim)
                 @assert isapprox(nsk(psi_0, sim), 1.0, atol=1e-9)
                 @pack_Sim! sim
             else
                 @unpack_Sim sim
+                x0 = L[1]/4
+                shift = Int(x0/L[1] * N[1])
                 iswitch = 1
                 x = X[1] |> real
                 y = X[2] |> real
                 z = X[3] |> real
-                psi_0 .= CuArray(sqrt.(abs2.(uu))) 
-                psi_0 .= psi_0 / sqrt(ns(psi_0, sim))
+                psi_0 = CuArray(uu)
+                xspace!(psi_0, sim)
+                psi_0 = circshift(CuArray(psi_0), (shift, 0, 0)) 
                 kspace!(psi_0, sim)
                 @assert isapprox(nsk(psi_0, sim), 1.0, atol=1e-9)
                 @pack_Sim! sim
             end
         end
-
-        sol = runsim(sd["G3"]; info=true)
-        plot_final_heatmap(sol.u, gamma)
 
         if isfile(save_path * "tile_dict.jld2")
             @info "Loading Tiles library..."

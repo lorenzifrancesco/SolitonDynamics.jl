@@ -7,16 +7,15 @@ function plot_axial_heatmap(u, time_axis, sim::Sim{1, Array{ComplexF64}}; info=f
     return ht
 end
 
-# TODO remove time axis
-function plot_axial_heatmap(u, time_axis, sim::Sim{3, CuArray{ComplexF64}}, axis; info=false, doifft=true)
+function plot_axial_heatmap(u, time_axis, sim::Sim{3, CuArray{ComplexF64}}; axis=1, info=false, doifft=true)
     @unpack t, X = sim; x = Array(X[axis])
-    @assert axis == 3
+    @assert axis == 1
     ax_list = (1, 2, 3)
     ax_list= filter(x->x!=axis, ax_list)
 
     doifft ? ux = [xspace(x, sim) for x in u] : nothing
     # SPECIALIZE to axis = 3
-    u_axial = [sum(abs2.(x), dims=ax_list)[1,1,:] for x in ux]
+    u_axial = [sum(abs2.(x), dims=ax_list)[:,1,1] for x in ux]
     u_axial = Array(reduce(hcat, u_axial))
     ht = Plots.heatmap(real.(x), time_axis, u_axial')
     display(ht)
