@@ -522,7 +522,7 @@ function load_parameters_alt(; vv::Float64 = 0.0, bb::Float64 = 0.0, gamma_param
     dV= volume_element(L, N)    
     flags = FFTW.EXHAUSTIVE
     time_steps = 500
-    Nt = Nsaves
+    Nt = 30
     tf = 2.0
     t = LinRange(ti, tf, Nt)
     if vv > max_vel/2

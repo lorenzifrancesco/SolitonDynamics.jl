@@ -13,6 +13,12 @@
  - Collapse for 3D GPE is not ready but single-shot simulations show it.
  - [ ] sigma 2
 [[dev_notes/sigma2]]
-# June 2023: Major refactoring
+## June 2023: Major refactoring
 We changed radically the workflow, using scripts as standalone units in which we import CondensateDynamics
 _NB: what equation are we actually simulating? We should [ ] write it down_
+
+## July 2023: Finalization
+### 30/06->2/07
+- [ ] Obtain the plots with ground states and with the zooms
+- [ ] Fix the tiles / launch a prototype computation on the cloud
+- [ ] Launch the tiles simulations on the cloud
