@@ -419,9 +419,9 @@ function load_parameters_alt(; vv::Float64 = 0.0, bb::Float64 = 0.0, gamma_param
     iswitch_all = -im
 
     max_vel = 1.0
-    N_axial_steps = 1024
+    N_axial_steps = 512
     abstol_all = 1e-6
-    time_steps_all = 400
+    time_steps_all = 200
 
     initial_width = 10
     Lx = 80.0
