@@ -25,11 +25,11 @@ end
 function ihs(s::String)
     n = parse(Int, s)
     if n < 500
-        return ("G1", n / 1000)
+        return ("G1", n / 100)
     elseif n < 1500
-        return ("N", (n - 1000) / 1000)
+        return ("N", (n - 1000) / 100)
     elseif n < 2500
-        return ("Np", (n - 2000) / 1000)
+        return ("Np", (n - 2000) / 100)
     else
         return ("G3", (n - 3000) / 100)
     end
