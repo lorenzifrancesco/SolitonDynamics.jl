@@ -7,6 +7,7 @@ function plot_axial_heatmap(u, time_axis, sim::Sim{1, Array{ComplexF64}}; info=f
     return ht
 end
 
+# TODO remove time axis
 function plot_axial_heatmap(u, time_axis, sim::Sim{3, CuArray{ComplexF64}}, axis; info=false, doifft=true)
     @unpack t, X = sim; x = Array(X[axis])
     @assert axis == 3
