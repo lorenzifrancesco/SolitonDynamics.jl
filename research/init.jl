@@ -421,6 +421,8 @@ function load_parameters_alt(; vv::Float64 = 0.0, bb::Float64 = 0.0, gamma_param
     max_vel = 1.0
     N_axial_steps = 1024
     abstol_all = 1e-6
+    time_steps_all = 300
+
     initial_width = 10
     Lx = 80.0
     # =========================================================
@@ -446,7 +448,7 @@ function load_parameters_alt(; vv::Float64 = 0.0, bb::Float64 = 0.0, gamma_param
     alg = BS3()
 
     # will be overwritten
-    time_steps = 500
+    time_steps = time_steps_all
     Nt = Nsaves
     tf = 2.0
     t = LinRange(ti, tf, Nt)
@@ -521,7 +523,7 @@ function load_parameters_alt(; vv::Float64 = 0.0, bb::Float64 = 0.0, gamma_param
     z = Array(X[3])
     dV= volume_element(L, N)    
     flags = FFTW.EXHAUSTIVE
-    time_steps = 500
+    time_steps = time_steps_all
     Nt = 30
     tf = 2.0
     t = LinRange(ti, tf, Nt)

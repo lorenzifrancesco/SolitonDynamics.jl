@@ -1,7 +1,10 @@
 JULIA_CUDA_SOFT_MEMORY_LIMIT ="95%"
 
-# XXX remark: good idea to vectorize on equations
-function get_tiles(sim::Sim{1, Array{Complex{Float64}}}, name::String="noname"; tiles=4)
+function get_tiles(
+    sim::Sim{1, Array{Complex{Float64}}}, 
+    name::String="noname"; 
+    tiles=6
+    )
     saveto = "../media/tiles_$(name).pdf"
     max_vel = 1
     max_bar = 1
@@ -31,8 +34,18 @@ function get_tiles(sim::Sim{1, Array{Complex{Float64}}}, name::String="noname"; 
     iter = Iterators.product(enumerate(vel_list), enumerate(bar_list))
     full_time = @elapsed for ((vx, vv), (bx, bb)) in ProgressBar(iter)
         sim = sgrid[bx, vx]
+        collapse_occured = false
         @info "Computing tile" (vv, bb)
-        avg_iteration_time += @elapsed sol = runsim(sim; info=false)
+        sol = nothing
+        try
+            avg_iteration_time += @elapsed sol = runsim(sim; info=false)
+        catch err
+            if isa(err, NpseCollapse) || isa(err, Gpe3DCollapse)
+                collapse_occured = true
+            else
+                throw(err)
+            end
+        end
         # catch maxiters hit and set the transmission to zero
         if sim.manual == false
             if sol.retcode != ReturnCode.Success
@@ -50,12 +63,17 @@ function get_tiles(sim::Sim{1, Array{Complex{Float64}}}, name::String="noname"; 
                 @info "T = " tran[bx, vx]
             end
         else
-            final = sol.u[end]
-            @info "Run complete, computing transmission..."
-            xspace!(final, sim)
-            tran[bx, vx] = ns(final, sim, mask_tran)
-            refl[bx, vx] = ns(final, sim, mask_refl)
-            @info "T = " tran[bx, vx]
+                if !collapse_occured
+                    final = sol.u[end]
+                    @info "Run complete, computing transmission..."
+                    xspace!(final, sim)
+                    tran[bx, vx] = ns(final, sim, mask_tran)
+                    refl[bx, vx] = ns(final, sim, mask_refl)
+                else
+                    @info "Run complete, detected collapse..."
+                    tran[bx, vx] = NaN
+                end
+                    @info "T = " tran[bx, vx]
         end
     end
     @info "Tiling time            = " full_time
@@ -72,7 +90,11 @@ end
 """
 in the 3D case we do not have sufficient GPU mem, so we go serially
 """
-function get_tiles(archetype::Sim{3, CuArray{Complex{Float64}}}, name::String="noname"; tiles=4)
+function get_tiles(
+    archetype::Sim{3, CuArray{Complex{Float64}}}, 
+    name::String="noname"; 
+    tiles=6
+    )
     saveto = "../media/tiles_$(name).pdf"
     max_vel = 1
     max_bar = 1
@@ -136,6 +158,7 @@ function get_tiles(archetype::Sim{3, CuArray{Complex{Float64}}}, name::String="n
             else
                 @info "Run complete, detected collapse..."
                 tran[bx, vx] = NaN
+                refl[bx, vx] = NaN
             end
                 @info "T = " tran[bx, vx]
         end
@@ -152,6 +175,8 @@ function get_tiles(archetype::Sim{3, CuArray{Complex{Float64}}}, name::String="n
     return tran
 end
 
+# TODO catch NPSE collapse
+# TODO understand what happens with GPE3D collapse
 function all_tiles(; use_precomputed_tiles=false)
     if Threads.nthreads() == 1
         @warn "running in single thread mode!"
@@ -165,7 +190,7 @@ function all_tiles(; use_precomputed_tiles=false)
     # 3- compute tiles
     # 4- compute lines
     save_path = "results/"
-    gamma_list = [0.65, 0.4, 0.15]
+    gamma_list = [0.65]
     for gamma in gamma_list
         @info "==== Using gamma: " gamma
         sd = load_parameters_alt(gamma_param=gamma)
