@@ -3,7 +3,7 @@ JULIA_CUDA_SOFT_MEMORY_LIMIT ="95%"
 function get_tiles(
     sim::Sim{1, Array{Complex{Float64}}}, 
     name::String="noname"; 
-    tiles=6
+    tiles=100
     )
     saveto = "../media/tiles_$(name).pdf"
     max_vel = 1
@@ -93,7 +93,7 @@ in the 3D case we do not have sufficient GPU mem, so we go serially
 function get_tiles(
     archetype::Sim{3, CuArray{Complex{Float64}}}, 
     name::String="noname"; 
-    tiles=6
+    tiles=100
     )
     saveto = "../media/tiles_$(name).pdf"
     max_vel = 1
@@ -190,7 +190,7 @@ function all_tiles(; use_precomputed_tiles=false)
     # 3- compute tiles
     # 4- compute lines
     save_path = "results/"
-    gamma_list = [0.65]
+    gamma_list = [0.65, 0.55, 0.4, 0.3, 0.15]
     for gamma in gamma_list
         @info "==== Using gamma: " gamma
         sd = load_parameters_alt(gamma_param=gamma)
@@ -206,12 +206,12 @@ function all_tiles(; use_precomputed_tiles=false)
         end
 
         # preparing all simulations for the tiling (as archetypes)
+        # automatic load as much as possible
         for (name, sim) in sd
-            if haskey(gs_dict, hs(name, gamma))
+            if haskey(gs_dict, hs(name, gamma)) 
                 @info "Found in library item " (name, gamma)
             else
                 @info "Computing item " (name, gamma)
-                display("With code: " * hs(name, gamma))
                 uu = get_ground_state(sim)
                 push!(gs_dict, hs(name, gamma) => uu)
                 JLD2.save(save_path * "gs_dict.jld2", gs_dict)
