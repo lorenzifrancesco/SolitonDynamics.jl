@@ -1,13 +1,13 @@
-function plot_axial_heatmap(u, time_axis, sim::Sim{1, Array{ComplexF64}}; info=false, doifft=true)
+function plot_axial_heatmap(u, time_axis, sim::Sim{1, Array{ComplexF64}}; info=false, doifft=true, show=false, title="__")
     @unpack t, X = sim; x = X[1]
     u = reduce(hcat, u)
     doifft ? u = mapslices(x->xspace(x, sim),u,dims=(1)) : nothing
-    ht = Plots.heatmap(real.(x), time_axis, abs2.(u)')
-    display(ht)
+    ht = Plots.heatmap(real.(x), t, abs2.(u)', title=title)
+    show ? display(ht) : nothing
     return ht
 end
 
-function plot_axial_heatmap(u, time_axis, sim::Sim{3, CuArray{ComplexF64}}; axis=1, info=false, doifft=true)
+function plot_axial_heatmap(u, time_axis, sim::Sim{3, CuArray{ComplexF64}}; axis=1, info=false, doifft=true, show=false, title="_")
     @unpack t, X = sim; x = Array(X[axis])
     @assert axis == 1
     ax_list = (1, 2, 3)
@@ -17,32 +17,32 @@ function plot_axial_heatmap(u, time_axis, sim::Sim{3, CuArray{ComplexF64}}; axis
     # SPECIALIZE to axis = 3
     u_axial = [sum(abs2.(x), dims=ax_list)[:,1,1] for x in ux]
     u_axial = Array(reduce(hcat, u_axial))
-    ht = Plots.heatmap(real.(x), time_axis, u_axial')
+    ht = Plots.heatmap(real.(x), time_axis, u_axial', title=title)
     display(ht)
     return ht
 end
 
-function plot_final_density(u, sim::Sim{1, Array{ComplexF64}}; info=false, doifft=true, label="initial", lw=1, ls=:solid, color=:black, title="", display=false)
+function plot_final_density(u, sim::Sim{1, Array{ComplexF64}}; info=false, doifft=true, label="initial", lw=1, ls=:solid, color=:black, title="", show=false)
     @unpack t, X = sim; x = Array(X[1])
     tmp = u[end]
     doifft ? final = xspace(tmp, sim) : final = tmp
     info && @info "final norm" ns(final, sim)
     p = plot(real.(x), abs2.(final), label=label, linewidth=lw, linestyle=ls, color=color, title=title)
-    display ? display(p) : nothing
+    show ? display(p) : nothing
     return p
 end
 
-function plot_final_density!(p, u, sim::Sim{1, Array{ComplexF64}}; info=false, doifft=true, label="initial", lw=1, ls=:solid, color=:black, display=false)
+function plot_final_density!(p, u, sim::Sim{1, Array{ComplexF64}}; info=false, doifft=true, label="initial", lw=1, ls=:solid, color=:black, show=false)
     @unpack t, X = sim; x = Array(X[1])
     tmp = u[end]
     doifft ? final = xspace(tmp, sim) : final = tmp
     info && @info "final norm" ns(final, sim)
     plot!(p, real.(x), abs2.(final), label=label, linewidth=lw, linestyle=ls, color=color)
-    display ? display(p) : nothing
+    show ? display(p) : nothing
     return p
 end
 
-function plot_final_density(u, sim::Sim{3, CuArray{ComplexF64}}, axis; info=false, doifft=true, label="initial", title="", display=false)
+function plot_final_density(u, sim::Sim{3, CuArray{ComplexF64}}, axis; info=false, doifft=true, label="initial", title="", show=false)
     @unpack t, X, dV = sim; x = Array(X[axis])
     dx = x[2]-x[1] |> real
     ax_list = (1, 2, 3)
@@ -53,11 +53,11 @@ function plot_final_density(u, sim::Sim{3, CuArray{ComplexF64}}, axis; info=fals
     info && @info "final norm" ns(final, sim)
     final_axial = Array(sum(abs2.(final), dims=ax_list))[:,1,1] * dV/dx
     p = plot(real.(x), final_axial, label=label, title=title)
-    display ? display(p) : nothing
+    show ? display(p) : nothing
     return p
 end
 
-function plot_final_density!(p, u, sim::Sim{3, CuArray{ComplexF64}}, axis; info=false, doifft=true, label="initial", display=false)
+function plot_final_density!(p, u, sim::Sim{3, CuArray{ComplexF64}}, axis; info=false, doifft=true, label="initial", show=false)
     @unpack t, X = sim; x = Array(X[axis])
     ax_list = (1, 2, 3)
     ax_list= filter(x->x!=axis, ax_list)
@@ -67,7 +67,7 @@ function plot_final_density!(p, u, sim::Sim{3, CuArray{ComplexF64}}, axis; info=
     @warn "dV missing?"
     final_axial = Array(sum(abs2.(final), dims=ax_list))[1,1,:]
     plot!(p, real.(x), final_axial, label=label)
-    display ? display(p) : nothing
+    show ? display(p) : nothing
     return p
 end
 

@@ -11,7 +11,7 @@ function all_lines(; use_precomputed_lines=false)
     for gamma in gamma_list
         @info "==== Using gamma: " gamma
     
-        sd = load_parameters_alt(gamma_param=gamma, eqs=["G3"])
+        sd = load_parameters_alt(gamma_param=gamma)
         @info "Required simulations: " keys(sd)
 
         prepare_for_collision!(sd, gamma)
@@ -35,7 +35,7 @@ function all_lines(; use_precomputed_lines=false)
                     name; 
                     lines=2,
                     sweep="vel",
-                    points=30)
+                    points=50)
                 push!(line_dict, hs(name, gamma) => line)
                 JLD2.save(save_path * "line_dict.jld2", line_dict)
             end
@@ -43,7 +43,7 @@ function all_lines(; use_precomputed_lines=false)
     end
 end
 
-# TODO: apply an adaptive time_steps
+# TODO: extremely slow velocities are not even interesting
 function get_lines(
     sim::Sim{1,Array{Complex{Float64}}},
     name::String="noname";
@@ -51,6 +51,8 @@ function get_lines(
     sweep="vel",
     points=100
     )
+
+
     saveto = "../media/lines_$(name).pdf"
     max_vel = 1
     max_bar = 1
@@ -58,13 +60,13 @@ function get_lines(
     # asymmetric matrix: 
     @assert sweep in ["vel", "bar"]
     if sweep == "vel"
-        vel_list = LinRange(0, max_vel, points)
+        vel_list = LinRange(0.1, max_vel, points)
         bar_list = LinRange(0.1, max_bar, lines) # FIXME find a better way to do this 0.1->1.0
         x_axis = vel_list
         y_axis = bar_list
     elseif sweep == "bar"
         vel_list = LinRange(0.1, max_vel, lines)
-        bar_list = LinRange(0, max_bar, points)
+        bar_list = LinRange(0.1, max_bar, points)
         x_axis = bar_list
         y_axis = vel_list
     end
@@ -81,7 +83,6 @@ function get_lines(
             for (ix, x) in enumerate(x_axis)
                 if sweep == "vel"
                     sgrid[iy, ix] = imprint_vel_set_bar(archetype; vv=x, bb=y)
-                    # TODO set time_steps dynamically
                 elseif sweep == "bar"
                     sgrid[iy, ix] = imprint_vel_set_bar(archetype; vv=y, bb=x)
                 end
@@ -173,13 +174,13 @@ function get_lines(
     # asymmetric matrix: 
     @assert sweep in ["vel", "bar"]
     if sweep == "vel"
-        vel_list = LinRange(0, max_vel, points)
+        vel_list = LinRange(0.1, max_vel, points)
         bar_list = LinRange(0.1, max_bar, lines) # FIXME find a better way to do this 0.1->1.0
         x_axis = vel_list
         y_axis = bar_list
     elseif sweep == "bar"
         vel_list = LinRange(0.1, max_vel, lines)
-        bar_list = LinRange(0, max_bar, points)
+        bar_list = LinRange(0.1, max_bar, points)
         x_axis = bar_list
         y_axis = vel_list
     end
@@ -283,3 +284,5 @@ function view_all_lines(; sweep="vel")
         #  display(p)
     end
 end
+
+# TODO compare equations

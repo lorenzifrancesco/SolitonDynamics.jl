@@ -256,6 +256,7 @@ function prepare_for_collision!(sd, gamma)
             psi_0 .= circshift(psi_0, shift)
             kspace!(psi_0, sim)
             @assert isapprox(nsk(psi_0, sim), 1.0, atol=1e-9)
+            time_steps  = Int(ceil((tf-ti)/dt))
             @pack_Sim! sim
         else
             @unpack_Sim sim
@@ -270,6 +271,7 @@ function prepare_for_collision!(sd, gamma)
             psi_0 = circshift(CuArray(psi_0), (shift, 0, 0))
             kspace!(psi_0, sim)
             @assert isapprox(nsk(psi_0, sim), 1.0, atol=1e-9)
+            time_steps  = Int(ceil((tf-ti)/dt))
             @pack_Sim! sim
         end
     end

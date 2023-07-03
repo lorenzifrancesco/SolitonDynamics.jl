@@ -35,5 +35,6 @@ includet("lines.jl")
 ```
 includet("tiles.jl")
 
-include("aux_collapse.jl")
-include("aux_gs.jl")
+includet("aux_collapse.jl")
+includet("aux_gs.jl")
+includet("aux_collision.jl")

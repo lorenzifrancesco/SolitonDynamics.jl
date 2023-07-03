@@ -90,7 +90,7 @@ function manual_run(sim; info=false, debug=false, throw_collapse=true)
          else
             ss_buffer = nothing
          end
-
+         debug && @warn "running with time_steps = " time_steps
          for i in 1:time_steps
             try
                propagate_manual!(psi, sim, time; ss_buffer=ss_buffer)
@@ -102,6 +102,7 @@ function manual_run(sim; info=false, debug=false, throw_collapse=true)
                end
                return nothing
             end
+            print("\r", i, " - step")
             if t[save_counter] < solve_time_axis[i]
                collection[:, save_counter] = psi
                save_counter += 1
@@ -110,7 +111,6 @@ function manual_run(sim; info=false, debug=false, throw_collapse=true)
          end
          collection[:, Nt] = psi 
          sol = CustomSolution(u=[collection[:, k] for k in 1:Nt], t=t)
-         info && @info sol
       elseif length(N) == 3
          collection = CuArray{ComplexF64,4}(undef, (N..., Nt))
          collection[:, :, :, 1] = psi

@@ -636,7 +636,9 @@ function imprint_vel_set_bar(
     sim::Sim{1, Array{Complex{Float64}}}; 
     vv::Float64=0.0, 
     bb::Float64=0.0,
-    bw::Float64=0.5)
+    bw::Float64=0.5,
+    dt::Float64=0.15,
+    time_step_limit::Int64=500)
     simc = deepcopy(sim)
     @unpack_Sim simc
     x = X[1] |> real
@@ -649,8 +651,10 @@ function imprint_vel_set_bar(
     end
     t = LinRange(ti, tf, Nt)
     time_steps = Int(floor((tf-ti)/dt))
-    if time_steps > 1000
-        @warn "time_steps > 1000"
+    if time_steps > time_step_limit
+        @warn "time_steps > $time_step_limit, clipping dt"
+        time_steps = time_step_limit
+        dt = (tf-ti)/time_steps
     end
     xspace!(psi_0, simc)
     @. psi_0 = abs(psi_0) * exp(-im*(x)*vv)
@@ -663,8 +667,9 @@ function imprint_vel_set_bar(
     sim::Sim{3, CuArray{Complex{Float64}}}; 
     vv::Float64=0.0, 
     bb::Float64=0.0, 
-    bw::Float64=0.5
-    dt::Float64=0.05)
+    bw::Float64=0.5,
+    dt::Float64=0.15, # TODO optimize
+    time_step_limit::Int64=500)
 
     simc = deepcopy(sim)
     @unpack_Sim simc
@@ -680,8 +685,10 @@ function imprint_vel_set_bar(
     end
     t = LinRange(ti, tf, Nt)
     time_steps = Int(floor((tf-ti)/dt))
-    if time_steps > 1000
-        @warn "time_steps > 1000"
+    if time_steps > time_step_limit
+        @warn "time_steps > $time_step_limit, clipping dt"
+        time_steps = time_step_limit
+        dt = (tf-ti)/time_steps
     end
     xspace!(psi_0, simc)
     @. psi_0 = abs(psi_0) * exp(-im*(x)*vv)
@@ -694,8 +701,9 @@ function imprint_vel_set_bar!(
     sim::Sim{1, Array{Complex{Float64}}}; 
     vv::Float64=0.0, 
     bb::Float64=0.0, 
-    bw::Float64=0.5
-    dt::Float64=0.05)
+    bw::Float64=0.5,
+    dt::Float64=0.15,
+    time_step_limit::Int64=500)    
 
     @unpack_Sim sim
     x = X[1] |> real
@@ -708,8 +716,11 @@ function imprint_vel_set_bar!(
     end
     t = LinRange(ti, tf, Nt)
     time_steps = Int(floor((tf-ti)/dt))
-    if time_steps > 1000
-        @warn "time_steps > 1000"
+    if time_steps > time_step_limit
+        @warn "time_steps > $time_step_limit, clipping dt"
+        time_steps = time_step_limit
+        dt = (tf-ti)/time_steps
+        print("\n Setting dt to $dt")
     end
     xspace!(psi_0, sim)
     @. psi_0 = abs(psi_0) * exp(-im*(x)*vv)
@@ -722,8 +733,9 @@ function imprint_vel_set_bar!(
     sim::Sim{3, CuArray{Complex{Float64}}}; 
     vv::Float64=0.0, 
     bb::Float64=0.0, 
-    bw::Float64=0.5
-    dt::Float64=0.05)
+    bw::Float64=0.5,
+    dt::Float64=0.15, # TODO optimize
+    time_step_limit::Int64=500)
 
     @unpack_Sim sim
     x = X[1] |> real
@@ -738,8 +750,10 @@ function imprint_vel_set_bar!(
     end
     t = LinRange(ti, tf, Nt)
     time_steps = Int(floor((tf-ti)/dt))
-    if time_steps > 1000
-        @warn "time_steps > 1000"
+    if time_steps > time_step_limit
+        @warn "time_steps > $time_step_limit, clipping dt"
+        time_steps = time_step_limit
+        dt = (tf-ti)/time_steps
     end
     xspace!(psi_0, sim)
     @. psi_0 = abs(psi_0) * exp(-im*(x)*vv)
