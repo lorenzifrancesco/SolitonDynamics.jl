@@ -21,9 +21,7 @@ end
 
 """
     normalize(parameters)    
-
 conversion tool from SI units used in experiments to simulation Parameters
-
 """
 function normalize(sisim::SISim)
     @unpack as, omega_perp, mass, N_particles, L, N = sisim

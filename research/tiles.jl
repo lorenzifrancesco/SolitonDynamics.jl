@@ -1,21 +1,58 @@
-JULIA_CUDA_SOFT_MEMORY_LIMIT ="95%"
+JULIA_CUDA_SOFT_MEMORY_LIMIT = "95%"
+
+function all_tiles(; use_precomputed_tiles=false)
+    if Threads.nthreads() == 1
+        @warn "running in single thread mode!"
+    else
+        @info "running in multi-thread mode: n_threads =" Threads.nthreads()
+    end
+
+    save_path = "results/"
+    gamma_list = [0.65, 0.55, 0.4, 0.3, 0.15]
+
+    for gamma in gamma_list
+        @info "==== Using gamma: " gamma
+        sd = load_parameters_alt(gamma_param=gamma)
+        @info "Required simulations: " keys(sd)
+
+        prepare_for_collision!(sd, gamma)
+        if isfile(save_path * "tile_dict.jld2")
+            @info "Loading Tiles library..."
+            tile_dict = JLD2.load(save_path * "tile_dict.jld2")
+        else
+            @info "No Tiles library found! Saving an empty one..."
+            tile_dict = Dict()
+            JLD2.save(save_path * "tile_dict.jld2", tile_dict)
+        end
+
+        for (name, sim) in sd
+            @info "Tiling " name
+            if haskey(tile_dict, hs(name, gamma)) && use_precomputed_tiles
+                @info "Already found tile for " name, gamma
+            else
+                tile = get_tiles(sim, name)
+                push!(tile_dict, hs(name, gamma) => tile)
+                JLD2.save(save_path * "tile_dict.jld2", tile_dict)
+            end
+        end
+    end
+end
 
 function get_tiles(
-    sim::Sim{1, Array{Complex{Float64}}}, 
-    name::String="noname"; 
-    tiles=100
-    )
+    sim::Sim{1,Array{Complex{Float64}}},
+    name::String="noname";
+    tiles=100)
     saveto = "../media/tiles_$(name).pdf"
     max_vel = 1
     max_bar = 1
     #
     vel_list = LinRange(0, max_vel, tiles)
     bar_list = LinRange(0, max_bar, tiles)
-    tran = Array{Float64, 2}(undef, (tiles, tiles))
-    refl = Array{Float64, 2}(undef, (tiles, tiles))
+    tran = Array{Float64,2}(undef, (tiles, tiles))
+    refl = Array{Float64,2}(undef, (tiles, tiles))
 
     @info "Filling sim grid..."
-    sgrid = Array{Sim, 2}(undef, (tiles, tiles))
+    sgrid = Array{Sim,2}(undef, (tiles, tiles))
     archetype = sim
     sgrid[1, 1] = archetype
     @time begin
@@ -26,8 +63,8 @@ function get_tiles(
         end
     end
     # all sims have the same x
-    mask_refl = map(xx -> xx>0, sgrid[1, 1].X[1] |> real)
-    mask_tran = map(xx -> xx<0, sgrid[1, 1].X[1] |> real)
+    mask_refl = map(xx -> xx > 0, sgrid[1, 1].X[1] |> real)
+    mask_tran = map(xx -> xx < 0, sgrid[1, 1].X[1] |> real)
 
     @info "Running tiling..."
     avg_iteration_time = 0.0
@@ -63,17 +100,20 @@ function get_tiles(
                 @info "T = " tran[bx, vx]
             end
         else
-                if !collapse_occured
-                    final = sol.u[end]
-                    @info "Run complete, computing transmission..."
-                    xspace!(final, sim)
-                    tran[bx, vx] = ns(final, sim, mask_tran)
-                    refl[bx, vx] = ns(final, sim, mask_refl)
-                else
-                    @info "Run complete, detected collapse..."
-                    tran[bx, vx] = NaN
-                end
-                    @info "T = " tran[bx, vx]
+            if !collapse_occured
+                final = sol.u[end]
+                @info "Run complete, computing transmission..."
+                xspace!(final, sim)
+                tran[bx, vx] = ns(final, sim, mask_tran)
+                refl[bx, vx] = ns(final, sim, mask_refl)
+            else
+                @info "Run complete, detected collapse..."
+                tran[bx, vx] = NaN
+            end
+            @info "T = " tran[bx, vx]
+        end
+        if ! isapprox(tran[bx, vx]+refl[bx, vx], 1.0, atol=1e-5)
+            @warn "T+R != 1.0"
         end
     end
     @info "Tiling time            = " full_time
@@ -91,23 +131,22 @@ end
 in the 3D case we do not have sufficient GPU mem, so we go serially
 """
 function get_tiles(
-    archetype::Sim{3, CuArray{Complex{Float64}}}, 
-    name::String="noname"; 
-    tiles=100
-    )
+    archetype::Sim{3,CuArray{Complex{Float64}}},
+    name::String="noname";
+    tiles=100)
     saveto = "../media/tiles_$(name).pdf"
     max_vel = 1
     max_bar = 1
     #
     vel_list = LinRange(0, max_vel, tiles)
     bar_list = LinRange(0, max_bar, tiles)
-    tran = Array{Float64, 2}(undef, (tiles, tiles))
-    refl = Array{Float64, 2}(undef, (tiles, tiles))
+    tran = Array{Float64,2}(undef, (tiles, tiles))
+    refl = Array{Float64,2}(undef, (tiles, tiles))
 
     @info "Proceeding serially from the archetype..."
     # all sims have the same x
-    mask_refl = map(xx -> xx>0, archetype.X[1] |> real)
-    mask_tran = map(xx -> xx<0, archetype.X[1] |> real)
+    mask_refl = map(xx -> xx > 0, archetype.X[1] |> real)
+    mask_tran = map(xx -> xx < 0, archetype.X[1] |> real)
 
     @info "Running tiling..."
     avg_iteration_time = 0.0
@@ -146,7 +185,7 @@ function get_tiles(
                     @info "Run complete, detected collapse..."
                     tran[bx, vx] = NaN
                 end
-                    @info "T = " tran[bx, vx]
+                @info "T = " tran[bx, vx]
             end
         else
             if !collapse_occured
@@ -160,7 +199,10 @@ function get_tiles(
                 tran[bx, vx] = NaN
                 refl[bx, vx] = NaN
             end
-                @info "T = " tran[bx, vx]
+            @info "T = " tran[bx, vx]
+        end
+        if ! isapprox(tran[bx, vx]+refl[bx, vx], 1.0, atol=1e-5)
+            @warn "T+R != 1.0"
         end
     end
     @info "Tiling time            = " full_time
@@ -175,99 +217,63 @@ function get_tiles(
     return tran
 end
 
-# TODO catch NPSE collapse
-# TODO understand what happens with GPE3D collapse
-function all_tiles(; use_precomputed_tiles=false)
-    if Threads.nthreads() == 1
-        @warn "running in single thread mode!"
-    else
-        @info "running in multi-thread mode: n_threads =" Threads.nthreads()
-    end
 
-    ## procedure:
-    # 1- compute ground states
-    # 2- prepare dynamical simulations using GS
-    # 3- compute tiles
-    # 4- compute lines
+
+function prepare_for_collision!(sd, gamma)
     save_path = "results/"
-    gamma_list = [0.65, 0.55, 0.4, 0.3, 0.15]
-    for gamma in gamma_list
-        @info "==== Using gamma: " gamma
-        sd = load_parameters_alt(gamma_param=gamma)
-        @info "Required simulations: " keys(sd)
-        # prepare ground states (saving them)
-        if isfile(save_path * "gs_dict.jld2")
-            @info "Loading GS library..."
-            gs_dict = JLD2.load(save_path * "gs_dict.jld2")
+    # prepare ground states (saving them)
+    if isfile(save_path * "gs_dict.jld2")
+        @info "Loading GS library..."
+        gs_dict = JLD2.load(save_path * "gs_dict.jld2")
+    else
+        @info "No GS library found! Saving an empty one..."
+        gs_dict = Dict()
+        JLD2.save(save_path * "gs_dict.jld2", gs_dict)
+    end
+    # preparing all simulations for the tiling (as archetypes)
+    # automatic load as much as possible
+    for (name, sim) in sd
+        if haskey(gs_dict, hs(name, gamma))
+            @info "Found in library item " (name, gamma)
         else
-            @info "No GS library found! Saving an empty one..."
-            gs_dict = Dict()
+            @info "Computing item " (name, gamma)
+            uu = get_ground_state(sim)
+            push!(gs_dict, hs(name, gamma) => uu)
             JLD2.save(save_path * "gs_dict.jld2", gs_dict)
         end
-
-        # preparing all simulations for the tiling (as archetypes)
-        # automatic load as much as possible
-        for (name, sim) in sd
-            if haskey(gs_dict, hs(name, gamma)) 
-                @info "Found in library item " (name, gamma)
-            else
-                @info "Computing item " (name, gamma)
-                uu = get_ground_state(sim)
-                push!(gs_dict, hs(name, gamma) => uu)
-                JLD2.save(save_path * "gs_dict.jld2", gs_dict)
-            end
-            uu = JLD2.load(save_path * "gs_dict.jld2", hs(name, gamma))
-            # write the initial state into sim
-            # TODO write the method into prepare function
-            @info " ---> Writing ground state into sim..."
-            if length(sim.N) == 1
-                @unpack_Sim sim
-                x0 = L[1]/4
-                shift = Int(x0/L[1] * N[1])
-                iswitch = 1
-                x = X[1]
-                psi_0 = uu
-                xspace!(psi_0, sim)
-                psi_0 .= circshift(psi_0, shift)
-                kspace!(psi_0, sim)
-                @assert isapprox(nsk(psi_0, sim), 1.0, atol=1e-9)
-                @pack_Sim! sim
-            else
-                @unpack_Sim sim
-                x0 = L[1]/4
-                shift = Int(x0/L[1] * N[1])
-                iswitch = 1
-                x = X[1] |> real
-                y = X[2] |> real
-                z = X[3] |> real
-                psi_0 = CuArray(uu)
-                xspace!(psi_0, sim)
-                psi_0 = circshift(CuArray(psi_0), (shift, 0, 0)) 
-                kspace!(psi_0, sim)
-                @assert isapprox(nsk(psi_0, sim), 1.0, atol=1e-9)
-                @pack_Sim! sim
-            end
-        end
-
-        if isfile(save_path * "tile_dict.jld2")
-            @info "Loading Tiles library..."
-            tile_dict = JLD2.load(save_path * "tile_dict.jld2")
+        uu = JLD2.load(save_path * "gs_dict.jld2", hs(name, gamma))
+        # write the initial state into sim
+        # TODO write the method into prepare function
+        @info " ---> Writing ground state into sim..."
+        if length(sim.N) == 1
+            @unpack_Sim sim
+            x0 = L[1] / 4
+            shift = Int(x0 / L[1] * N[1])
+            iswitch = 1
+            x = X[1]
+            psi_0 = uu
+            xspace!(psi_0, sim)
+            psi_0 .= circshift(psi_0, shift)
+            kspace!(psi_0, sim)
+            @assert isapprox(nsk(psi_0, sim), 1.0, atol=1e-9)
+            @pack_Sim! sim
         else
-            @info "No Tiles library found! Saving an empty one..."
-            tile_dict = Dict()
-            JLD2.save(save_path * "tile_dict.jld2", gs_dict)
-        end
-        for (name, sim) in sd
-            @info "Tiling " name
-            if haskey(tile_dict, hs(name, gamma)) && use_precomputed_tiles
-                @info "Already found tile for " name, gamma
-            else
-                tile = get_tiles(sim, name)
-                push!(tile_dict, hs(name, gamma) => tile)
-                JLD2.save(save_path * "tile_dict.jld2", tile_dict)
-            end
+            @unpack_Sim sim
+            x0 = L[1] / 4
+            shift = Int(x0 / L[1] * N[1])
+            iswitch = 1
+            x = X[1] |> real
+            y = X[2] |> real
+            z = X[3] |> real
+            psi_0 = CuArray(uu)
+            xspace!(psi_0, sim)
+            psi_0 = circshift(CuArray(psi_0), (shift, 0, 0))
+            kspace!(psi_0, sim)
+            @assert isapprox(nsk(psi_0, sim), 1.0, atol=1e-9)
+            @pack_Sim! sim
         end
     end
+    return sd
 end
 
 function view_all_tiles()
@@ -277,7 +283,7 @@ function view_all_tiles()
     for (k, v) in td
         @info "found" ihs(k)
         ht = heatmap(v)
-        savefig(ht, "media/" * string(ihs(k)) *  "_tiles.pdf")
+        savefig(ht, "media/" * string(ihs(k)) * "_tiles.pdf")
         #  display(ht)
     end
 end

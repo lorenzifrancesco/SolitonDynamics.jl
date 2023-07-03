@@ -410,7 +410,13 @@ function load_parameters_collapse(
 end
 
 
-function load_parameters_alt(; vv::Float64 = 0.0, bb::Float64 = 0.0, gamma_param::Float64=0.6, Nsaves::Int64=200, eqs=["G1", "N", "Np", "G3"])
+function load_parameters_alt(
+    ; vv::Float64 = 0.0,
+    bb::Float64 = 0.0, 
+    gamma_param::Float64=0.6, 
+    Nsaves::Int64=200, 
+    eqs=["G1", "N", "Np", "G3"])
+
     sim_dictionary = Dict()
 
     maxiters_1d = 1e10
@@ -419,7 +425,7 @@ function load_parameters_alt(; vv::Float64 = 0.0, bb::Float64 = 0.0, gamma_param
     iswitch_all = -im
 
     max_vel = 1.0
-    N_axial_steps = 512
+    N_axial_steps = 1024
     abstol_all = 1e-6
     time_steps_all = 200
 
@@ -527,13 +533,6 @@ function load_parameters_alt(; vv::Float64 = 0.0, bb::Float64 = 0.0, gamma_param
     Nt = 30
     tf = 2.0
     t = LinRange(ti, tf, Nt)
-    if vv > max_vel/2
-        time_steps = 1000
-    elseif vv > max_vel/4
-        time_steps = 2500
-    else
-        time_steps = 4000
-    end
     dt = (tf-ti)/time_steps
 
     # specs for GS sim
@@ -636,7 +635,11 @@ function prepare_in_ground_state!(sim::Sim{3, CuArray{Complex{Float64}}})
     return sim
 end
 
-function imprint_vel_set_bar(sim::Sim{1, Array{Complex{Float64}}}; vv::Float64=0.0, bb::Float64=0.0, bw::Float64=0.5)
+function imprint_vel_set_bar(
+    sim::Sim{1, Array{Complex{Float64}}}; 
+    vv::Float64=0.0, 
+    bb::Float64=0.0,
+    bw::Float64=0.5)
     simc = deepcopy(sim)
     @unpack_Sim simc
     x = X[1] |> real
@@ -656,7 +659,11 @@ function imprint_vel_set_bar(sim::Sim{1, Array{Complex{Float64}}}; vv::Float64=0
     return simc
 end
 
-function imprint_vel_set_bar(sim::Sim{3, CuArray{Complex{Float64}}}; vv::Float64=0.0, bb::Float64=0.0, bw::Float64=0.5)
+function imprint_vel_set_bar(
+    sim::Sim{3, CuArray{Complex{Float64}}}; 
+    vv::Float64=0.0, 
+    bb::Float64=0.0, 
+    bw::Float64=0.5)
     simc = deepcopy(sim)
     @unpack_Sim simc
     x = X[1] |> real
