@@ -7,10 +7,10 @@
     - NB: the 0.15 case does not correspond. Only for $\gamma = 0.65$ we have correspondence.
  - [x] tiles for the dynamics
 [[dev_notes/tiles]]
-- [ ] Collapse 
+- [x] Collapse 
 [[dev_notes/collapse]]
  - Collapse for NPSE is consistent
- - Collapse for 3D GPE is not ready but single-shot simulations show it.
+ - Collapse for 3D GPE is measurable with density.
  - [ ] sigma 2
 [[dev_notes/sigma2]]
 ## June 2023: Major refactoring
