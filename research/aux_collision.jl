@@ -5,7 +5,7 @@ function collide()
     gamma = 0.65
     sd = load_parameters_alt(gamma_param=gamma)
     prepare_for_collision!(sd, gamma)
-    sim = sd["G1"]
+    sim = sd["G3"]
 
     imprint_vel_set_bar!(sim; vv=1.0, bb=1.0)
 

@@ -14,6 +14,7 @@ includet("../examples/plot_axial_evolution.jl")
 includet("../examples/plot_isosurfaces.jl")
 includet("visual_utils.jl")
 includet("init.jl")
+includet("sim_utils.jl")
 
 
 ```

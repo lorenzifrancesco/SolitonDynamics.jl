@@ -39,7 +39,6 @@ function sigma_eq(sigma, params)
   return f
 end
 
-# FIXME i'm very slow: vectorize me
 function estimate_sigma2(psi_k, sim::Sim{3,CuArray{ComplexF64}})
   s2 = Array{Float64,1}(undef, sim.N[1])
   # MSE estimator
@@ -51,15 +50,16 @@ function estimate_sigma2(psi_k, sim::Sim{3,CuArray{ComplexF64}})
   zax = 1:sim.N[3]
   tmp = zeros(sim.N[1])
   axial_density = sum(aa, dims=(2, 3))[:, 1, 1]
-  ymask = (sim.X[2] .^ 2) * ones(sim.N[2])'
-  zmask = ones(sim.N[3]) * (sim.X[3] .^ 2)'
+  ymask = (CuArray(sim.X[2]) .^ 2) * CuArray(ones(sim.N[2]))'
+  zmask = CuArray(ones(sim.N[3])) * (CuArray(sim.X[3]) .^ 2)'
   r2mask = ymask+zmask
+  display(sim.X[2])
   for x in xax
     if axial_density[x] < 1e-6
-      tmp[x] = aa[x, :, :] / axial_density[x]
-      @warn "found small prob"
+      tmp[x] = 1.0
+      # @warn "found small prob"
     else
-      tmp[x] = sum(aa[x, :, :] .* r2mask) * dx * dx
+      tmp[x] = 1 - sum(aa[x, :, :] .* r2mask) * dx * dx # FIXME
     end
   end
   s2 = tmp
