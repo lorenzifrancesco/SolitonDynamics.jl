@@ -12,7 +12,7 @@ function all_tiles(; use_precomputed_tiles=false)
 
     for gamma in gamma_list
         @info "==== Using gamma: " gamma
-        sd = load_parameters_alt(gamma_param=gamma)
+        sd = load_parameters_alt(gamma_param=gamma; nosaves=true)
         @info "Required simulations: " keys(sd)
 
         prepare_for_collision!(sd, gamma)
@@ -42,6 +42,7 @@ function get_tiles(
     sim::Sim{1,Array{Complex{Float64}}},
     name::String="noname";
     tiles=100)
+
     saveto = "../media/tiles_$(name).pdf"
     max_vel = 1
     max_bar = 1

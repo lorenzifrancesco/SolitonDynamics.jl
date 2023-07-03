@@ -414,8 +414,10 @@ function load_parameters_alt(
     ; vv::Float64 = 0.0,
     bb::Float64 = 0.0, 
     gamma_param::Float64=0.6, 
-    Nsaves::Int64=200, 
-    eqs=["G1", "N", "Np", "G3"])
+    Nsaves::Int64=200,
+    eqs=["G1", "N", "Np", "G3"],
+    nosaves=false,
+    )
 
     sim_dictionary = Dict()
 
@@ -454,7 +456,11 @@ function load_parameters_alt(
     alg = BS3()
 
     # will be overwritten
-    Nt = Nsaves
+    if nosaves
+      Nt = 2
+    else
+      Nt = Nsaves
+    end
     tf = 2.0
     t = LinRange(ti, tf, Nt)
     dt = dt_all
@@ -527,7 +533,11 @@ function load_parameters_alt(
     z = Array(X[3])
     dV= volume_element(L, N)    
     flags = FFTW.EXHAUSTIVE
-    Nt = 30
+    if nosaves
+      Nt = 1
+    else
+      Nt = 50
+    end
     tf = 2.0
     t = LinRange(ti, tf, Nt)
     dt = dt_all

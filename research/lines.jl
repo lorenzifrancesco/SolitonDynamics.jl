@@ -11,7 +11,7 @@ function all_lines(; use_precomputed_lines=false)
     for gamma in gamma_list
         @info "==== Using gamma: " gamma
     
-        sd = load_parameters_alt(gamma_param=gamma)
+        sd = load_parameters_alt(gamma_param=gamma; nosaves=true)
         @info "Required simulations: " keys(sd)
 
         prepare_for_collision!(sd, gamma)

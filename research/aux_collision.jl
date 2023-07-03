@@ -37,7 +37,7 @@ function collide()
             # @info "total_time " time_steps * dt # FIXME there is nothing we can do, but tf should not be present into the solver routine
             @pack_Sim! sim
 
-            @time sol = runsim(sim; info=false)
+            @time sol = runsim(sim; info=true)
             plot_axial_heatmap(sol.u, sim.t, sim; show=true, title="dt=$dt")
             # heatmap(abs2.(sol.u))
             # display(ht)
