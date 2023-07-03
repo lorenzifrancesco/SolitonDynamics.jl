@@ -380,7 +380,7 @@ function load_parameters_collapse(
     Nt = Nsaves
     tf = 2.0
     t = LinRange(ti, tf, Nt)
-    if vv > max_vel/2
+    if vv > max_vel/2 # FIXME this should be done later on
         time_steps = 1000
     elseif vv > max_vel/4
         time_steps = 2500
@@ -427,7 +427,7 @@ function load_parameters_alt(
     max_vel = 1.0
     N_axial_steps = 1024
     abstol_all = 1e-6
-    time_steps_all = 200
+    # time_steps_all = 200 do not fix it. Use a constant dt
 
     initial_width = 10
     Lx = 80.0
@@ -454,15 +454,13 @@ function load_parameters_alt(
     alg = BS3()
 
     # will be overwritten
-    time_steps = time_steps_all
     Nt = Nsaves
     tf = 2.0
     t = LinRange(ti, tf, Nt)
-    dt = (tf-ti)/time_steps
-
+    dt = dt_all
+    time_steps = Int(floor((tf-ti)/dt))
     # specs for GS sim
     maxiters = maxiters_1d
-    dt = dt_all
 
     # SPR condensate bright soliton t in units of omega_perp^-1
     analytical_gs = zeros(N)
@@ -529,15 +527,14 @@ function load_parameters_alt(
     z = Array(X[3])
     dV= volume_element(L, N)    
     flags = FFTW.EXHAUSTIVE
-    time_steps = time_steps_all
     Nt = 30
     tf = 2.0
     t = LinRange(ti, tf, Nt)
-    dt = (tf-ti)/time_steps
+    dt = dt_all
+    time_steps = Int(floor((tf-ti)/dt))
 
     # specs for GS sim
     maxiters = maxiters_3d
-    dt = dt_all
 
     tmp = [exp(-((x-x0)^2/initial_width + (y^2 + z^2)/2)) * exp(-im*(x-x0)*vv) for x in x, y in y, z in z]
     psi_0 = CuArray(tmp)
@@ -651,7 +648,10 @@ function imprint_vel_set_bar(
         tf = 2*x0/vv
     end
     t = LinRange(ti, tf, Nt)
-    dt = (tf-ti)/time_steps
+    time_steps = Int(floor((tf-ti)/dt))
+    if time_steps > 1000
+        @warn "time_steps > 1000"
+    end
     xspace!(psi_0, simc)
     @. psi_0 = abs(psi_0) * exp(-im*(x)*vv)
     kspace!(psi_0, simc)
@@ -663,7 +663,9 @@ function imprint_vel_set_bar(
     sim::Sim{3, CuArray{Complex{Float64}}}; 
     vv::Float64=0.0, 
     bb::Float64=0.0, 
-    bw::Float64=0.5)
+    bw::Float64=0.5
+    dt::Float64=0.05)
+
     simc = deepcopy(sim)
     @unpack_Sim simc
     x = X[1] |> real
@@ -677,7 +679,10 @@ function imprint_vel_set_bar(
         tf = 2*x0/vv
     end
     t = LinRange(ti, tf, Nt)
-    dt = (tf-ti)/time_steps
+    time_steps = Int(floor((tf-ti)/dt))
+    if time_steps > 1000
+        @warn "time_steps > 1000"
+    end
     xspace!(psi_0, simc)
     @. psi_0 = abs(psi_0) * exp(-im*(x)*vv)
     kspace!(psi_0, simc)
@@ -685,7 +690,13 @@ function imprint_vel_set_bar(
     return simc
 end
 
-function imprint_vel_set_bar!(sim::Sim{1, Array{Complex{Float64}}}; vv::Float64=0.0, bb::Float64=0.0, bw::Float64=0.5)
+function imprint_vel_set_bar!(
+    sim::Sim{1, Array{Complex{Float64}}}; 
+    vv::Float64=0.0, 
+    bb::Float64=0.0, 
+    bw::Float64=0.5
+    dt::Float64=0.05)
+
     @unpack_Sim sim
     x = X[1] |> real
     @. V0 = bb * exp(-(x/bw)^2 /2) # central barrier
@@ -696,7 +707,10 @@ function imprint_vel_set_bar!(sim::Sim{1, Array{Complex{Float64}}}; vv::Float64=
         tf = 2*x0/vv
     end
     t = LinRange(ti, tf, Nt)
-    dt = (tf-ti)/time_steps
+    time_steps = Int(floor((tf-ti)/dt))
+    if time_steps > 1000
+        @warn "time_steps > 1000"
+    end
     xspace!(psi_0, sim)
     @. psi_0 = abs(psi_0) * exp(-im*(x)*vv)
     kspace!(psi_0, sim)
@@ -704,7 +718,13 @@ function imprint_vel_set_bar!(sim::Sim{1, Array{Complex{Float64}}}; vv::Float64=
     return sim
 end
 
-function imprint_vel_set_bar!(sim::Sim{3, CuArray{Complex{Float64}}}; vv::Float64=0.0, bb::Float64=0.0, bw::Float64=0.5)
+function imprint_vel_set_bar!(
+    sim::Sim{3, CuArray{Complex{Float64}}}; 
+    vv::Float64=0.0, 
+    bb::Float64=0.0, 
+    bw::Float64=0.5
+    dt::Float64=0.05)
+
     @unpack_Sim sim
     x = X[1] |> real
     y = X[2] |> real
@@ -717,7 +737,10 @@ function imprint_vel_set_bar!(sim::Sim{3, CuArray{Complex{Float64}}}; vv::Float6
         tf = 2*x0/vv
     end
     t = LinRange(ti, tf, Nt)
-    dt = (tf-ti)/time_steps
+    time_steps = Int(floor((tf-ti)/dt))
+    if time_steps > 1000
+        @warn "time_steps > 1000"
+    end
     xspace!(psi_0, sim)
     @. psi_0 = abs(psi_0) * exp(-im*(x)*vv)
     kspace!(psi_0, sim)
