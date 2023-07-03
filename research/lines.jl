@@ -11,7 +11,7 @@ function all_lines(; use_precomputed_lines=false)
     for gamma in gamma_list
         @info "==== Using gamma: " gamma
     
-        sd = load_parameters_alt(gamma_param=gamma; nosaves=true)
+        sd = load_parameters_alt(gamma_param=gamma; eqs=["G1"], nosaves=true)
         @info "Required simulations: " keys(sd)
 
         prepare_for_collision!(sd, gamma)
@@ -33,9 +33,9 @@ function all_lines(; use_precomputed_lines=false)
                 line = get_lines(
                     sim, 
                     name; 
-                    lines=2,
+                    lines=3,
                     sweep="vel",
-                    points=50)
+                    points=100)
                 push!(line_dict, hs(name, gamma) => line)
                 JLD2.save(save_path * "line_dict.jld2", line_dict)
             end

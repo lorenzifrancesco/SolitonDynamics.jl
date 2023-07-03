@@ -534,7 +534,7 @@ function load_parameters_alt(
     dV= volume_element(L, N)    
     flags = FFTW.EXHAUSTIVE
     if nosaves
-      Nt = 1
+      Nt = 2
     else
       Nt = 50
     end

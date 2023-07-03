@@ -3,13 +3,13 @@ using ColorSchemes
 
 function collide()
     gamma = 0.65
-    sd = load_parameters_alt(gamma_param=gamma)
+    sd = load_parameters_alt(gamma_param=gamma; nosaves=true)
     prepare_for_collision!(sd, gamma)
     sim = sd["G3"]
 
     imprint_vel_set_bar!(sim; vv=1.0, bb=1.0)
 
-    nn = 10
+    nn = 30
     meas = []
     pal = palette([:red, :blue], nn)
     
@@ -27,7 +27,7 @@ function collide()
         @warn "chempot relative error" (chempotk(sol.u, gg) - true_min) / true_min
         push!(meas, chempotk(sol.u, gg))
     else
-        dt_range = LinRange(0.005, 0.5, nn)
+        dt_range = LinRange(0.001, 1, nn)
         for i in 1:nn
             @unpack_Sim sim
             dt = dt_range[i]
@@ -38,10 +38,10 @@ function collide()
             @pack_Sim! sim
 
             @time sol = runsim(sim; info=true)
-            plot_axial_heatmap(sol.u, sim.t, sim; show=true, title="dt=$dt")
+            # plot_axial_heatmap(sol.u, sim.t, sim; show=true, title="dt=$dt")
             # heatmap(abs2.(sol.u))
             # display(ht)
-            readline()
+            # readline()
 
             final = xspace(sol.u[end], sim)
             tran = ns(final, sim, mask_tran)
@@ -49,6 +49,7 @@ function collide()
             @info "T" tran
             @assert isapprox(tran+refl, 1.0, atol=1e-3)
             push!(meas, tran)
+            GC.gc()
         end
         p=plot(dt_range, meas, color=pal)
         display(p)
