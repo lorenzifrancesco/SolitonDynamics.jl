@@ -14,3 +14,5 @@ simulations on the cloud confirm that it is.
 How can we interpret the results of the 3D GPE and high nonlinearity?
 
 ##### Implement dynamic time_steps assignment for better quality tiles and lines
+- [x] question: how can i estimate the right time_steps? I should have an almost constant $dt$ for having a good description of the phyisics!
+- [ ] rewrite the normal time axis scheduling such that $dt$ is constant -> eventually warn if time_steps are too many.

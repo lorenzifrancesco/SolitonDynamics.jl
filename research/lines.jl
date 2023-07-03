@@ -6,12 +6,12 @@ function all_lines(; use_precomputed_lines=false)
     end
 
     save_path = "results/"
-    gamma_list = [0.65, 0.55, 0.4, 0.3, 0.15]
+    gamma_list = [0.55]
 
     for gamma in gamma_list
         @info "==== Using gamma: " gamma
     
-        sd = load_parameters_alt(gamma_param=gamma, eqs=["G1"])
+        sd = load_parameters_alt(gamma_param=gamma, eqs=["G3"])
         @info "Required simulations: " keys(sd)
 
         prepare_for_collision!(sd, gamma)
@@ -30,7 +30,12 @@ function all_lines(; use_precomputed_lines=false)
             if haskey(line_dict, hs(name, gamma)) && use_precomputed_lines
                 @info "Already found line for " name, gamma
             else
-                line = get_lines(sim, name)
+                line = get_lines(
+                    sim, 
+                    name; 
+                    lines=2,
+                    sweep="vel",
+                    points=30)
                 push!(line_dict, hs(name, gamma) => line)
                 JLD2.save(save_path * "line_dict.jld2", line_dict)
             end
@@ -76,6 +81,7 @@ function get_lines(
             for (ix, x) in enumerate(x_axis)
                 if sweep == "vel"
                     sgrid[iy, ix] = imprint_vel_set_bar(archetype; vv=x, bb=y)
+                    # TODO set time_steps dynamically
                 elseif sweep == "bar"
                     sgrid[iy, ix] = imprint_vel_set_bar(archetype; vv=y, bb=x)
                 end
@@ -88,10 +94,11 @@ function get_lines(
 
     @info "Running lining..."
     if sweep == "vel"
-        display("Bar\n|\n|\n|____Vel")
+        print("Bar\n|\n|\n|____Vel")
     elseif sweep == "bar"
-        display("Vel\n|\n|\n|____Bar")
+        print("Vel\n|\n|\n|____Bar")
     end
+
     avg_iteration_time = 0.0
     iter = Iterators.product(enumerate(y_axis), enumerate(x_axis))
     full_time = @elapsed for ((iy, y), (ix, x)) in ProgressBar(iter)
@@ -196,7 +203,6 @@ function get_lines(
         elseif sweep == "bar"
             imprint_vel_set_bar!(sim; vv=y, bb=x)
         end
-        @info "Computing line" (vv, bb)
         sol = nothing
         try
             avg_iteration_time += @elapsed sol = runsim(sim; info=false)
@@ -273,7 +279,7 @@ function view_all_lines(; sweep="vel")
         for iy in 1:size(v)[1]
             plot!(p, v[iy, :], label=string(iy))
         end
-        savefig(p, "media/" * string(ihs(k)) * "_lines.pdf")
+        savefig(p, "media/lines_" * string(ihs(k)) * ".pdf")
         #  display(p)
     end
 end

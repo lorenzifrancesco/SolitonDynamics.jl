@@ -283,7 +283,7 @@ function view_all_tiles()
     for (k, v) in td
         @info "found" ihs(k)
         ht = heatmap(v)
-        savefig(ht, "media/" * string(ihs(k)) * "_tiles.pdf")
+        savefig(ht, "media/tiles_" * string(ihs(k)) * ".pdf")
         #  display(ht)
     end
 end
