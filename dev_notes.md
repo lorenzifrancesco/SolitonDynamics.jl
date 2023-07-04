@@ -23,4 +23,6 @@ _NB: what equation are we actually simulating? We should [ ] write it down_
 - [x] Fix the tiles / launch a prototype computation on the cloud
 - [x] Launch the tiles simulations on the cloud
 > results: unusual behaviour of 3D GPE for $\gamma=0.65$. We should check more carefully the reult tile by tile.
-- [ ] collect all the parameters in a table (especially the barrier ones). 
+- [ ] collect all the parameters in a table (especially the barrier ones).
+##### Problem: prepare_for_collision prepares in ground state but from time to time normalization check fail
+

@@ -8,6 +8,8 @@ We need to obtain $\sigma^2$ for a single state (**ground state** or **collision
   - [x] compute an estimate via least squares (variance estimator).
   the estimate routine is extremely slow. Vectorize it in GPU.
 > the 3D case is difficult: the estimate seems not to be accurate due to the "sprayed values" at low axial probability.
-
+- [ ]  fix the 3D method: why is it at zero?
 
 #### Comparison script?
+we have a script for various values of the barrier. 
+- [ ] write a comparison line plotter

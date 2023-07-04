@@ -42,7 +42,7 @@ function all_ground_states(
     ;plus::Bool=false, 
     use_precomputed::Bool=true, 
     take_advantage::Bool=true,
-    saveplots::Bool=false,
+    saveplots::Bool=true,
     show_plots::Bool=true
     )
     pyplot(size=(1500, 800))
@@ -59,7 +59,7 @@ function all_ground_states(
         JLD2.save(join([save_path, "gs_dict.jld2"]), gs_dict)
     end
 
-    gamma_param_list = [0.15, 0.4, 0.65]
+    gamma_param_list = [0.0]
     @info "Starting simulations..."
     for gamma_param in gamma_param_list
         # update simulation parameters
@@ -229,9 +229,9 @@ function all_ground_states(
     return gs_dict
 end
 
-function get_ground_state(sim)
+function get_ground_state(sim; info=false)
     @assert sim.iswitch == -im
-    res = Array(runsim(sim; info=false).u)
+    res = Array(runsim(sim; info=info).u)
     @assert size(res) == sim.N
     return res
 end

@@ -44,6 +44,8 @@ function estimate_sigma2(psi_k, sim::Sim{3,CuArray{ComplexF64}})
   # MSE estimator
   psi = xspace(psi_k, sim)
   dx = sim.X[1][2] - sim.X[1][1]
+  dy = sim.X[2][2] - sim.X[2][1]
+  dz = sim.X[3][2] - sim.X[3][1]
   aa = abs2.(psi)
   xax = 1:sim.N[1]
   yax = 1:sim.N[2]
@@ -53,13 +55,12 @@ function estimate_sigma2(psi_k, sim::Sim{3,CuArray{ComplexF64}})
   ymask = (CuArray(sim.X[2]) .^ 2) * CuArray(ones(sim.N[2]))'
   zmask = CuArray(ones(sim.N[3])) * (CuArray(sim.X[3]) .^ 2)'
   r2mask = ymask+zmask
-  display(sim.X[2])
   for x in xax
-    if axial_density[x] < 1e-6
+    if axial_density[x] < 1e-300
       tmp[x] = 1.0
       # @warn "found small prob"
     else
-      tmp[x] = 1 - sum(aa[x, :, :] .* r2mask) * dx * dx # FIXME
+      tmp[x] = sum(aa[x, :, :] .* r2mask) / sum(aa[x, :, :])  # FIXME
     end
   end
   s2 = tmp

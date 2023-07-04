@@ -78,6 +78,64 @@ function prepare_in_ground_state!(sim::Sim{3, CuArray{Complex{Float64}}})
     return sim
 end
 
+function prepare_for_collision!(sd, gamma; use_precomputed_gs=true, info=false)
+    save_path = "results/"
+    # prepare ground states (saving them)
+    if isfile(save_path * "gs_dict.jld2")
+        @info "[Loading GS library...]"
+        gs_dict = JLD2.load(save_path * "gs_dict.jld2")
+    else
+        @info "No GS library found! Saving an empty one..."
+        gs_dict = Dict()
+        JLD2.save(save_path * "gs_dict.jld2", gs_dict)
+    end
+    # preparing all simulations for the tiling (as archetypes)
+    # automatic load as much as possible
+    for (name, sim) in sd
+        if haskey(gs_dict, hs(name, gamma)) && use_precomputed_gs
+            @info "---> Found in library item " (name, gamma)
+        else
+            @info "---> Computing item..." (name, gamma)
+            uu = get_ground_state(sim; info=info)
+            push!(gs_dict, hs(name, gamma) => uu)
+            JLD2.save(save_path * "gs_dict.jld2", gs_dict)
+        end
+        uu = JLD2.load(save_path * "gs_dict.jld2", hs(name, gamma))
+        # write the initial state into sim
+        @info " ---> Writing ground state into sim..."
+        if length(sim.N) == 1
+            @unpack_Sim sim
+            x0 = L[1] / 4
+            shift = Int(x0 / L[1] * N[1])
+            iswitch = 1
+            x = X[1]
+            psi_0 = uu
+            xspace!(psi_0, sim)
+            psi_0 .= circshift(psi_0, shift)
+            kspace!(psi_0, sim)
+            @assert isapprox(nsk(psi_0, sim), 1.0, atol=1e-9)
+            time_steps  = Int(ceil((tf-ti)/dt))
+            @pack_Sim! sim
+        else
+            @unpack_Sim sim
+            x0 = L[1] / 4
+            shift = Int(x0 / L[1] * N[1])
+            iswitch = 1
+            x = X[1] |> real
+            y = X[2] |> real
+            z = X[3] |> real
+            psi_0 = CuArray(uu)
+            xspace!(psi_0, sim)
+            psi_0 = circshift(CuArray(psi_0), (shift, 0, 0))
+            kspace!(psi_0, sim)
+            @assert isapprox(nsk(psi_0, sim), 1.0, atol=1e-9)
+            time_steps  = Int(ceil((tf-ti)/dt))
+            @pack_Sim! sim
+        end
+    end
+    return sd
+end
+
 function imprint_vel_set_bar(
     sim::Sim{1, Array{Complex{Float64}}}; 
     vv::Float64=0.0, 
@@ -222,61 +280,3 @@ function set_g!(sim::Sim{3, CuArray{Complex{Float64}}}, gamma_param::Float64=0.4
     return
 end
 
-function prepare_for_collision!(sd, gamma; use_precomputed_gs=true)
-    save_path = "results/"
-    # prepare ground states (saving them)
-    if isfile(save_path * "gs_dict.jld2")
-        @info "Loading GS library..."
-        gs_dict = JLD2.load(save_path * "gs_dict.jld2")
-    else
-        @info "No GS library found! Saving an empty one..."
-        gs_dict = Dict()
-        JLD2.save(save_path * "gs_dict.jld2", gs_dict)
-    end
-    # preparing all simulations for the tiling (as archetypes)
-    # automatic load as much as possible
-    for (name, sim) in sd
-        if haskey(gs_dict, hs(name, gamma)) && use_precomputed_gs
-            @info "Found in library item " (name, gamma)
-        else
-            @info "Computing item " (name, gamma)
-            uu = get_ground_state(sim)
-            push!(gs_dict, hs(name, gamma) => uu)
-            JLD2.save(save_path * "gs_dict.jld2", gs_dict)
-        end
-        uu = JLD2.load(save_path * "gs_dict.jld2", hs(name, gamma))
-        
-        # write the initial state into sim
-        @info " ---> Writing ground state into sim..."
-        if length(sim.N) == 1
-            @unpack_Sim sim
-            x0 = L[1] / 4
-            shift = Int(x0 / L[1] * N[1])
-            iswitch = 1
-            x = X[1]
-            psi_0 = uu
-            xspace!(psi_0, sim)
-            psi_0 .= circshift(psi_0, shift)
-            kspace!(psi_0, sim)
-            @assert isapprox(nsk(psi_0, sim), 1.0, atol=1e-9)
-            time_steps  = Int(ceil((tf-ti)/dt))
-            @pack_Sim! sim
-        else
-            @unpack_Sim sim
-            x0 = L[1] / 4
-            shift = Int(x0 / L[1] * N[1])
-            iswitch = 1
-            x = X[1] |> real
-            y = X[2] |> real
-            z = X[3] |> real
-            psi_0 = CuArray(uu)
-            xspace!(psi_0, sim)
-            psi_0 = circshift(CuArray(psi_0), (shift, 0, 0))
-            kspace!(psi_0, sim)
-            @assert isapprox(nsk(psi_0, sim), 1.0, atol=1e-9)
-            time_steps  = Int(ceil((tf-ti)/dt))
-            @pack_Sim! sim
-        end
-    end
-    return sd
-end

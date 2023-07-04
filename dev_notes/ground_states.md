@@ -16,7 +16,7 @@ And we don't know why. Using GC.gc() helps but cost too much time.
 Almost ok, but needs to be tested before the armageddon-like simulations.
 
 #### TODO
-- [ ] 1D ground state convergence (rinuncio)
+- [x] 1D ground state convergence (rinuncio)
 - [ ] Fix automatic ground state (wish)
 - [ ] Fix CrankNicholson ground state (wish)
 
@@ -108,3 +108,8 @@ This could suggest us the reason behind the difference between the analytical an
 It may be the same problem or not.
 
 - [ ] check for a quick fix.
+
+## This is a problem even for the transverse solution of the 3D GPE. Imprecision of a few percents...
+- [ ] debug it! 
+
+MWE

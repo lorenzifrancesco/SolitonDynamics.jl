@@ -423,11 +423,11 @@ function load_parameters_alt(
 
     maxiters_1d = 1e10
     maxiters_3d = 1e10
-    dt_all = 0.05 # changed
+    dt_all = 0.1 # changed
     iswitch_all = -im
 
     max_vel = 1.0
-    N_axial_steps = 1024
+    N_axial_steps = 16000
     abstol_all = 1e-6
     # time_steps_all = 200 do not fix it. Use a constant dt
 

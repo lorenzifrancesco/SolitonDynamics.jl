@@ -42,7 +42,7 @@ function isosurface(sol)
     return
 end
 
-function show_slice(slice_position::Float64, psi, sim::Sim{3, CuArray{Complex{Float64}}}; file="slice.png", display=false)
+function show_slice(slice_position::Float64, psi, sim::Sim{3, CuArray{Complex{Float64}}}; file="slice.png", show=false)
     @unpack L, X, N = sim
     psi = Array(xspace(psi, sim))
     x = X[1] |> real
@@ -53,11 +53,11 @@ function show_slice(slice_position::Float64, psi, sim::Sim{3, CuArray{Complex{Fl
     z = X[3] |> real
     saveto=joinpath("media",file)
     ht = heatmap(y, z, abs2.(psi[idx,:,:]))
-    display ? display(ht) : nothing
+    show ? display(ht) : nothing
     return ht
 end
 
-function show_profile(slice_position::Float64, psi, sim::Sim{3, CuArray{Complex{Float64}}}; file="profile.png", display=false)
+function show_profile(slice_position::Float64, psi, sim::Sim{3, CuArray{Complex{Float64}}}; file="profile.png", show=false)
     @unpack L, X, N = sim
     psi = Array(xspace(psi, sim))
     y = X[2] |> real
@@ -68,7 +68,7 @@ function show_profile(slice_position::Float64, psi, sim::Sim{3, CuArray{Complex{
     z = X[3] |> real
     saveto=joinpath("media",file)
     ht = heatmap(x, z, abs2.(psi[:,idy,:])', aspectratio=:equal)
-    display ? display(ht) : nothing
+    show ? display(ht) : nothing
     return ht
 end
 
