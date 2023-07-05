@@ -423,12 +423,12 @@ function load_parameters_alt(
 
     maxiters_1d = 1e10
     maxiters_3d = 1e10
-    dt_all = 0.001 # important for the prepare_for_collision function, then overwritten in imprint_vel_set_bar
+    dt_all = 0.0005 # important for the prepare_for_collision function, then overwritten in imprint_vel_set_bar
     iswitch_all = -im
 
     max_vel = 1.0
-    N_axial_steps = 512
-    abstol_all = 1e-6
+    N_axial_steps = 1024
+    abstol_all = 7e-8
     # time_steps_all = 200 do not fix it. Use a constant dt
 
     initial_width = 10

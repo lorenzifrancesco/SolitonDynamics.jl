@@ -228,7 +228,8 @@ function view_all_tiles()
     td = load(tile_file)
     for (k, v) in td
         @info "found" ihs(k)
-        ht = heatmap(v)
+        axis = LinRange(0.0, 1.0, size(v)[1])
+        ht = contour(axis, axis, v, clabels=true, xlabel="v", ylabel="b")
         savefig(ht, "media/tiles_" * string(ihs(k)) * ".pdf")
         #  display(ht)
     end

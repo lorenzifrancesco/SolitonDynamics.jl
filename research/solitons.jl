@@ -45,8 +45,9 @@ function all_ground_states(
     saveplots::Bool=true,
     show_plots::Bool=true
     )
-    pyplot(size=(1500, 800))
+    # pyplot(size=(1500, 800))
     sd = load_parameters_alt()
+
     @assert all([s.iswitch for s in values(sd)] .== -im)
     save_path = "results/"
 
@@ -59,7 +60,7 @@ function all_ground_states(
         JLD2.save(join([save_path, "gs_dict.jld2"]), gs_dict)
     end
 
-    gamma_param_list = [0.55]
+    gamma_param_list = [0.65]
     @info "Starting simulations..."
     for gamma_param in gamma_param_list
         # update simulation parameters
@@ -68,6 +69,10 @@ function all_ground_states(
         sim_npse = sd["N"]
         sim_npse_plus = sd["Np"]
         sim_gpe_3d = sd["G3"]
+        @assert sim_gpe_1d.abstol    <= 1e-7
+        @assert sim_npse.abstol      <= 1e-7
+        @assert sim_npse_plus.abstol <= 1e-7
+        @assert sim_gpe_3d.abstol    <= 1e-7
         @warn "Computing for g = " sim_gpe_1d.g
         # =========================================================
         Plots.CURRENT_PLOT.nullableplot = nothing
@@ -174,13 +179,11 @@ function all_ground_states(
             sim_gpe_3d.psi_0 .= sim_gpe_3d.psi_0 / sqrt(sum(abs2.(sim_gpe_3d.psi_0) * sim_gpe_3d.dV)) #this may be responsible for the strange behaviour
             initial_3d = copy(sim_gpe_3d.psi_0)
             kspace!(sim_gpe_3d.psi_0, sim_gpe_3d)
-            pp = plot(x, axial_imprint(x), label="dovrebbe")
-            plot!(pp, x, sum(abs2.(xspace(sim_gpe_3d.psi_0, sim_gpe_3d)), dims=(2, 3))[:, 1, 1] * (real(y[2]-y[1])^2), label="è")
-            display(pp)
-            @warn sum(abs2.(axial_imprint.(x))) * (x[2]-x[1]) # FIXME (i'm off by 3/1000)
+            # pp = plot(x, axial_imprint(x), label="dovrebbe")
+            # plot!(pp, x, sum(abs2.(xspace(sim_gpe_3d.psi_0, sim_gpe_3d)), dims=(2, 3))[:, 1, 1] * (real(y[2]-y[1])^2), label="è")
+            # display(pp)
+            # @warn sum(abs2.(axial_imprint.(x))) * (x[2]-x[1]) # FIXME (i'm off by 3/1000)
         end
-
-        @assert false
 
         if haskey(gs_dict, hs("G3", gamma_param))
             if use_precomputed
@@ -226,7 +229,7 @@ function all_ground_states(
         if show_plots
             display(p)
         end
-        savefig(p, "media/" * string(gamma_param) *  "_ground_states.pdf")
+        saveplots ? savefig(p, "media/" * string(gamma_param) *  "_ground_states.pdf") : nothing
         
         # focus on particular view
         # display and save

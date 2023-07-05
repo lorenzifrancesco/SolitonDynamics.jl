@@ -1,7 +1,7 @@
 using ColorSchemes
 
 function gs_sigma2()
-  gamma_list = [0.55]
+  gamma_list = [0.65]
   for gamma in gamma_list
     sd = load_parameters_alt(gamma_param=gamma)
     prepare_for_collision!(sd, gamma; use_precomputed_gs=true, info=true)
@@ -13,8 +13,9 @@ function gs_sigma2()
       pal = [:red]
     end
     i = 1
+    p = plot()
     for (k, v) in sd
-      plot_axial_density(v.psi_0, v; show=true)
+      plot_final_density!(p, [v.psi_0], v; show=true)
       est = estimate_sigma2(v.psi_0, v)
       plot!(p, real(v.X[1]), est, color=pal[i], label=k)
       # mid = Int(round(v.N[1]/2))
