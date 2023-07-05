@@ -1,23 +1,30 @@
 using ColorSchemes
 
+# use the 512 version (long run)
 function gs_sigma2()
-  gamma_list = [0.65]
+  gamma_list = [0.55]
   for gamma in gamma_list
     sd = load_parameters_alt(gamma_param=gamma)
     prepare_for_collision!(sd, gamma; use_precomputed_gs=true, info=true)
 
     p=plot(title="gamma=$(gamma)")
     if length(sd)>1
-      pal = palette([:red, :blue], length(sd))
+      pal = palette([:blue, :red], length(sd))
+      pal = [:blue, :red, :grey, :black]
+      @assert length(sd) == 4
+      lines = [:dash, :solid, :solid, :dot]
+      labels = ["NPSE+", "3D-GPE", "1D-GPE", "NPSE"]
     else
       pal = [:red]
     end
     i = 1
     p = plot()
     for (k, v) in sd
-      plot_final_density!(p, [v.psi_0], v; show=true)
+      # plot_final_density!(p, [v.psi_0], v; show=true)
       est = estimate_sigma2(v.psi_0, v)
-      plot!(p, real(v.X[1]), est, color=pal[i], label=k)
+      plot!(p, real(v.X[1]), circshift(est, Int(ceil(-512/4))), color=pal[i], linestyle=lines[i], label=labels[i])
+      plot!(p, xlims=(-10, 10), ylims=(0.78, 1.02))
+      plot!(grid=false)
       # mid = Int(round(v.N[1]/2))
       # mid_tran = Int(round(v.N[2]/2))
       # pp = xspace(v.psi_0, v)
@@ -36,5 +43,6 @@ function gs_sigma2()
       i +=1
     end
     display(p)
+    savefig(p, "media/sigma2_"* string(gamma) *".pdf")
   end
 end

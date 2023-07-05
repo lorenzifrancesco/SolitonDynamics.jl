@@ -60,7 +60,7 @@ function all_ground_states(
         JLD2.save(join([save_path, "gs_dict.jld2"]), gs_dict)
     end
 
-    gamma_param_list = [0.65]
+    gamma_param_list = [0.55]
     @info "Starting simulations..."
     for gamma_param in gamma_param_list
         # update simulation parameters

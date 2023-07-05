@@ -427,8 +427,11 @@ function load_parameters_alt(
     iswitch_all = -im
 
     max_vel = 1.0
-    N_axial_steps = 1024
-    abstol_all = 7e-8
+    ####
+    #### match it to the gs 
+    ####
+    N_axial_steps = 512
+    abstol_all = 9.9e-8
     # time_steps_all = 200 do not fix it. Use a constant dt
 
     initial_width = 10

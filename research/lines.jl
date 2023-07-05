@@ -11,7 +11,8 @@ function all_lines(; use_precomputed_lines=false)
   for gamma in gamma_list
     @info "==== Using gamma: " gamma
 
-    sd = load_parameters_alt(gamma_param=gamma; eqs=["G1"], nosaves=true)
+    sd = load_parameters_alt(gamma_param=gamma; eqs=["N"], nosaves=false)
+
     @info "Required simulations: " keys(sd)
 
     prepare_for_collision!(sd, gamma)
@@ -30,18 +31,21 @@ function all_lines(; use_precomputed_lines=false)
       if haskey(line_dict, hs(name, gamma)) && use_precomputed_lines
         @info "Already found line for " name, gamma
       else
+        # launch the line methods
         line = get_lines(
           sim,
           name;
-          lines=3,
+          lines=2,
           sweep="vel",
           points=100)
+
         push!(line_dict, hs(name, gamma) => line)
         JLD2.save(save_path * "line_dict.jld2", line_dict)
       end
     end
   end
 end
+
 
 # TODO: extremely slow velocities are not even interesting
 function get_lines(
@@ -52,27 +56,28 @@ function get_lines(
   points=100
 )
 
-
   saveto = "../media/lines_$(name).pdf"
-  max_vel = 1
-  max_bar = 1
+  max_vel = evel(2)
+  max_bar = ebar(2)
   #
   # asymmetric matrix: 
   @assert sweep in ["vel", "bar"]
   if sweep == "vel"
-    vel_list = LinRange(0.1, max_vel, points)
-    bar_list = LinRange(0.1, max_bar, lines) # FIXME find a better way to do this 0.1->1.0
+    vel_list = LinRange(evel(1), max_vel, points)
+    bar_list = LinRange(ebar(1), max_bar, lines)
     x_axis = vel_list
     y_axis = bar_list
   elseif sweep == "bar"
-    vel_list = LinRange(0.1, max_vel, lines)
-    bar_list = LinRange(0.1, max_bar, points)
+    vel_list = LinRange(evel(1), max_vel, lines)
+    bar_list = LinRange(ebar(1), max_bar, points)
     x_axis = bar_list
     y_axis = vel_list
   end
   tran = Array{Float64,2}(undef, (lines, points))
   refl = Array{Float64,2}(undef, (lines, points))
 
+  @warn x_axis
+  @warn y_axis
   @info "Filling sim grid..."
   sgrid = Array{Sim,2}(undef, (lines, points))
   archetype = sim
@@ -89,6 +94,7 @@ function get_lines(
       end
     end
   end
+
   # all sims have the same x
   mask_refl = map(xx -> xx > 0, sgrid[1, 1].X[1] |> real)
   mask_tran = map(xx -> xx < 0, sgrid[1, 1].X[1] |> real)
@@ -107,7 +113,7 @@ function get_lines(
     collapse_occured = false
     sol = nothing
     try
-      avg_iteration_time += @elapsed sol = runsim(sim; info=false)
+      avg_iteration_time += @elapsed sol = runsim(sim; info=true)
     catch err
       if isa(err, NpseCollapse) || isa(err, Gpe3DCollapse)
         collapse_occured = true
@@ -157,6 +163,7 @@ function get_lines(
   return tran
 end
 
+
 """
 in the 3D case we do not have sufficient GPU mem, so we go serially
 """
@@ -168,19 +175,19 @@ function get_lines(
   points=100
 )
   saveto = "../media/lines_$(name).pdf"
-  max_vel = 1
-  max_bar = 1
+  max_vel = evel(2)
+  max_bar = ebar(2)
   #
   # asymmetric matrix: 
   @assert sweep in ["vel", "bar"]
   if sweep == "vel"
-    vel_list = LinRange(0.1, max_vel, points)
-    bar_list = LinRange(0.1, max_bar, lines) # FIXME find a better way to do this 0.1->1.0
+    vel_list = LinRange(evel(1), max_vel, points)
+    bar_list = LinRange(ebar(1), max_bar, lines) # FIXME find a better way to do this 0.1->1.0
     x_axis = vel_list
     y_axis = bar_list
   elseif sweep == "bar"
-    vel_list = LinRange(0.1, max_vel, lines)
-    bar_list = LinRange(0.1, max_bar, points)
+    vel_list = LinRange(evel(1), max_vel, lines)
+    bar_list = LinRange(ebar(1), max_bar, points)
     x_axis = bar_list
     y_axis = vel_list
   end
@@ -273,32 +280,51 @@ function view_all_lines(; sweep="vel")
     @info "found" ihs(k)
     @warn "check the size"
     if sweep == "vel"
-      p = plot(xlabel="velocity", ylabel="barrier", title=ihs(k))
+      p = plot(xlabel="velocity", ylabel="T", title=ihs(k))
+      x = LinRange(evel(1), evel(2), length(v[1, :]))
+      y = LinRange(ebar(1), ebar(2), length(v[:, 1]))
     elseif sweep == "bar"
-      p = plot(xlabel="barrier", ylabel="velocity", title=ihs(k))
+      p = plot(xlabel="barrier", ylabel="T", title=ihs(k))
+      x = LinRange(ebar(1), ebar(2), length(v[1, :]))
+      y = LinRange(evel(1), evel(2), length(v[:, 1]))
     end
     for iy in 1:size(v)[1]
-      plot!(p, v[iy, :], label=string(iy))
+      plot!(p, collect(x), v[iy, :], label=string(iy))
     end
     savefig(p, "media/lines_" * string(ihs(k)) * ".pdf")
     #  display(p)
   end
 end
 
-function view_compare_all_lines_(index=1; sweep="vel")
+function compare_all_lines(; sweep="vel")
   line_file = "results/line_dict.jld2"
   @assert isfile(line_file)
   ld = load(line_file)
-  p = plot()
   if sweep == "vel"
-    plot!(p, xlabel="velocity", ylabel="barrier", title=ihs(k))
+    p = plot(xlabel="velocity", ylabel="T", title=ihs(k))
+    x = LinRange(evel(1), evel(2), length(v[1, :]))
+    y = LinRange(ebar(1), ebar(2), length(v[:, 1]))
   elseif sweep == "bar"
-    plot!(p, xlabel="barrier", ylabel="velocity", title=ihs(k))
+    p = plot(xlabel="barrier", ylabel="T", title=ihs(k))
+    x = LinRange(ebar(1), ebar(2), length(v[1, :]))
+    y = LinRange(evel(1), evel(2), length(v[:, 1]))
   end
+  
   for (k, v) in ld
-    @info "inserting " ihs(k)
-    plot!(p, v[index, :], label=string(iy))
-    #  display(p)
+    @info "found" ihs(k)
+    choice = 1
+    for iy in 1:size(v)[1]
+      plot!(p, collect(x), v[choice, :])
+    end
   end
-  savefig(p, "media/lines_" * string(ihs(k)) * ".pdf")
+  savefig(p, "media/compare_lines.pdf")
+end
+
+function ebar(i)
+  extremes = [0.1, 1.0]
+  return extremes[i]
+end
+function evel(i)
+  extremes = [0.15, 0.3]
+  return extremes[i]
 end
