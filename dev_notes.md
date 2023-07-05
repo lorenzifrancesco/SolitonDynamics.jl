@@ -17,6 +17,8 @@
 We changed radically the workflow, using scripts as standalone units in which we import CondensateDynamics
 _NB: what equation are we actually simulating? We should [ ] write it down_
 
+**NB: FFTW maps an array of $N$ elements (spacing: $1$) to a frequency range of max frequency $(N-1)/N$ spaced by 1/N**.
+Check docs http://www.fftw.org/fftw3_doc/The-1d-Discrete-Fourier-Transform-_0028DFT_0029.html.
 ## July 2023: Finalization
 ### 30/06->2/07
 - [ ] Obtain the plots with ground states and with the zooms
@@ -26,3 +28,11 @@ _NB: what equation are we actually simulating? We should [ ] write it down_
 - [ ] collect all the parameters in a table (especially the barrier ones).
 ##### Problem: prepare_for_collision prepares in ground state but from time to time normalization check fail
 
+##### Old imprecision problem: it gets solved by using a finer $dt$
+--> 3D long simulation confirms that.s
+
+
+##### 5/07
+- [ ] obtain sigma2
+- [ ] obtain lines (check for 3D collapse for high $\gamma$)
+- [ ] understand and fix $dk$

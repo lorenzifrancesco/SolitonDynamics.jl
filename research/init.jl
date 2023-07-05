@@ -279,7 +279,7 @@ function load_parameters_collapse(
     iswitch_all = -im
 
     max_vel = 1.0
-    N_axial_steps = 1024
+    N_axial_steps = 128
     abstol_all = 1e-3
     Lx = 60.0
     # =========================================================
@@ -413,7 +413,7 @@ end
 function load_parameters_alt(
     ; vv::Float64 = 0.0,
     bb::Float64 = 0.0, 
-    gamma_param::Float64=0.6, 
+    gamma_param::Float64=0.6,
     Nsaves::Int64=200,
     eqs=["G1", "N", "Np", "G3"],
     nosaves=false,
@@ -423,11 +423,11 @@ function load_parameters_alt(
 
     maxiters_1d = 1e10
     maxiters_3d = 1e10
-    dt_all = 0.1 # changed
+    dt_all = 0.001 # important for the prepare_for_collision function, then overwritten in imprint_vel_set_bar
     iswitch_all = -im
 
     max_vel = 1.0
-    N_axial_steps = 16000
+    N_axial_steps = 512
     abstol_all = 1e-6
     # time_steps_all = 200 do not fix it. Use a constant dt
 

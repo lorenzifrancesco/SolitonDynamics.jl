@@ -23,7 +23,7 @@ function kvec(L,N)
     # @assert iseven(N)
     # nk = 0:Int(N/2)
     # k = [nk[1:end-1];-reverse(nk[2:end])]*2*π/λ
-    k = fftfreq(N)*N*2*π/L * (N-1)/N
+    k = fftfreq(N)*N*2*π/L 
     return k
 end
 

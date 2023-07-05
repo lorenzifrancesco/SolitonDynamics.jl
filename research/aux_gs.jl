@@ -10,8 +10,9 @@ function go()
     x = X[1] |> real
     solver = SplitStep
     # psi_0 .= gpe_analytical.(x, gamma; x0=gg.L[1] / 4)
-    V0 = [1/2*(x^2) for x in x] 
-    @. psi_0 = exp(-(x.^2)/2)/sqrt(pi)
+    width = 1.0
+    @. V0 = 1/(2*width)*(x^2) 
+    @. psi_0 = exp(-(x^2)/(2*width))/sqrt(pi)
     psi_0 /= sqrt(ns(psi_0, gg))
     kspace!(psi_0, gg)
     @pack_Sim! gg
@@ -28,12 +29,14 @@ function go()
 
     if true
         @unpack_Sim gg
-        dt = 0.01
-        abstol = 1e-10
-        reltol = 1e-10
+        dt = 0.00001
+        abstol = 1e-6
+        reltol = 1e-6
         @pack_Sim! gg
         sol = runsim(gg; info=true)
-        plot!(p, x, abs2.(xspace(sol.u, gg)), color=pal[1])
+        plot!(p, x, abs2.(xspace(sol.u, gg)), color=pal[1], label="calculated")
+        @warn maximum(abs2.(xspace(sol.u, gg)))-maximum(abs2.(xspace(gg.psi_0, gg)))
+        @warn maximum(abs2.(sol.u))-maximum(abs2.(gg.psi_0))
         # @warn "chempot relative error" (chempotk(sol.u, gg) - true_min) / true_min
         # push!(meas, chempotk(sol.u, gg))
     else

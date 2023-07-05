@@ -59,7 +59,7 @@ function all_ground_states(
         JLD2.save(join([save_path, "gs_dict.jld2"]), gs_dict)
     end
 
-    gamma_param_list = [0.0]
+    gamma_param_list = [0.55]
     @info "Starting simulations..."
     for gamma_param in gamma_param_list
         # update simulation parameters
@@ -174,7 +174,14 @@ function all_ground_states(
             sim_gpe_3d.psi_0 .= sim_gpe_3d.psi_0 / sqrt(sum(abs2.(sim_gpe_3d.psi_0) * sim_gpe_3d.dV)) #this may be responsible for the strange behaviour
             initial_3d = copy(sim_gpe_3d.psi_0)
             kspace!(sim_gpe_3d.psi_0, sim_gpe_3d)
+            pp = plot(x, axial_imprint(x), label="dovrebbe")
+            plot!(pp, x, sum(abs2.(xspace(sim_gpe_3d.psi_0, sim_gpe_3d)), dims=(2, 3))[:, 1, 1] * (real(y[2]-y[1])^2), label="è")
+            display(pp)
+            @warn sum(abs2.(axial_imprint.(x))) * (x[2]-x[1]) # FIXME (i'm off by 3/1000)
         end
+
+        @assert false
+
         if haskey(gs_dict, hs("G3", gamma_param))
             if use_precomputed
                 @info "\t using precomputed solution G3"
