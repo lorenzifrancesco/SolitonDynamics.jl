@@ -11,7 +11,7 @@ function all_lines(; use_precomputed_lines=false)
   for gamma in gamma_list
     @info "==== Using gamma: " gamma
 
-    sd = load_parameters_alt(gamma_param=gamma; eqs=["N"], nosaves=false)
+    sd = load_parameters_alt(gamma_param=gamma; eqs=["Np", "G3"], nosaves=true)
 
     @info "Required simulations: " keys(sd)
 
@@ -300,22 +300,26 @@ function compare_all_lines(; sweep="vel")
   line_file = "results/line_dict.jld2"
   @assert isfile(line_file)
   ld = load(line_file)
+  @info typeof(collect(values((ld)))[1])
+  example = collect(values(ld))[1]
   if sweep == "vel"
-    p = plot(xlabel="velocity", ylabel="T", title=ihs(k))
-    x = LinRange(evel(1), evel(2), length(v[1, :]))
-    y = LinRange(ebar(1), ebar(2), length(v[:, 1]))
+    p = plot(xlabel="velocity", ylabel="T")
+    x = LinRange(evel(1), evel(2), length(example[1, :]))
   elseif sweep == "bar"
-    p = plot(xlabel="barrier", ylabel="T", title=ihs(k))
-    x = LinRange(ebar(1), ebar(2), length(v[1, :]))
-    y = LinRange(evel(1), evel(2), length(v[:, 1]))
+    p = plot(xlabel="barrier", ylabel="T")
+    x = LinRange(ebar(1), ebar(2), length(example[1, :]))
   end
-  
+
+  lines = beauty_lines()
+  labels = beauty_tiles()
+  cnt = 1
   for (k, v) in ld
     @info "found" ihs(k)
     choice = 1
     for iy in 1:size(v)[1]
-      plot!(p, collect(x), v[choice, :])
+      plot!(p, collect(x), v[choice, :], linestyle=lines[cnt], label=labels[cnt])
     end
+    cnt +=  1
   end
   savefig(p, "media/compare_lines.pdf")
 end

@@ -12,8 +12,8 @@ function gs_sigma2()
       pal = palette([:blue, :red], length(sd))
       pal = [:blue, :red, :grey, :black]
       @assert length(sd) == 4
-      lines = [:dash, :solid, :solid, :dot]
-      labels = ["NPSE+", "3D-GPE", "1D-GPE", "NPSE"]
+      lines = beauty_lines()
+      labels = beauty_labels()
     else
       pal = [:red]
     end

@@ -99,9 +99,8 @@ function all_ground_states(
             push!(gs_dict, hs("G1", gamma_param) => sol.u)
         end
         gpe_1d = gs_dict[hs("G1", gamma_param)]
-        plot_final_density!(p, [gpe_1d], sim_gpe_1d; label="GPE_1D", color=:blue, ls=:dash)
+        plot_final_density!(p, [gpe_1d], sim_gpe_1d; laabel="GPE_1D", color=:blue, ls=:dash)
         JLD2.save(join([save_path, "gs_dict.jld2"]), gs_dict)
-
 
         # == NPSE =======================================================
         # estimate width
@@ -126,7 +125,6 @@ function all_ground_states(
         npse = gs_dict[hs("N", gamma_param)]
         plot_final_density!(p, [npse], sim_npse; label="NPSE", color=:green, ls=:dot)
         JLD2.save(join([save_path, "gs_dict.jld2"]), gs_dict)
-
 
         # == NPSE plus =======================================================
         if take_advantage
