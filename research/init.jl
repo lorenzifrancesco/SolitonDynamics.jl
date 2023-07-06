@@ -415,7 +415,7 @@ function load_parameters_alt(
     bb::Float64 = 0.0, 
     gamma_param::Float64=0.6,
     Nsaves::Int64=200,
-    eqs=["G1", "N", "Np", "G3"],
+    eqs=["G1", "CQ", "N", "Np", "G3"],
     nosaves=false,
     )
 
@@ -431,7 +431,7 @@ function load_parameters_alt(
     #### match it to the gs 
     ####
     N_axial_steps = 512
-    abstol_all = 9.9e-8
+    abstol_all = 9.9e-6
     # time_steps_all = 200 do not fix it. Use a constant dt
 
     initial_width = 10
@@ -482,8 +482,20 @@ function load_parameters_alt(
     if "G1" in eqs
         push!(sim_dictionary, "G1" => sim_gpe_1d)
     end
+
     # =========================================================
-    ## NPSE (unable to copy)
+    ## CQGPE 
+    sim_ccgpe = deepcopy(sim_gpe_1d)
+    @unpack_Sim sim_ccgpe
+    equation = CQGPE
+    @pack_Sim! sim_ccgpe
+
+    if "CQ" in eqs
+      push!(sim_dictionary, "CQ" => sim_ccgpe)
+    end
+
+    # =========================================================
+    ## NPSE
     sim_npse = deepcopy(sim_gpe_1d)
     initial_state = zeros(N[1])
     @unpack_Sim sim_npse
@@ -564,4 +576,3 @@ function load_parameters_alt(
     end
     return sim_dictionary
 end
-

@@ -1,6 +1,6 @@
 JULIA_CUDA_SOFT_MEMORY_LIMIT = "95%"
 
-function all_tiles(; use_precomputed_tiles=false)
+function tiles(; use_precomputed_tiles=false)
     if Threads.nthreads() == 1
         @warn "running in single thread mode!"
     else

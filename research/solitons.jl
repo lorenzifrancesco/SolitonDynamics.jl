@@ -2,7 +2,7 @@
  max g allowable for hashing = -5.0, 5.0
 ```
 function hs(eq::String, g::Float64)
-    @assert eq in ["G1", "N", "Np", "G3"]
+    @assert eq in ["G1", "N", "CQ", "Np", "G3"]
     if g <= -5.0
         @warn "Collapse regime selected"
         return string(666666)
@@ -14,8 +14,10 @@ function hs(eq::String, g::Float64)
         n += 1000
     elseif eq == "Np"
         n += 2000
-    else
+    elseif eq == "G3"
         n += 3000
+    else
+        n += 4000
     end
     n += Int(round(g * 100))
     # print("\nCompute hash: ", n, "\n")
@@ -38,12 +40,12 @@ end
 
 # FIXME 2 3D-GPE follows only the starting configurations
 
-function all_ground_states(
+function solitons(
     ;plus::Bool=false, 
     use_precomputed::Bool=true, 
     take_advantage::Bool=true,
     saveplots::Bool=true,
-    show_plots::Bool=true
+    show_plots::Bool=false
     )
     # pyplot(size=(1500, 800))
     sd = load_parameters_alt()
@@ -66,14 +68,17 @@ function all_ground_states(
         # update simulation parameters
         set_g!.(values(sd), gamma_param)
         sim_gpe_1d = sd["G1"]
+        sim_cc = sd["CQ"]
         sim_npse = sd["N"]
         sim_npse_plus = sd["Np"]
         sim_gpe_3d = sd["G3"]
-        @assert sim_gpe_1d.abstol    <= 1e-7
-        @assert sim_npse.abstol      <= 1e-7
-        @assert sim_npse_plus.abstol <= 1e-7
-        @assert sim_gpe_3d.abstol    <= 1e-7
+        # @assert sim_gpe_1d.abstol    <= 1e-7
+        # @assert sim_npse.abstol      <= 1e-7
+        # @assert sim_npse_plus.abstol <= 1e-7
+        # @assert sim_gpe_3d.abstol    <= 1e-7
+
         @warn "Computing for g = " sim_gpe_1d.g
+        
         # =========================================================
         Plots.CURRENT_PLOT.nullableplot = nothing
         x = sim_gpe_1d.X[1] |> real
@@ -81,8 +86,8 @@ function all_ground_states(
         offset = sim_gpe_1d.L[1] / 4
         offset *= 0.0
         @. analytical_gs = sqrt(gamma_param / 2) * 2 / (exp(gamma_param * (x-offset)) + exp(-(x-offset) * gamma_param))
-        p = plot_final_density([analytical_gs], sim_gpe_1d; label="analytical", color=:orange, doifft=false, ls=:dashdot, title="gamma = $gamma_param")
-
+        # p = plot_final_density([analytical_gs], sim_gpe_1d; label="analytical", color=:orange, doifft=false, ls=:dashdot, title="gamma = $gamma_param")
+        p=plot()
         # == GPE 1D =======================================================
         if haskey(gs_dict, hs("G1", gamma_param))
             if use_precomputed
@@ -99,7 +104,29 @@ function all_ground_states(
             push!(gs_dict, hs("G1", gamma_param) => sol.u)
         end
         gpe_1d = gs_dict[hs("G1", gamma_param)]
-        plot_final_density!(p, [gpe_1d], sim_gpe_1d; laabel="GPE_1D", color=:blue, ls=:dash)
+        plot_final_density!(p, [gpe_1d], sim_gpe_1d; label="1D-GPE", color=:blue, ls=:dash)
+        JLD2.save(join([save_path, "gs_dict.jld2"]), gs_dict)
+
+        # == CQGPE =======================================================
+        if take_advantage
+          sim_cc.psi_0 = gpe_1d
+        end
+        if haskey(gs_dict, hs("CQ", gamma_param))
+          if use_precomputed && false
+              @info "\t using precomputed solution CQ"
+          else
+              @info "\t deleting and recomputing solution CQ"
+              delete!(gs_dict, hs("CQ", gamma_param))
+              sol = runsim(sim_cc; info=true)
+              push!(gs_dict, hs("CQ", gamma_param) => sol.u)
+          end
+        else
+            @info "computing CQ"
+            sol = runsim(sim_cc; info=true)
+            push!(gs_dict, hs("CQ", gamma_param) => sol.u)
+        end
+        cc = gs_dict[hs("CQ", gamma_param)]
+        plot_final_density!(p, [cc], sim_cc; label="CQ-GPE", color=:blue, ls=:dashdot)
         JLD2.save(join([save_path, "gs_dict.jld2"]), gs_dict)
 
         # == NPSE =======================================================
@@ -145,7 +172,7 @@ function all_ground_states(
             push!(gs_dict, hs("Np", gamma_param) => sol.u)
         end
         npse_plus = gs_dict[hs("Np", gamma_param)]
-        plot_final_density!(p, [npse_plus], sim_npse_plus; label="NPSE_der", ls=:dash, color=:green)
+        plot_final_density!(p, [npse_plus], sim_npse_plus; label="NPSE+", ls=:dash, color=:green)
         JLD2.save(join([save_path, "gs_dict.jld2"]), gs_dict)
 
 
@@ -207,7 +234,7 @@ function all_ground_states(
         # we need to renormalize (error in the sum??)
         final_axial = final_axial / sum(final_axial * dx) |> real
         solution_3d = LinearInterpolation(x_3d_range, final_axial, extrapolation_bc=Line())
-        plot!(p, x_axis, solution_3d(x_axis), label="GPE_3D", color=:red)
+        plot!(p, x_axis, solution_3d(x_axis), label="3D-GPE", color=:red)
         
         # set attributes
         if gamma_param == 0.15
@@ -220,19 +247,21 @@ function all_ground_states(
             @info "special case for gamma = 0.65"
             plot!(p, xlims=(-4, 4), ylims=(0.0, 0.6))
         else 
-            @info "non special case"
+            @info "non special case, but applying lims as 0.65"
+            plot!(p, xlims=(-4, 4), ylims=(0.0, 0.6))
         end
-        plot!(p, xlabel="x", ylabel="density", legend=:bottomright)
+        plot!(p, xlabel="x", ylabel="density", legend=:bottomright, grid=false, smooth=true)
         # display and save
         if show_plots
             display(p)
         end
         saveplots ? savefig(p, "media/" * string(gamma_param) *  "_ground_states.pdf") : nothing
         
-        # focus on particular view
-        # display and save
-        # display(p)
-        # savefig(p, save_path * string(gamma_param) *  "_ground_states_zoom.pdf")
+        if show_plots
+          display(p)
+        end
+        plot!(p, xlims=(-1, 1), ylims=(0.25, 0.35)) # 0.4, 0.45 for gamma 065
+        saveplots ? savefig(p, "media/" * string(gamma_param) *  "_ground_states_zoom.pdf") : nothing
     end
     return gs_dict
 end

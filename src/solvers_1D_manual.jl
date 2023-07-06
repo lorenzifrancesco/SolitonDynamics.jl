@@ -7,8 +7,7 @@ function nlin_manual!(psi,sim::Sim{1, Array{ComplexF64}},t; ss_buffer=nothing, i
    g,X,V0,dV,equation,sigma2,dt,iswitch,N = unpack_selection(sim, :g,:X,:V0,:dV,:equation,:sigma2,:dt,:iswitch,:N); x = X[1]; N = N[1]
    xspace!(psi,sim)
    if equation == GPE_1D
-      @. psi = exp(dt * -im*iswitch* (g*abs2(psi))) * psi
-      @. psi *= exp(dt * -im*iswitch* (V0 + V(x, t))) 
+      @. psi *= exp(dt * -im*iswitch* (V0 + V(x, t) + g*abs2(psi)))
    elseif equation == NPSE
       # @warn "whois sigma2? if appropriate this is zero" sigma2(Complex(sqrt(minimum(abs2.(psi)))))
       nonlinear = g*abs2.(psi) ./sigma2.(psi) + (1 ./(2*sigma2.(psi)) + 1/2*sigma2.(psi))
@@ -52,7 +51,9 @@ function nlin_manual!(psi,sim::Sim{1, Array{ComplexF64}},t; ss_buffer=nothing, i
       nonlinear = g*abs2.(psi) ./sigma2_plus +  (1/2 * sigma2_plus .+ (1 ./(2*sigma2_plus)).* (1 .+ (1/dV * diff(prepend!(temp, 1.0))).^2))
       @. psi = exp(dt * -im*iswitch* (V0 + V(x, t) + nonlinear)) * psi
       # Base.GC.gc()    
-   end
+    elseif equation == CQGPE
+      @. psi *= exp(dt * -im*iswitch* (V0 + V(x, t) + g*abs2(psi) - 0.05*6*log(4/3)*g^2*abs2(abs2(psi))) )
+    end
    kspace!(psi,sim)
    return nothing
 end

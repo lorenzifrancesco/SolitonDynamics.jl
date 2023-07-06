@@ -15,6 +15,7 @@ const GPE_1D =    EquationType(1, 1)
 const NPSE =      EquationType(2, 1)
 const NPSE_plus = EquationType(3, 1)
 const GPE_3D =    EquationType(4, 3)
+const CQGPE =    EquationType(5, 1)
 
 abstract type Simulation{D} end
 

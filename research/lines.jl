@@ -1,4 +1,4 @@
-function all_lines(; use_precomputed_lines=false)
+function lines(; use_precomputed_lines=false)
   if Threads.nthreads() == 1
     @warn "running in single thread mode!"
   else
@@ -11,7 +11,7 @@ function all_lines(; use_precomputed_lines=false)
   for gamma in gamma_list
     @info "==== Using gamma: " gamma
 
-    sd = load_parameters_alt(gamma_param=gamma; eqs=["Np", "G3"], nosaves=true)
+    sd = load_parameters_alt(gamma_param=gamma; eqs=["Np"], nosaves=true)
 
     @info "Required simulations: " keys(sd)
 
@@ -300,7 +300,6 @@ function compare_all_lines(; sweep="vel")
   line_file = "results/line_dict.jld2"
   @assert isfile(line_file)
   ld = load(line_file)
-  @info typeof(collect(values((ld)))[1])
   example = collect(values(ld))[1]
   if sweep == "vel"
     p = plot(xlabel="velocity", ylabel="T")
@@ -310,15 +309,16 @@ function compare_all_lines(; sweep="vel")
     x = LinRange(ebar(1), ebar(2), length(example[1, :]))
   end
 
-  lines = beauty_lines()
-  labels = beauty_tiles()
+  lines  =  [:solid, :dot, :solid, :dash]
+  labels = ["1D-GPE", "NPSE", "3D-GPE", "NPSE+"]
   cnt = 1
+  @info keys(ld)
   for (k, v) in ld
     @info "found" ihs(k)
     choice = 1
-    for iy in 1:size(v)[1]
-      plot!(p, collect(x), v[choice, :], linestyle=lines[cnt], label=labels[cnt])
-    end
+    # for iy in 1:size(v)[1]
+    plot!(p, collect(x), v[choice, :], linestyle=lines[cnt], label=labels[cnt])
+    # end
     cnt +=  1
   end
   savefig(p, "media/compare_lines.pdf")

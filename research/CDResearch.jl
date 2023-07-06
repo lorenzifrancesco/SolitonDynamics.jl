@@ -5,6 +5,7 @@ import Makie, GLMakie
 using HDF5, JLD2
 using FFTW, CUDA, OrdinaryDiffEq
 using Interpolations
+using OrderedCollections
 
 using LoopVectorization, LinearAlgebra
 

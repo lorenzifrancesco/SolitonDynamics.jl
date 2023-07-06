@@ -33,8 +33,12 @@ Check docs http://www.fftw.org/fftw3_doc/The-1d-Discrete-Fourier-Transform-_0028
 
 
 ##### 5/07
-- [ ] obtain sigma2
-- [ ] obtain lines (check for 3D collapse for high $\gamma$)
+- [x] obtain sigma2
+- [x] obtain lines (check for 3D collapse for high $\gamma$)
 - [x] understand and fix $dk$
-- [ ] Is the $\gamma=0.65$ ground state ok? Or are we actually collapsing?
+- [x] Is the $\gamma=0.65$ ground state ok? Or are we actually collapsing?
 - [ ] are we obtaining the 3D GPE collapse value?
+
+##### 6/07
+055 -> 512
+065 -> 1024
