@@ -8,11 +8,11 @@ function tiles(; use_precomputed_tiles=false)
     end
 
     save_path = "results/"
-    gamma_list = [0.65, 0.55, 0.4, 0.3, 0.15]
+    gamma_list = [0.65]
 
     for gamma in gamma_list
         @info "==== Using gamma: " gamma
-        sd = load_parameters_alt(gamma_param=gamma; nosaves=true)
+        sd = load_parameters_alt(gamma_param=gamma; eqs=["G1", "N"], nosaves=true)
         @info "Required simulations: " keys(sd)
 
         prepare_for_collision!(sd, gamma)

@@ -1,4 +1,5 @@
-function lines(; use_precomputed_lines=false)
+function lines(gamma_list = [0.55]
+  ; use_precomputed_lines=false)
   if Threads.nthreads() == 1
     @warn "running in single thread mode!"
   else
@@ -6,7 +7,6 @@ function lines(; use_precomputed_lines=false)
   end
 
   save_path = "results/"
-  gamma_list = [0.55]
 
   for gamma in gamma_list
     @info "==== Using gamma: " gamma
@@ -302,10 +302,10 @@ function compare_all_lines(; sweep="vel")
   ld = load(line_file)
   example = collect(values(ld))[1]
   if sweep == "vel"
-    p = plot(xlabel="velocity", ylabel="T")
+    p = plot(xlabel=L"v", ylabel=L"T")
     x = LinRange(evel(1), evel(2), length(example[1, :]))
   elseif sweep == "bar"
-    p = plot(xlabel="barrier", ylabel="T")
+    p = plot(xlabel=L"b", ylabel=L"T")
     x = LinRange(ebar(1), ebar(2), length(example[1, :]))
   end
 

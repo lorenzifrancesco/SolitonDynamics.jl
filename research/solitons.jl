@@ -62,7 +62,7 @@ function solitons(
         JLD2.save(join([save_path, "gs_dict.jld2"]), gs_dict)
     end
 
-    gamma_param_list = [0.4]
+    gamma_param_list = [0.55]
     @info "Starting simulations..."
     for gamma_param in gamma_param_list
         # update simulation parameters
@@ -250,7 +250,7 @@ function solitons(
             @info "non special case, but applying lims as 0.65"
             plot!(p, xlims=(-4, 4), ylims=(0.0, 0.6))
         end
-        plot!(p, xlabel="x", ylabel="density", legend=:bottomright, grid=false, smooth=true)
+        plot!(p, xlabel=L"x", ylabel=L"|\phi|^2", legend=:topright, grid=false, smooth=true)
         # display and save
         if show_plots
             display(p)

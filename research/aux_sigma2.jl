@@ -1,8 +1,7 @@
 using ColorSchemes
 
 # use the 512 version (long run)
-function gs_sigma2()
-  gamma_list = [0.4]
+function gs_sigma2(gamma_list=[0.55])
   for gamma in gamma_list
     sd = load_parameters_alt(gamma_param=gamma)
     delete!(sd, "CQ")
@@ -35,7 +34,7 @@ function gs_sigma2()
       else
         plot!(p, xlims=(-10, 10), ylims=(0.6, 1.02))
       end
-      plot!(grid=false)
+      plot!(grid=false, xlabel=L"x", ylabel=L"\sigma^2")
       # mid = Int(round(v.N[1]/2))
       # mid_tran = Int(round(v.N[2]/2))
       # pp = xspace(v.psi_0, v)
