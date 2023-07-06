@@ -2,9 +2,10 @@ using ColorSchemes
 
 # use the 512 version (long run)
 function gs_sigma2()
-  gamma_list = [0.55]
+  gamma_list = [0.4]
   for gamma in gamma_list
     sd = load_parameters_alt(gamma_param=gamma)
+    delete!(sd, "CQ")
     prepare_for_collision!(sd, gamma; use_precomputed_gs=true, info=true)
 
     p=plot(title="gamma=$(gamma)")
@@ -22,8 +23,18 @@ function gs_sigma2()
     for (k, v) in sd
       # plot_final_density!(p, [v.psi_0], v; show=true)
       est = estimate_sigma2(v.psi_0, v)
-      plot!(p, real(v.X[1]), circshift(est, Int(ceil(-512/4))), color=pal[i], linestyle=lines[i], label=labels[i])
-      plot!(p, xlims=(-10, 10), ylims=(0.78, 1.02))
+      if length(v.N) == 3
+        est += ones(length(est))* (1 - est[1])
+        plot!(p, real(v.X[1]), circshift(est, Int(ceil(-512/4))), color=pal[i], linestyle=lines[i], label=labels[i])
+      else
+        plot!(p, real(v.X[1]), circshift(est, Int(ceil(-1024/4))), color=pal[i], linestyle=lines[i], label=labels[i])
+      end
+
+      if gamma == 0.55
+        plot!(p, xlims=(-10, 10), ylims=(0.78, 1.02))
+      else
+        plot!(p, xlims=(-10, 10), ylims=(0.6, 1.02))
+      end
       plot!(grid=false)
       # mid = Int(round(v.N[1]/2))
       # mid_tran = Int(round(v.N[2]/2))
@@ -42,7 +53,8 @@ function gs_sigma2()
       # show_profile(0.0, v.psi_0, v; show=true)
       i +=1
     end
-    display(p)
+    plot!(p, legend=:bottomleft)
+    # display(p)
     savefig(p, "media/sigma2_"* string(gamma) *".pdf")
   end
 end

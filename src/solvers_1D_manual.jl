@@ -52,7 +52,7 @@ function nlin_manual!(psi,sim::Sim{1, Array{ComplexF64}},t; ss_buffer=nothing, i
       @. psi = exp(dt * -im*iswitch* (V0 + V(x, t) + nonlinear)) * psi
       # Base.GC.gc()    
     elseif equation == CQGPE
-      @. psi *= exp(dt * -im*iswitch* (V0 + V(x, t) + g*abs2(psi) - 0.05*6*log(4/3)*g^2*abs2(abs2(psi))) )
+      @. psi *= exp(dt * -im*iswitch* (V0 + V(x, t) + g*abs2(psi) - 6*log(4/3)*g^2*abs2(abs2(psi))) )
     end
    kspace!(psi,sim)
    return nothing

@@ -62,7 +62,7 @@ function solitons(
         JLD2.save(join([save_path, "gs_dict.jld2"]), gs_dict)
     end
 
-    gamma_param_list = [0.55]
+    gamma_param_list = [0.4]
     @info "Starting simulations..."
     for gamma_param in gamma_param_list
         # update simulation parameters
@@ -108,26 +108,26 @@ function solitons(
         JLD2.save(join([save_path, "gs_dict.jld2"]), gs_dict)
 
         # == CQGPE =======================================================
-        if take_advantage
-          sim_cc.psi_0 = gpe_1d
-        end
-        if haskey(gs_dict, hs("CQ", gamma_param))
-          if use_precomputed && false
-              @info "\t using precomputed solution CQ"
-          else
-              @info "\t deleting and recomputing solution CQ"
-              delete!(gs_dict, hs("CQ", gamma_param))
-              sol = runsim(sim_cc; info=true)
-              push!(gs_dict, hs("CQ", gamma_param) => sol.u)
-          end
-        else
-            @info "computing CQ"
-            sol = runsim(sim_cc; info=true)
-            push!(gs_dict, hs("CQ", gamma_param) => sol.u)
-        end
-        cc = gs_dict[hs("CQ", gamma_param)]
-        plot_final_density!(p, [cc], sim_cc; label="CQ-GPE", color=:blue, ls=:dashdot)
-        JLD2.save(join([save_path, "gs_dict.jld2"]), gs_dict)
+        # if take_advantage
+        #   sim_cc.psi_0 = gpe_1d
+        # end
+        # if haskey(gs_dict, hs("CQ", gamma_param))
+        #   if use_precomputed && false
+        #       @info "\t using precomputed solution CQ"
+        #   else
+        #       @info "\t deleting and recomputing solution CQ"
+        #       delete!(gs_dict, hs("CQ", gamma_param))
+        #       sol = runsim(sim_cc; info=true)
+        #       push!(gs_dict, hs("CQ", gamma_param) => sol.u)
+        #   end
+        # else
+        #     @info "computing CQ"
+        #     sol = runsim(sim_cc; info=true)
+        #     push!(gs_dict, hs("CQ", gamma_param) => sol.u)
+        # end
+        # cc = gs_dict[hs("CQ", gamma_param)]
+        # plot_final_density!(p, [cc], sim_cc; label="CQ-GPE", color=:blue, ls=:dashdot)
+        # JLD2.save(join([save_path, "gs_dict.jld2"]), gs_dict)
 
         # == NPSE =======================================================
         # estimate width

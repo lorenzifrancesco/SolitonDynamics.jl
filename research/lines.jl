@@ -321,6 +321,7 @@ function compare_all_lines(; sweep="vel")
     # end
     cnt +=  1
   end
+  plot!(grid=false, legend=:topleft)
   savefig(p, "media/compare_lines.pdf")
 end
 

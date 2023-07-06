@@ -430,7 +430,7 @@ function load_parameters_alt(
     ####
     #### match it to the gs 
     ####
-    N_axial_steps = 512
+    N_axial_steps = 1024
     abstol_all = 9.9e-6
     # time_steps_all = 200 do not fix it. Use a constant dt
 
