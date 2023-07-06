@@ -12,7 +12,7 @@ function tiles(; use_precomputed_tiles=false)
 
     for gamma in gamma_list
         @info "==== Using gamma: " gamma
-        sd = load_parameters_alt(gamma_param=gamma; eqs=["G1", "N"], nosaves=true)
+        sd = load_parameters_alt(gamma_param=gamma; eqs=["G1", "N", "Np"], nosaves=true)
         @info "Required simulations: " keys(sd)
 
         prepare_for_collision!(sd, gamma)
@@ -217,10 +217,6 @@ function get_tiles(
     return tran
     return tran
 end
-
-
-
-
 
 function view_all_tiles()
     tile_file = "results/tile_dict.jld2"

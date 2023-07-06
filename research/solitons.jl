@@ -62,7 +62,7 @@ function solitons(
         JLD2.save(join([save_path, "gs_dict.jld2"]), gs_dict)
     end
 
-    gamma_param_list = [0.55]
+    gamma_param_list = [0.65]
     @info "Starting simulations..."
     for gamma_param in gamma_param_list
         # update simulation parameters
@@ -104,7 +104,7 @@ function solitons(
             push!(gs_dict, hs("G1", gamma_param) => sol.u)
         end
         gpe_1d = gs_dict[hs("G1", gamma_param)]
-        plot_final_density!(p, [gpe_1d], sim_gpe_1d; label="1D-GPE", color=:blue, ls=:dash)
+        plot_final_density!(p, [gpe_1d], sim_gpe_1d; label="1D-GPE", color=:grey, ls=:solid)
         JLD2.save(join([save_path, "gs_dict.jld2"]), gs_dict)
 
         # == CQGPE =======================================================
@@ -260,7 +260,7 @@ function solitons(
         if show_plots
           display(p)
         end
-        plot!(p, xlims=(-1, 1), ylims=(0.25, 0.35)) # 0.4, 0.45 for gamma 065
+        plot!(p, xlims=(-1, 1), ylims=(0.4, 0.45)) # 0.4, 0.45 for gamma 065
         saveplots ? savefig(p, "media/" * string(gamma_param) *  "_ground_states_zoom.pdf") : nothing
     end
     return gs_dict
