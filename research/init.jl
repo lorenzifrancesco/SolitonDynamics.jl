@@ -423,7 +423,7 @@ function load_parameters_alt(
 
     maxiters_1d = 1e10
     maxiters_3d = 1e10
-    dt_all = 0.0001 # important for the prepare_for_collision function, then overwritten in imprint_vel_set_bar
+    dt_all = 0.01# important for the prepare_for_collision function, then overwritten in imprint_vel_set_bar
     iswitch_all = -im
 
     max_vel = 1.0
