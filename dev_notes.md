@@ -46,3 +46,6 @@ Check docs http://www.fftw.org/fftw3_doc/The-1d-Discrete-Fourier-Transform-_0028
 065 -> 1024
 
 ## IMPLEMENT ALL THE CHEMICAL POTENTIALS!!! Not only GPE 
+
+
+# EXPLORE the impact of second order algorithm in the D=1 case
