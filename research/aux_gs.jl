@@ -71,19 +71,37 @@ end
 function check_3d_correctness(; gamma=0.65, info=true, iterate_t=false, show_waves=false, show=true)
   # TODO iterate here about N
   N_3d = 512
-  N_tran_range = collect(20:40:512)
+  N_tran_range = [10:10:50]
   t_range = [0.05]
   mus = zeros(length(N_tran_range), length(t_range))
   linf = zeros(length(N_tran_range), length(t_range))
 
+
   for (iN, Nx) in enumerate(N_tran_range)
-    sd = load_parameters_alt(
+    GC.gc(true)
+    CUDA.reclaim()
+    # single_gpu_array = N_3d * Nx^2 * 2*64 / (8*1024^3) 
+    # transform_array = single_gpu_array^2
+    # tot = 4*transform_array + single_gpu_array
+    # @warn "estimated GPU mem usage [GiB]: " tot
+    print("\n============\n")
+    CUDA.memory_status()
+    @info "Loading the simulation..."
+    @time sd = load_parameters_alt(
       gamma_param=gamma,
       N_axial_3D=N_3d,
       N_trans_3D=Nx,
-      nosaves=true)
-      
+      nosaves=true, 
+      eqs=["G3"])
     sim = sd["G3"]
+    print("\n============\n")
+    CUDA.memory_status()
+
+    # print("\nContinue? [N/y]")
+    # r = readline()
+    # if r != "y"
+    #   return
+    # end
 
     @unpack_Sim sim
     x = X[1] |> real
