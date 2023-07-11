@@ -417,6 +417,9 @@ function load_parameters_alt(
     Nsaves::Int64=200,
     eqs=["G1", "CQ", "N", "Np", "G3"],
     nosaves=false,
+    N_axial_1D = 1024, 
+    N_axial_3D = 512,
+    N_trans_3D = 64,
     )
 
     sim_dictionary = Dict()
@@ -430,17 +433,20 @@ function load_parameters_alt(
     ####
     #### match it to the gs 
     ####
-    N_axial_steps = 1024
     abstol_all = 9.9e-6
     # time_steps_all = 200 do not fix it. Use a constant dt
 
     initial_width = 10
     Lx = 80.0
+    
     # =========================================================
     ## 1D-GPE 
     L = (Lx,)
-    N = (N_axial_steps,)
-    sim_gpe_1d = Sim{length(L), Array{Complex{Float64}}}(L=L, N=N)
+    N = (N_axial_1D,)
+    sim_gpe_1d = Sim{length(L), Array{Complex{Float64}}}(
+      L=L, 
+      N=N, 
+      )
     @unpack_Sim sim_gpe_1d
 
     iswitch = iswitch_all
@@ -527,9 +533,8 @@ function load_parameters_alt(
     end
     # =========================================================
     ## 3D-GPE 
-    Nx = 512
     L = (Lx,10.0,10.0)
-    N = (Nx, 64, 64)
+    N = (N_axial_3D, N_trans_3D, N_trans_3D)
     sim_gpe_3d = Sim{length(L), CuArray{Complex{Float64}}}(L=L, N=N)
     initial_state = zeros(N[1])
     @unpack_Sim sim_gpe_3d

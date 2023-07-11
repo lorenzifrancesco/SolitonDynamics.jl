@@ -222,6 +222,7 @@ function view_all_tiles()
     tile_file = "results/tile_dict.jld2"
     @assert isfile(tile_file)
     td = load(tile_file)
+    @info td
     for (k, v) in td
         @info "found" ihs(k)
         axis = LinRange(0.0, 1.0, size(v)[1])

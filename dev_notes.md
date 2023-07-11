@@ -13,6 +13,8 @@
  - Collapse for 3D GPE is measurable with density.
  - [ ] sigma 2
 [[dev_notes/sigma2]]
+- [ ] correctness
+[[dev_notes/correctness]]
 ## June 2023: Major refactoring
 We changed radically the workflow, using scripts as standalone units in which we import CondensateDynamics
 _NB: what equation are we actually simulating? We should [ ] write it down_
@@ -42,3 +44,5 @@ Check docs http://www.fftw.org/fftw3_doc/The-1d-Discrete-Fourier-Transform-_0028
 ##### 6/07
 055 -> 512
 065 -> 1024
+
+## IMPLEMENT ALL THE CHEMICAL POTENTIALS!!! Not only GPE 
