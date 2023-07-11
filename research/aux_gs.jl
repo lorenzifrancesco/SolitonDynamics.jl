@@ -155,7 +155,7 @@ function check_3d_space(;
   show=true)
 
   N_axial = 512
-  N_tran_range = [200]
+  N_tran_range = [40, 200, 512]
   dt_set = 0.05
   mus = zeros(length(N_tran_range))
   linf = zeros(length(N_tran_range))
