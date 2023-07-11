@@ -10,3 +10,6 @@
 
 ##### which are the major concerns on correctness? 
 - ground states: NPSE+ performs worst than GPE-3D.
+
+> we may take advantage in reducing very much the axial points in order to improve the transverse part.
+> How about going to second order??

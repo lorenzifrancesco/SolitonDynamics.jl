@@ -128,6 +128,7 @@ end
 @with_kw mutable struct CustomSolution
     u
     t
+    cnt::Int64 = 0
 end
 
 InitSim(L,N,A,par) = Sim{length(L), A}(L=L,N=N,params=par)

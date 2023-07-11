@@ -437,7 +437,7 @@ function load_parameters_alt(
     # time_steps_all = 200 do not fix it. Use a constant dt
 
     initial_width = 10
-    Lx = 80.0
+    Lx = 40.0
     
     # =========================================================
     ## 1D-GPE 

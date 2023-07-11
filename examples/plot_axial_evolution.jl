@@ -25,7 +25,7 @@ function plot_final_density(u, sim::Sim{1, Array{ComplexF64}}; info=false, doiff
     @unpack t, X = sim; x = Array(X[1])
     tmp = u[end]
     doifft ? final = xspace(tmp, sim) : final = tmp
-    info && @info "final norm" ns(final, sim)
+    @assert isapprox(ns(final, sim), 1.0, atol=1e-3)
     p = plot(real.(x), abs2.(final), label=label, linewidth=lw, linestyle=ls, color=color, title=title)
     show ? display(p) : nothing
     return p
@@ -35,13 +35,14 @@ function plot_final_density!(p, u, sim::Sim{1, Array{ComplexF64}}; info=false, d
     @unpack t, X = sim; x = Array(X[1])
     tmp = u[end]
     doifft ? final = xspace(tmp, sim) : final = tmp
-    info && @info "final norm" ns(final, sim)
+    @assert isapprox(ns(final, sim), 1.0, atol=1e-3)
     plot!(p, real.(x), abs2.(final), label=label, linewidth=lw, linestyle=ls, color=color)
     show ? display(p) : nothing
     return p
 end
 
 function plot_final_density(u, sim::Sim{3, CuArray{ComplexF64}}; axis=1, info=false, doifft=true, label="initial", title="", show=false)
+    @error "broken"
     @unpack t, X, dV = sim; x = Array(X[axis])
     dx = x[2]-x[1] |> real
     ax_list = (1, 2, 3)
@@ -49,7 +50,7 @@ function plot_final_density(u, sim::Sim{3, CuArray{ComplexF64}}; axis=1, info=fa
     info && @info size(u)
     final = u[end]
     doifft ? final = xspace(final, sim) : nothing
-    info && @info "final norm" ns(final, sim)
+    @assert isapprox(ns(final, sim), 1.0, atol=1e-3)
     final_axial = Array(sum(abs2.(final), dims=ax_list))[:,1,1] * dV/dx
     p = plot(real.(x), final_axial, label=label, title=title)
     show ? display(p) : nothing
@@ -57,13 +58,13 @@ function plot_final_density(u, sim::Sim{3, CuArray{ComplexF64}}; axis=1, info=fa
 end
 
 function plot_final_density!(p, u, sim::Sim{3, CuArray{ComplexF64}}; axis=1, info=false, doifft=true, label="initial", show=false)
+    @error "broken"
     @unpack t, X = sim; x = Array(X[axis])
     ax_list = (1, 2, 3)
     ax_list= filter(x->x!=axis, ax_list)
     final = u[end]
     doifft ? final = xspace(final, sim) : nothing
-    info && @info "final norm" ns(final, sim)
-    @warn "dV missing?"
+    @assert isapprox(ns(final, sim), 1.0, atol=1e-3)
     final_axial = Array(sum(abs2.(final), dims=ax_list))[1,1,:]
     plot!(p, real.(x), final_axial, label=label)
     show ? display(p) : nothing
