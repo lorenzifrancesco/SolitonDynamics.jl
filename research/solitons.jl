@@ -38,7 +38,6 @@ function ihs(s::String)
 end
 
 
-# FIXME 2 3D-GPE follows only the starting configurations
 
 function solitons(
   ; plus::Bool=false,

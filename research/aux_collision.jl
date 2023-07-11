@@ -40,7 +40,6 @@ function collide()
               time_steps  = Int(ceil((tf-ti)/dt))
               @warn "dt = " dt
               @warn "tf = " tf
-              # @info "total_time " time_steps * dt # FIXME there is nothing we can do, but tf should not be present into the solver routine
               @pack_Sim! sim
 
               @time sol = runsim(sim; info=true)

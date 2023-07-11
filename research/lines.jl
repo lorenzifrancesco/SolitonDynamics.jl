@@ -47,7 +47,6 @@ function lines(gamma_list = [0.55]
 end
 
 
-# TODO: extremely slow velocities are not even interesting
 function get_lines(
   sim::Sim{1,Array{Complex{Float64}}},
   name::String="noname";

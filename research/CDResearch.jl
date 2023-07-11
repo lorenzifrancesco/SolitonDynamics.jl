@@ -12,7 +12,8 @@ using LoopVectorization, LinearAlgebra
 using ProgressBars, Colors
 
 includet("_plot_settings.jl")
-pyplot(size=(350, 220))
+# pyplot(size=(350, 220))
+plotly()
 includet("../examples/plot_axial_evolution.jl")
 includet("../examples/plot_isosurfaces.jl")
 includet("visual_utils.jl")
