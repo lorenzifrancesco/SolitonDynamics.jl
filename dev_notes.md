@@ -55,3 +55,4 @@ Check docs http://www.fftw.org/fftw3_doc/The-1d-Discrete-Fourier-Transform-_0028
 --> 0.01 accuracy is obtained using $dt<0.05$, $N>2048$ [GPE-1D]
 
 - [ ] Why our Crank Nicholson is not ready??
+- we want to be able to say: "these simulations are precise up to some percent"

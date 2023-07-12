@@ -9,10 +9,13 @@ function nlin_manual!(
    ss_buffer=nothing, 
    info=false, 
    debug=false)
+   
    @unpack ksquared,g,X,V0,dV,Vol,mu,equation,sigma2,dt,iswitch = sim; x = X[1]; y = X[1]; z = X[1]
+   order = 2
+   dt_order = dt/order
    xspace!(psi,sim)
-   @. psi *= exp(dt * -im*iswitch* (V0 + V(x,y,z,t)))
-   @. psi *= exp(dt * -im*iswitch* (g*abs2(psi)))      
+   @. psi *= exp(dt_order * -im*iswitch* (V0 + V(x,y,z,t)))
+   @. psi *= exp(dt_order * -im*iswitch* (g*abs2(psi)))      
    if maximum(abs2.(psi) * dV) > 0.5
       throw(Gpe3DCollapse(maximum(abs2.(psi) * dV)))
    end
@@ -28,10 +31,12 @@ function propagate_manual!(
    ss_buffer=nothing, 
    info=false, 
    debug=false)
+   
    @unpack ksquared, iswitch, dV, Vol,mu,gamma_damp,dt = sim
    psi_i = copy(psi) 
-   nlin_manual!(psi,sim,t; info=info)
    @. psi = exp(dt * iswitch * (1.0 - im*gamma_damp)*(-im*(1/2*ksquared - mu))) * psi
+   nlin_manual!(psi,sim,t; info=info)
+   nlin_manual!(psi,sim,t; info=info)
    if iswitch == -im
       psi .= psi / sqrt(nsk(psi, sim))
       info && print(" - chempot: ", chempotk(psi, sim))
