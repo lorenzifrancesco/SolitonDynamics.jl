@@ -5,15 +5,17 @@ unpack_selection(sim, fields...) = map(x -> getfield(sim, x), fields)
 
 function nlin_manual!(psi, sim::Sim{1,Array{ComplexF64}}, t; ss_buffer=nothing, info=false)
   g, X, V0, dV, equation, sigma2, dt, iswitch, N = unpack_selection(sim, :g, :X, :V0, :dV, :equation, :sigma2, :dt, :iswitch, :N)
+  order = 2
+  dt_order = dt/order
   x = X[1]
   N = N[1]
   xspace!(psi, sim)
   if equation == GPE_1D
-    @. psi *= exp(dt * -im * iswitch * (V0 + V(x, t) + g * abs2(psi)))
+    @. psi *= exp(dt_order * -im * iswitch * (V0 + V(x, t) + g * abs2(psi)))
   elseif equation == NPSE
     # @warn "whois sigma2? if appropriate this is zero" sigma2(Complex(sqrt(minimum(abs2.(psi)))))
     nonlinear = g * abs2.(psi) ./ sigma2.(psi) + (1 ./ (2 * sigma2.(psi)) + 1 / 2 * sigma2.(psi))
-    @. psi = exp(dt * -im * iswitch * (V0 + V(x, t) + nonlinear)) * psi
+    @. psi = exp(dt_order * -im * iswitch * (V0 + V(x, t) + nonlinear)) * psi
   elseif equation == NPSE_plus
     sigma2_plus = zeros(length(x))
     try
@@ -51,10 +53,10 @@ function nlin_manual!(psi, sim::Sim{1,Array{ComplexF64}}, t; ss_buffer=nothing, 
     end
     temp = copy(sigma2_plus)
     nonlinear = g * abs2.(psi) ./ sigma2_plus + (1 / 2 * sigma2_plus .+ (1 ./ (2 * sigma2_plus)) .* (1 .+ (1 / dV * diff(prepend!(temp, 1.0))) .^ 2))
-    @. psi = exp(dt * -im * iswitch * (V0 + V(x, t) + nonlinear)) * psi
+    @. psi = exp(dt_order * -im * iswitch * (V0 + V(x, t) + nonlinear)) * psi
     # Base.GC.gc()  
   elseif equation == CQGPE
-    @. psi *= exp(dt * -im * iswitch * (V0 + V(x, t) + g * abs2(psi) - 1 / 4 * g^2 * abs2(abs2(psi))))
+    @. psi *= exp(dt_order * -im * iswitch * (V0 + V(x, t) + g * abs2(psi) - 1 / 4 * g^2 * abs2(abs2(psi))))
   end
   if maximum(abs2.(psi) * dV) > 0.5
     throw(Gpe3DCollapse(maximum(abs2.(psi) * dV)))
@@ -67,8 +69,10 @@ end
 function propagate_manual!(psi, sim::Sim{1,Array{ComplexF64}}, t; ss_buffer=nothing, info=false)
   (ksquared, iswitch, mu, gamma_damp, dt) = unpack_selection(sim, :ksquared, :iswitch, :mu, :gamma_damp, :dt)
   psi_i = copy(psi)
-  nlin_manual!(psi, sim, t; ss_buffer=ss_buffer, info=info)
+  # splitting: N/2, N/2, L
   @. psi = exp(dt * iswitch * (1.0 - im * gamma_damp) * (-im * (1 / 2 * ksquared - mu))) * psi
+  nlin_manual!(psi, sim, t; ss_buffer=ss_buffer, info=info)
+  nlin_manual!(psi, sim, t; ss_buffer=ss_buffer, info=info)
   if iswitch == -im
     psi .= psi / sqrt(nsk(psi, sim))
     info && print(" - chempot: ", abs(chempotk(psi, sim)))

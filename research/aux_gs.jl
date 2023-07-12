@@ -5,16 +5,16 @@ function check_1d_space(;
   gamma=0.6,
   info=true,
   iterate_t=false,
-  show_waves=false,
+  show_waves=true,
   show=true,
-  eq="Np")
+  eq="G1")
 
-  N_range = [200, 400, 1024, 2048, 4096, 8192]
-  dt_set = 0.05
+  N_range = [200, 400, 1024, 2048, 4096]
+  dt_set = 0.001
   mus = zeros(length(N_range))
   elaps = zeros(length(N_range))
   linf = zeros(length(N_range))
-
+  true_min = 0.0
   for (iN, Nx) in enumerate(N_range)
     sd = load_parameters_alt(
       gamma_param=gamma,
@@ -28,7 +28,6 @@ function check_1d_space(;
     solver = SplitStep
     manual = true
     @assert length(sim.N) == 1
-
     ## get the analytical ground state
     if gamma > 0.0
       analytical_sol = gpe_analytical.(x, gamma; x0=sim.L[1] / 4)
@@ -41,15 +40,11 @@ function check_1d_space(;
       p = plot(x, abs2.(analytical_sol), label="gaussian", color=:black)
     end
     analytical_sol = analytical_sol / sqrt(ns(analytical_sol, sim))
-
-    # initialize psi_0 at random
-    psi_0 .= complex(rand(N))
-    psi_0 /= sqrt(ns(psi_0, sim))
-    kspace!(psi_0, sim)
     dt = dt_set
     abstol = 1e-3
     reltol = 1e-3
     @pack_Sim! sim
+    
     print("\n\n===> Relevant parameters: \n\t gamma = $gamma, N = $(sim.N), dt = $(sim.dt)")
 
     plot!(p, x, abs2.(xspace(sim.psi_0, sim)), label="initial", color=:grey)
@@ -65,6 +60,7 @@ function check_1d_space(;
 
   if show
     p = plot(N_range, mus, label="mu", color=:green, grid=:both)
+    plot!(p, N_range, true_min * ones(length(N_range)), label="true_min", color=:black)
     print("\n(dropping the first in elapsed time evaluation)")
     q = plot(N_range[2:end], elaps[2:end], label="execution_time", color=:red)
     display(q)
@@ -81,14 +77,14 @@ function check_1d_time(;
   iterate_t=false,
   show_waves=false,
   show=true,
-  eq="N")
+  eq="G1")
 
   Nx = 2048
-  dt_range = [0.2, 0.1, 0.05, 0.01, 0.001]
+  dt_range = [0.1, 0.05, 0.01, 0.005]
   mus = zeros(length(dt_range))
   elaps = zeros(length(dt_range))
   linf = zeros(length(dt_range))
-
+  true_min = 0.0
   for (idt, dt_set) in enumerate(dt_range)
     sd = load_parameters_alt(
       gamma_param=gamma,
@@ -116,9 +112,6 @@ function check_1d_time(;
     analytical_sol = analytical_sol / sqrt(ns(analytical_sol, sim))
 
     # initialize psi_0 at random
-    psi_0 .= complex(rand(N))
-    psi_0 /= sqrt(ns(psi_0, sim))
-    kspace!(psi_0, sim)
     dt = dt_set
     abstol = 1e-3
     reltol = 1e-3
@@ -139,6 +132,7 @@ function check_1d_time(;
 
   if show
     p = plot(1 ./ dt_range, mus, label="mu", color=:green, xlabel="1/dt")
+    plot!(p, 1 ./ dt_range, true_min * ones(length(dt_range)), label="true_min", color=:black)
     display(p)
     print("\n(dropping the first in elapsed time evaluation)")
     q = plot(1 ./ dt_range, elaps, label="execution_time", color=:red, xlabel="1/dt")
@@ -155,7 +149,7 @@ function check_3d_space(;
   show=true)
 
   N_axial = 512
-  N_tran_range = [200]
+  N_tran_range = [60, 80, 120, 140]
   dt_set = 0.05
   mus = zeros(length(N_tran_range))
   linf = zeros(length(N_tran_range))

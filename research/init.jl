@@ -413,13 +413,15 @@ end
 function load_parameters_alt(
     ; vv::Float64 = 0.0,
     bb::Float64 = 0.0, 
-    gamma_param::Float64=0.6,
+    gamma_param::Float64=0.65,
     Nsaves::Int64=200,
     eqs=["G1", "CQ", "N", "Np", "G3"],
     nosaves=false,
-    N_axial_1D = 1024, 
+    N_axial_1D = 1024,
     N_axial_3D = 512,
     N_trans_3D = 64,
+    Lx = 30.0,
+    Lt = 10.0,
     )
 
     sim_dictionary = Dict()
@@ -437,7 +439,6 @@ function load_parameters_alt(
     # time_steps_all = 200 do not fix it. Use a constant dt
 
     initial_width = 10
-    Lx = 40.0
     
     # =========================================================
     ## 1D-GPE 
@@ -533,7 +534,7 @@ function load_parameters_alt(
     end
     # =========================================================
     ## 3D-GPE 
-    L = (Lx,10.0,10.0)
+    L = (Lx,Lt,Lt)
     N = (N_axial_3D, N_trans_3D, N_trans_3D)
     sim_gpe_3d = Sim{length(L), CuArray{Complex{Float64}}}(L=L, N=N)
     initial_state = zeros(N[1])
