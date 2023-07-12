@@ -13,7 +13,11 @@ using ProgressBars, Colors
 
 includet("_plot_settings.jl")
 # pyplot(size=(350, 220))
-plotly()
+if ENV["USER"] == "ubuntu"
+  plotly()
+else
+  pyplot()
+end
 includet("../examples/plot_axial_evolution.jl")
 includet("../examples/plot_isosurfaces.jl")
 includet("visual_utils.jl")

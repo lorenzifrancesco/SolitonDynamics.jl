@@ -212,6 +212,7 @@ function check_3d_space(;
   if show
     q = plot(N_tran_range, mus, label="mu", color=:red)
     display(q)
+    savefig(q, "mu_vs_N_tran.pdf")
   end
 
   return (mus, linf)
