@@ -161,12 +161,12 @@ end
 
 function check_3d_space(;
   gamma=0.65,
-  info=true,
+  info=false,
   show_waves=true,
   show=true)
 
-  N_axial = 512
-  N_tran_range = [60, 80, 120, 140]
+  N_axial = 160
+  N_tran_range = [50, 60, 150, 160]
   dt_set = 0.05
   mus = zeros(length(N_tran_range))
   linf = zeros(length(N_tran_range))
@@ -181,11 +181,14 @@ function check_3d_space(;
       N_axial_3D=N_axial,
       N_trans_3D=Nx,
       nosaves=true,
-      eqs=["G3"])
+      eqs=["G3"],
+      Lx=10,
+      Lt=10)
+
     sim = sd["G3"]
-    print("\n============\n")
-    CUDA.memory_status()
-    print("\n============\n")
+    # print("\n============\n")
+    # CUDA.memory_status()
+    # print("\n============\n")
 
     @unpack_Sim sim
     x = X[1] |> real
@@ -207,10 +210,11 @@ function check_3d_space(;
     
     sol = runsim(sim; info=info)
 
-    @info "final imaginary time: " sim.dt * sol.cnt
+    print("\n\tfinal imaginary time: $(sim.dt * sol.cnt)\n")
+    print("\n\t Chemical potential: $(chempotk(sol.u, sim))")
     final = xspace(sol.u, sim)
     final_axial = Array(sum(abs2.(final), dims=(2, 3))[:, 1, 1] * (x[2] - x[1])^2)
-    plot!(p, x, final_axial)
+    plot!(p, x, final_axial, label="Nt=$Nx")
 
     mus[iN] = chempotk(sol.u, sim)
     linf[iN] = l_inf(sol.u)
@@ -222,10 +226,10 @@ function check_3d_space(;
 
     GC.gc(true)
     CUDA.reclaim()
-    CUDA.memory_status()
   end
 
   show_waves ? display(p) : nothing
+  savefig(p, "waves.pdf")
   if show
     q = plot(N_tran_range, mus, label="mu", color=:red)
     display(q)

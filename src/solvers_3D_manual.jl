@@ -11,7 +11,7 @@ function nlin_manual!(
    debug=false)
    
    @unpack ksquared,g,X,V0,dV,Vol,mu,equation,sigma2,dt,iswitch = sim; x = X[1]; y = X[1]; z = X[1]
-   order = 2
+   order = 1
    dt_order = dt/order
    xspace!(psi,sim)
    @. psi *= exp(dt_order * -im*iswitch* (V0 + V(x,y,z,t)))
@@ -31,11 +31,10 @@ function propagate_manual!(
    ss_buffer=nothing, 
    info=false, 
    debug=false)
-   
+
    @unpack ksquared, iswitch, dV, Vol,mu,gamma_damp,dt = sim
    psi_i = copy(psi) 
    @. psi = exp(dt * iswitch * (1.0 - im*gamma_damp)*(-im*(1/2*ksquared - mu))) * psi
-   nlin_manual!(psi,sim,t; info=info)
    nlin_manual!(psi,sim,t; info=info)
    if iswitch == -im
       psi .= psi / sqrt(nsk(psi, sim))
