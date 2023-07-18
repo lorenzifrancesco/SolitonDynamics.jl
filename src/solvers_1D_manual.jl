@@ -116,7 +116,7 @@ function pc_ground_state!(psi, sim::Sim{1,Array{ComplexF64}}, dt, tri_fwd, tri_b
   nonlin = -(dt / 2) * g * abs2.(psi)
   tri_fwd += -Diagonal(ones(N[1])) + Diagonal(nonlin)
   for i in 1:3
-    mapslices(x -> \(x, tri_fwd[i]), psi, dims=(i))
+    mapslices(x -> \(x, tri_fwd[i]), psi, dims=(i)) # FIXME am I a 3d method?
   end
   psi_star = tri_fwd * psi + psi
   psi .= 1 / 2 * (tri_fwd * psi) + psi
@@ -143,10 +143,9 @@ function be_ground_state!(psi, sim::Sim{1,Array{ComplexF64}}, dt, tri_fwd, tri_b
   @unpack dt, g, X, V0, iswitch, dV, Vol, N = sim
   x = X[1]
   psi_i = copy(psi)
-  nonlin = -(dt / 2) * g * abs2.(psi)
-  tri_bkw += Diagonal(nonlin)
-  psi .= transpose(\(psi, tri_bkw))
-
+  nonlin = -dt * (g * abs2.(psi) + V0)
+  tri_bkw_complete = tri_bkw - Diagonal(nonlin)
+  psi .= transpose(\(psi, tri_bkw_complete))
   psi .= psi / sqrt(ns(psi, sim))
   cp_diff = (chempot(psi, sim) - chempot(psi_i, sim)) / chempot(psi_i, sim) / dt
   return cp_diff

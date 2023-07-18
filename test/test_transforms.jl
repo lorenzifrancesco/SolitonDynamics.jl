@@ -66,3 +66,12 @@ xspace!(psi_0, sim)
 @info nsk(kspace(psi_1, sim), sim)
 
 @test isapprox(ns(psi_1, sim), nsk(kspace(initial_state, sim), sim), atol=1e-9)
+
+# test the correctness of transforms in a known case 
+
+
+# (gaussian wavepacket)
+psi_constant = ones(sim.N) |> complex
+display(psi_constant)
+psi_constant_trans = kspace(psi_constant, sim)
+display(psi_constant_trans)

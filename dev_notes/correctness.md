@@ -13,3 +13,6 @@
 
 > we may take advantage in reducing very much the axial points in order to improve the transverse part.
 > How about going to second order??
+> 
+![Alt text](image.png)
+![Alt text](image-1.png)

@@ -10,7 +10,8 @@ function check_1d_space(;
   eq="G1")
 
   N_range = [200, 400, 1024, 2048, 4096]
-  dt_set = 0.001
+  N_range = [200]
+  dt_set = 0.05
   mus = zeros(length(N_range))
   elaps = zeros(length(N_range))
   linf = zeros(length(N_range))
@@ -19,13 +20,17 @@ function check_1d_space(;
     sd = load_parameters_alt(
       gamma_param=gamma,
       N_axial_1D=Nx,
-      nosaves=true)
+      nosaves=true,
+      Lx=30.0
+      )
     display(sd)
     sim = sd[eq]
 
     @unpack_Sim sim
+    
+    solver = BackwardEuler
+
     x = X[1] |> real
-    solver = SplitStep
     manual = true
     @assert length(sim.N) == 1
     ## get the analytical ground state
@@ -37,21 +42,29 @@ function check_1d_space(;
       # harmonic oscillator
       @. V0 = 1 / 2 * (x^2)
       analytical_sol = exp.(-x .^ 2 / 2) / sqrt(pi)
+      analytical_sol = analytical_sol / sqrt(ns(analytical_sol, sim))
+      @assert sum(abs2.(analytical_sol) * dV) ≈ 1.0
       p = plot(x, abs2.(analytical_sol), label="gaussian", color=:black)
     end
     analytical_sol = analytical_sol / sqrt(ns(analytical_sol, sim))
     dt = dt_set
-    abstol = 1e-3
-    reltol = 1e-3
+    abstol = 1e-10
+    reltol = 1e-10
+    maxiters=150
     @pack_Sim! sim
     
     print("\n\n===> Relevant parameters: \n\t gamma = $gamma, N = $(sim.N), dt = $(sim.dt)")
 
-    plot!(p, x, abs2.(xspace(sim.psi_0, sim)), label="initial", color=:grey)
+
+    # plot!(p, x, abs2.(xspace(sim.psi_0, sim)), label="initial", color=:grey)
     nn = 2
     pal = palette([:red, :blue], nn)
 
     elaps[iN] = @elapsed sol = runsim(sim; info=info)
+    @info nsk(sol.u, sim)
+    @assert nsk(sol.u, sim) ≈ 1.0
+    # @warn "solution is" xspacesol.u
+    
     plot!(p, x, abs2.(xspace(sol.u, sim)), color=pal[1], label="calculated")
     mus[iN] = chempotk(sol.u, sim)
     linf[iN] = l_inf(sol.u - analytical_sol)
@@ -59,12 +72,13 @@ function check_1d_space(;
   end
 
   if show
-    p = plot(N_range, mus, label="mu", color=:green, grid=:both)
-    plot!(p, N_range, true_min * ones(length(N_range)), label="true_min", color=:black)
+    p = plot(N_range, mus, label="mu", color=:green, grid=:both, title="CN")
+    # plot!(p, N_range, true_min * ones(length(N_range)), label="true_min", color=:black)
     print("\n(dropping the first in elapsed time evaluation)")
     q = plot(N_range[2:end], elaps[2:end], label="execution_time", color=:red)
-    display(q)
-    display(p)
+    # display(q)
+    # display(p)
+    # savefig(p, "mu_vs_N_CN.pdf")
   end
 
   return (mus, linf)
@@ -89,7 +103,9 @@ function check_1d_time(;
     sd = load_parameters_alt(
       gamma_param=gamma,
       N_axial_1D=Nx,
-      nosaves=true)
+      nosaves=true,
+      Lx = 50.0)
+
     sim = sd[eq]
 
     @unpack_Sim sim
@@ -134,6 +150,7 @@ function check_1d_time(;
     p = plot(1 ./ dt_range, mus, label="mu", color=:green, xlabel="1/dt")
     plot!(p, 1 ./ dt_range, true_min * ones(length(dt_range)), label="true_min", color=:black)
     display(p)
+    savefig(p, "mu_vs_dt_CN.pdf")
     print("\n(dropping the first in elapsed time evaluation)")
     q = plot(1 ./ dt_range, elaps, label="execution_time", color=:red, xlabel="1/dt")
     display(q)
