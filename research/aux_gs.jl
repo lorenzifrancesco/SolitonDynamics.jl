@@ -15,6 +15,7 @@ function check_1d_space(;
   elaps = zeros(length(N_range))
   linf = zeros(length(N_range))
   true_min = 0.0
+  p = plot()
   for (iN, Nx) in enumerate(N_range)
     sd = load_parameters_alt(
       gamma_param=gamma,
@@ -67,9 +68,9 @@ function check_1d_space(;
     plot!(p, x, abs2.(xspace(sol.u, sim)), color=pal[1], label="calculated")
     mus[iN] = chempotk(sol.u, sim)
     linf[iN] = l_inf(sol.u - analytical_sol)
-    show_waves ? display(p) : nothing
   end
 
+  show_waves ? display(p) : nothing
   if show
     s = plot(N_range, mus, label="mu", color=:green, grid=:both, title="SSFM")
     # plot!(p, N_range, true_min * ones(length(N_range)), label="true_min", color=:black)
@@ -93,17 +94,18 @@ function check_1d_time(;
   eq="G1")
 
   Nx = 400
-  dt_range = [0.1, 0.05, 0.01, 0.005]
+  dt_range = [0.1, 0.05, 0.01, 0.005, 0.001]
   mus = zeros(length(dt_range))
   elaps = zeros(length(dt_range))
   linf = zeros(length(dt_range))
   true_min = 0.0
+  p = plot()
   for (idt, dt_set) in enumerate(dt_range)
     sd = load_parameters_alt(
       gamma_param=gamma,
       N_axial_1D=Nx,
       nosaves=true,
-      Lx = 50.0)
+      Lx = 40.0)
 
     sim = sd[eq]
 
@@ -115,9 +117,9 @@ function check_1d_time(;
 
     ## get the analytical ground state
     if gamma > 0.0
-      analytical_sol = gpe_analytical.(x, gamma; x0=sim.L[1] / 4)
-      true_min = chempot(gpe_analytical.(x, gamma; x0=sim.L[1] / 4), sim)
-      p = plot(x, abs2.(gpe_analytical.(x, gamma; x0=sim.L[1] / 4)), label="soliton", color=:black)
+      analytical_sol = gpe_analytical.(x, gamma; x0=0.0)
+      true_min = chempot(gpe_analytical.(x, gamma; x0=0.0), sim)
+      p = plot(x, abs2.(gpe_analytical.(x, gamma; x0=0.0)), label="soliton", color=:black)
     else
       # harmonic oscillator
       @. V0 = 1 / 2 * (x^2)
@@ -141,15 +143,15 @@ function check_1d_time(;
     plot!(p, x, abs2.(xspace(sol.u, sim)), color=pal[1], label="calculated")
     mus[idt] = chempotk(sol.u, sim)
     linf[idt] = l_inf(sol.u - analytical_sol)
-    show_waves ? display(p) : nothing
     sim = nothing
   end
 
+  show_waves ? display(p) : nothing
   if show
-    p = plot(1 ./ dt_range, mus, label="mu", color=:green, xlabel="1/dt")
-    plot!(p, 1 ./ dt_range, true_min * ones(length(dt_range)), label="true_min", color=:black)
-    display(p)
-    savefig(p, "mu_vs_dt_CN.pdf")
+    s = plot(1 ./ dt_range, mus, label="mu", color=:green, xlabel="1/dt")
+    plot!(s, 1 ./ dt_range, true_min * ones(length(dt_range)), label="true_min", color=:black)
+    display(s)
+    # savefig(p, "mu_vs_dt_CN.pdf")
     print("\n(dropping the first in elapsed time evaluation)")
     q = plot(1 ./ dt_range, elaps, label="execution_time", color=:red, xlabel="1/dt")
     display(q)

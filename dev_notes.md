@@ -57,4 +57,5 @@ Check docs http://www.fftw.org/fftw3_doc/The-1d-Discrete-Fourier-Transform-_0028
 - [ ] Why our Crank Nicholson is not ready??
 - [ ] eventually study the effect of second order splitting on 1D
 
-CAN WE IMPLEMENT the 3D methods in CPU??
+
+### SSFM is second order accurate in time and accurate to every order in space
