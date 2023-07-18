@@ -56,3 +56,5 @@ Check docs http://www.fftw.org/fftw3_doc/The-1d-Discrete-Fourier-Transform-_0028
 3D --> 0.05 accuracy is obtaines using $dt<0.05$, $N_trans>400$ [GPE-3D]
 - [ ] Why our Crank Nicholson is not ready??
 - [ ] eventually study the effect of second order splitting on 1D
+
+CAN WE IMPLEMENT the 3D methods in CPU??
