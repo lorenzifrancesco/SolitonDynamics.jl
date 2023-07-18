@@ -166,8 +166,9 @@ function check_3d_space(;
   show_waves=true,
   show=true)
 
-  N_axial = 160
-  N_tran_range = [50, 60, 150, 160]
+  N_axial = 100
+  N_tran_range = [30, 40, 80, 90]
+  # N_tran_range = [20]
   dt_set = 0.05
   mus = zeros(length(N_tran_range))
   linf = zeros(length(N_tran_range))
