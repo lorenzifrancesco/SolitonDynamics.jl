@@ -9,8 +9,7 @@ function check_1d_space(;
   show=true,
   eq="G1")
 
-  N_range = [200, 400, 1024, 2048, 4096]
-  N_range = [200]
+  N_range = [40, 50, 60, 80, 90, 100]
   dt_set = 0.05
   mus = zeros(length(N_range))
   elaps = zeros(length(N_range))
@@ -28,16 +27,16 @@ function check_1d_space(;
 
     @unpack_Sim sim
     
-    solver = BackwardEuler
+    solver = SplitStep 
 
     x = X[1] |> real
     manual = true
     @assert length(sim.N) == 1
     ## get the analytical ground state
     if gamma > 0.0
-      analytical_sol = gpe_analytical.(x, gamma; x0=sim.L[1] / 4)
-      true_min = chempot(gpe_analytical.(x, gamma; x0=sim.L[1] / 4), sim)
-      p = plot(x, abs2.(gpe_analytical.(x, gamma; x0=sim.L[1] / 4)), label="soliton", color=:black)
+      analytical_sol = gpe_analytical.(x, gamma; x0=0.0)
+      true_min = chempot(gpe_analytical.(x, gamma; x0=0.0), sim)
+      p = plot(x, abs2.(gpe_analytical.(x, gamma; x0=0.0)), label="soliton", color=:black)
     else
       # harmonic oscillator
       @. V0 = 1 / 2 * (x^2)
@@ -72,12 +71,12 @@ function check_1d_space(;
   end
 
   if show
-    p = plot(N_range, mus, label="mu", color=:green, grid=:both, title="CN")
+    s = plot(N_range, mus, label="mu", color=:green, grid=:both, title="SSFM")
     # plot!(p, N_range, true_min * ones(length(N_range)), label="true_min", color=:black)
     print("\n(dropping the first in elapsed time evaluation)")
     q = plot(N_range[2:end], elaps[2:end], label="execution_time", color=:red)
-    # display(q)
-    # display(p)
+    display(q)
+    display(s)
     # savefig(p, "mu_vs_N_CN.pdf")
   end
 
@@ -89,11 +88,11 @@ function check_1d_time(;
   gamma=0.6,
   info=true,
   iterate_t=false,
-  show_waves=false,
+  show_waves=true,
   show=true,
   eq="G1")
 
-  Nx = 2048
+  Nx = 400
   dt_range = [0.1, 0.05, 0.01, 0.005]
   mus = zeros(length(dt_range))
   elaps = zeros(length(dt_range))
