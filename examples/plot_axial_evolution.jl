@@ -48,8 +48,8 @@ function plot_final_density(u, sim::Sim{3, CuArray{ComplexF64}}; axis=1, info=fa
     ax_list = (1, 2, 3)
     ax_list= filter(x->x!=axis, ax_list)
     info && @info size(u)
-    final = u[end]
-    doifft ? final = xspace(final, sim) : nothing
+    tmp = u[end]
+    doifft ? final = xspace(tmp, sim) : final=tmp
     @assert isapprox(ns(final, sim), 1.0, atol=1e-3)
     final_axial = Array(sum(abs2.(final), dims=ax_list))[:,1,1] * dV/dx
     p = plot(real.(x), final_axial, label=label, title=title)

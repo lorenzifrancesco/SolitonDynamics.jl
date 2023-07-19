@@ -141,8 +141,8 @@ function imprint_vel_set_bar(
     vv::Float64=0.0, 
     bb::Float64=0.0,
     bw::Float64=0.5,
-    dt::Float64=0.001,
-    time_step_limit::Int64=1000)
+    dt::Float64=0.01,
+    time_step_limit::Int64=5000)
     simc = deepcopy(sim)
     @unpack_Sim simc
     x = X[1] |> real
@@ -172,8 +172,8 @@ function imprint_vel_set_bar(
     vv::Float64=0.0, 
     bb::Float64=0.0, 
     bw::Float64=0.5,
-    dt::Float64=0.005, # TODO optimize
-    time_step_limit::Int64=1000)
+    dt::Float64=0.01, # TODO optimize
+    time_step_limit::Int64=5000)
 
     simc = deepcopy(sim)
     @unpack_Sim simc
@@ -206,8 +206,8 @@ function imprint_vel_set_bar!(
     vv::Float64=0.0, 
     bb::Float64=0.0, 
     bw::Float64=0.5,
-    dt::Float64=0.001,
-    time_step_limit::Int64=1000)    
+    dt::Float64=0.01,
+    time_step_limit::Int64=5000)    
 
     @unpack_Sim sim
     x = X[1] |> real
@@ -238,8 +238,8 @@ function imprint_vel_set_bar!(
     vv::Float64=0.0, 
     bb::Float64=0.0, 
     bw::Float64=0.5,
-    dt::Float64=0.005, # TODO optimize
-    time_step_limit::Int64=1000)
+    dt::Float64=0.01, # TODO optimize
+    time_step_limit::Int64=5000)
 
     @unpack_Sim sim
     x = X[1] |> real

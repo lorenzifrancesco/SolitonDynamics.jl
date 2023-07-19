@@ -1,6 +1,7 @@
 JULIA_CUDA_SOFT_MEMORY_LIMIT = "95%"
 
 function tiles(; use_precomputed_tiles=false)
+    pyplot()
     if Threads.nthreads() == 1
         @warn "running in single thread mode!"
     else
@@ -12,13 +13,21 @@ function tiles(; use_precomputed_tiles=false)
 
     for gamma in gamma_list
         @info "==== Using gamma: " gamma
-        sd = load_parameters_alt(gamma_param=gamma; eqs=["G1"], nosaves=true)
+        sd = load_parameters_alt(gamma_param=gamma; nosaves=true)
         @info "Required simulations: " keys(sd)
         prepare_for_collision!(sd, gamma)
 
         # check the extremes for stability
-        four_extremes = get_tiles(sim, tiles = 2, plot_finals=true)
-
+        @info "Computing the extremes..."
+        check_eq = "G3"
+        four_extremes = get_tiles(sd[check_eq], check_eq; 
+                                  tiles = 2,
+                                  plot_finals=true)
+        print("--> Extremes computed. Going on? [N/y]")
+        ans = readline()
+        if ans != "y"
+          return
+        end
         if isfile(save_path * "tile_dict.jld2")
             @info "Loading Tiles library..."
             tile_dict = JLD2.load(save_path * "tile_dict.jld2")
@@ -90,7 +99,7 @@ function get_tiles(
         end
 
         if plot_finals
-          pp = plot_final_density([sol.u], sim; show=false)
+          pp = plot_final_density(sol.u, sim; show=false)
           savefig(pp, "media/checks/final_$(name)_$(vv)_$(bb).pdf")
           qq = plot_axial_heatmap(sol.u, sim.t, sim; show=false)
           savefig(qq, "media/checks/heatmap_$(name)_$(vv)_$(bb).pdf")
