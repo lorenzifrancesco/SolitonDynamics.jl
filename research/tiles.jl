@@ -12,10 +12,13 @@ function tiles(; use_precomputed_tiles=false)
 
     for gamma in gamma_list
         @info "==== Using gamma: " gamma
-        sd = load_parameters_alt(gamma_param=gamma; eqs=["Np"], nosaves=true)
+        sd = load_parameters_alt(gamma_param=gamma; eqs=["G1"], nosaves=true)
         @info "Required simulations: " keys(sd)
-
         prepare_for_collision!(sd, gamma)
+
+        # check the extremes for stability
+        four_extremes = get_tiles(sim, tiles = 2, plot_finals=true)
+
         if isfile(save_path * "tile_dict.jld2")
             @info "Loading Tiles library..."
             tile_dict = JLD2.load(save_path * "tile_dict.jld2")
@@ -41,7 +44,8 @@ end
 function get_tiles(
     sim::Sim{1,Array{Complex{Float64}}},
     name::String="noname";
-    tiles=100)
+    tiles=100, 
+    plot_finals=false)
 
     saveto = "../media/tiles_$(name).pdf"
     max_vel = 1
@@ -84,6 +88,14 @@ function get_tiles(
                 throw(err)
             end
         end
+
+        if plot_finals
+          pp = plot_final_density([sol.u], sim; show=false)
+          savefig(pp, "media/checks/final_$(name)_$(vv)_$(bb).pdf")
+          qq = plot_axial_heatmap(sol.u, sim.t, sim; show=false)
+          savefig(qq, "media/checks/heatmap_$(name)_$(vv)_$(bb).pdf")
+        end
+
         # catch maxiters hit and set the transmission to zero
         if sim.manual == false
             if sol.retcode != ReturnCode.Success
@@ -134,7 +146,9 @@ in the 3D case we do not have sufficient GPU mem, so we go serially
 function get_tiles(
     archetype::Sim{3,CuArray{Complex{Float64}}},
     name::String="noname";
-    tiles=100)
+    tiles=100,
+    plot_finals=false)
+
     saveto = "../media/tiles_$(name).pdf"
     max_vel = 1
     max_bar = 1
@@ -167,6 +181,14 @@ function get_tiles(
                 throw(err)
             end
         end
+        
+        if plot_finals
+          pp = plot_final_density([sol.u], sim; show=false)
+          savefig(pp, "media/checks/final_$(name)_$(vv)_$(bb).pdf")
+          qq = plot_axial_heatmap(sol.u, sim.t, sim; show=false)
+          savefig(qq, "media/checks/heatmap_$(name)_$(vv)_$(bb).pdf")
+        end
+
         # catch maxiters hit and set the transmission to zero
         if sim.manual == false
             if sol.retcode != ReturnCode.Success

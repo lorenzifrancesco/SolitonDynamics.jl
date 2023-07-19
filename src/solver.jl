@@ -24,7 +24,7 @@ function manual_run(sim; info=false, debug=false, throw_collapse=true)
         ss_buffer = nothing
       end
 
-      minimum_evolution_time = 10.0
+      minimum_evolution_time = 20.0
       
       info && print("Interaction number")
       while cnt < maxiters && (cnt * sim.dt < minimum_evolution_time || abs(cp_diff) > abstol_diff)

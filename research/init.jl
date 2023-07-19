@@ -420,7 +420,7 @@ function load_parameters_alt(
     N_axial_1D = 256, ## optimized values
     N_axial_3D = 256,
     N_trans_3D = 40,
-    Lx = 30.0,
+    Lx = 40.0,
     Lt = 10.0,
     )
 

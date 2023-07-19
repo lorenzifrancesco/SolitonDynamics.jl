@@ -1,6 +1,5 @@
 using ColorSchemes
 # no saves
-
 function collide()
     gamma = 0.65
     sd = load_parameters_alt(gamma_param=gamma; nosaves=true)

@@ -78,7 +78,7 @@ function prepare_in_ground_state!(sim::Sim{3, CuArray{Complex{Float64}}})
     return sim
 end
 
-function prepare_for_collision!(sd, gamma; use_precomputed_gs=true, info=false)
+function prepare_for_collision!(sd, gamma; use_precomputed_gs=false, info=false)
     save_path = "results/"
     # prepare ground states (saving them)
     if isfile(save_path * "gs_dict.jld2")
