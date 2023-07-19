@@ -51,7 +51,7 @@ function get_tiles(
     max_vel = 1
     max_bar = 1
     #
-    vel_list = LinRange(0, max_vel, tiles)
+    vel_list = LinRange(0.1, max_vel, tiles)
     bar_list = LinRange(0, max_bar, tiles)
     tran = Array{Float64,2}(undef, (tiles, tiles))
     refl = Array{Float64,2}(undef, (tiles, tiles))
@@ -153,7 +153,7 @@ function get_tiles(
     max_vel = 1
     max_bar = 1
     #
-    vel_list = LinRange(0, max_vel, tiles)
+    vel_list = LinRange(0.1, max_vel, tiles)
     bar_list = LinRange(0, max_bar, tiles)
     tran = Array{Float64,2}(undef, (tiles, tiles))
     refl = Array{Float64,2}(undef, (tiles, tiles))
