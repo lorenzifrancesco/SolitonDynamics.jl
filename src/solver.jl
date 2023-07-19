@@ -24,8 +24,10 @@ function manual_run(sim; info=false, debug=false, throw_collapse=true)
         ss_buffer = nothing
       end
 
+      minimum_evolution_time = 10.0
+      
       info && print("Interaction number")
-      while abs(cp_diff) > abstol_diff && cnt < maxiters
+      while cnt < maxiters && (cnt * sim.dt < minimum_evolution_time || abs(cp_diff) > abstol_diff)
         tmp = chempotk(psi, sim)
         try
           cp_diff = propagate_manual!(psi, sim, dt; info=info, ss_buffer=ss_buffer)
