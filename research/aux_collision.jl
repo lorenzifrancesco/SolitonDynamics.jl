@@ -7,7 +7,7 @@ function collide()
     prepare_for_collision!(sd, gamma)
     meas = []
     for (name, sim) in sd
-      @info "---> Computing for" ish(name)
+      @info "---> Computing for" ihs(name)
       sim = sd["G1"]
 
       imprint_vel_set_bar!(sim; vv=1.0, bb=1.0)
@@ -19,10 +19,10 @@ function collide()
       mask_tran = map(xx -> xx < 0, sim.X[1] |> real)
       
       if true
-          @unpack_Sim gg
+          @unpack_Sim sim
           dt = 0.01
-          @pack_Sim! gg
-          sol = runsim(gg; info=false)
+          @pack_Sim! sim
+          sol = runsim(sim; info=false)
 
           final = xspace(sol.u[end], sim)
           plot_final_density(sol.u, sim; show=true)

@@ -6,6 +6,8 @@ using HDF5, JLD2
 using FFTW, CUDA, OrdinaryDiffEq
 using Interpolations
 using OrderedCollections
+ENV["PYTHON"]="usr/bin/python"
+using PyCall
 
 using LoopVectorization, LinearAlgebra
 

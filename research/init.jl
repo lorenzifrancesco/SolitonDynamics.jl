@@ -417,9 +417,9 @@ function load_parameters_alt(
     Nsaves::Int64=200,
     eqs=["G1", "CQ", "N", "Np", "G3"],
     nosaves=false,
-    N_axial_1D = 1024,
-    N_axial_3D = 512,
-    N_trans_3D = 64,
+    N_axial_1D = 256, ## optimized values
+    N_axial_3D = 256,
+    N_trans_3D = 40,
     Lx = 30.0,
     Lt = 10.0,
     )
@@ -428,14 +428,14 @@ function load_parameters_alt(
 
     maxiters_1d = 1e10
     maxiters_3d = 1e10
-    dt_all = 0.01# important for the prepare_for_collision function, then overwritten in imprint_vel_set_bar
+    dt_all = 0.01 # important for the prepare_for_collision function, then overwritten in imprint_vel_set_bar
     iswitch_all = -im
 
     max_vel = 1.0
     ####
     #### match it to the gs 
     ####
-    abstol_all = 9.9e-6
+    abstol_all = 1e-3
     # time_steps_all = 200 do not fix it. Use a constant dt
 
     initial_width = 10

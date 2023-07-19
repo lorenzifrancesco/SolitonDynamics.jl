@@ -48,14 +48,3 @@ Check docs http://www.fftw.org/fftw3_doc/The-1d-Discrete-Fourier-Transform-_0028
 ## IMPLEMENT ALL THE CHEMICAL POTENTIALS!!! Not only GPE 
 
 
-# EXPLORE the impact of second order algorithm in the D=1 case
-
-- [x] clean up the simulations
-- [ ] setup the spatial discretization sim for 1D
-1D --> 0.01 accuracy is obtained using $dt<0.05$, $N>2048$ [GPE-1D]
-3D --> 0.05 accuracy is obtaines using $dt<0.05$, $N_trans>400$ [GPE-3D]
-- [ ] Why our Crank Nicholson is not ready??
-- [ ] eventually study the effect of second order splitting on 1D
-
-
-### SSFM is second order accurate in time and accurate to every order in space
