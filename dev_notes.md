@@ -28,11 +28,6 @@ Check docs http://www.fftw.org/fftw3_doc/The-1d-Discrete-Fourier-Transform-_0028
 - [x] Launch the tiles simulations on the cloud
 > results: unusual behaviour of 3D GPE for $\gamma=0.65$. We should check more carefully the reult tile by tile.
 - [ ] collect all the parameters in a table (especially the barrier ones).
-##### Problem: prepare_for_collision prepares in ground state but from time to time normalization check fail
-
-##### Old imprecision problem: it gets solved by using a finer $dt$
---> 3D long simulation confirms that.s
-
 
 ##### 5/07
 - [x] obtain sigma2
@@ -41,10 +36,4 @@ Check docs http://www.fftw.org/fftw3_doc/The-1d-Discrete-Fourier-Transform-_0028
 - [x] Is the $\gamma=0.65$ ground state ok? Or are we actually collapsing?
 - [ ] are we obtaining the 3D GPE collapse value?
 
-##### 6/07
-055 -> 512
-065 -> 1024
-
-## IMPLEMENT ALL THE CHEMICAL POTENTIALS!!! Not only GPE 
-
-
+## July 2023: Fix of correctness problem in transforms
