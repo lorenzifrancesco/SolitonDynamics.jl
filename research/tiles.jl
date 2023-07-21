@@ -44,7 +44,7 @@ function tiles(; use_precomputed_tiles=false)
       if haskey(tile_dict, hs(name, gamma)) && use_precomputed_tiles
         @info "Already found tile for " name, gamma
       else
-        tile = get_tiles(sim, name; tiles=50)
+        tile = get_tiles(sim, name; tiles=100)
         push!(tile_dict, hs(name, gamma) => tile)
         JLD2.save(save_path * "tile_dict.jld2", tile_dict)
       end
@@ -92,6 +92,12 @@ function get_tiles(
     sol = nothing
     try
       avg_iteration_time += @elapsed sol = runsim(sim; info=false)
+      if plot_finals
+        pp = plot_final_density(sol.u, sim; show=false)
+        savefig(pp, "media/checks/final_$(name)_$(vv)_$(bb).pdf")
+        qq = plot_axial_heatmap(sol.u, sim.t, sim; show=false)
+        savefig(qq, "media/checks/heatmap_$(name)_$(vv)_$(bb).pdf")
+      end
     catch err
       if isa(err, NpseCollapse) || isa(err, Gpe3DCollapse)
         collapse_occured = true
@@ -100,12 +106,6 @@ function get_tiles(
       end
     end
 
-    if plot_finals
-      pp = plot_final_density(sol.u, sim; show=false)
-      savefig(pp, "media/checks/final_$(name)_$(vv)_$(bb).pdf")
-      qq = plot_axial_heatmap(sol.u, sim.t, sim; show=false)
-      savefig(qq, "media/checks/heatmap_$(name)_$(vv)_$(bb).pdf")
-    end
 
     # catch maxiters hit and set the transmission to zero
     if sim.manual == false
@@ -185,6 +185,14 @@ function get_tiles(
     sol = nothing
     try
       avg_iteration_time += @elapsed sol = runsim(sim; info=false)
+      if plot_finals
+        pp = plot_final_density(sol.u, sim; show=false)
+        savefig(pp, "media/checks/final_$(name)_$(vv)_$(bb).pdf")
+        qq = plot_axial_heatmap(sol.u, sim.t, sim; show=false)
+        savefig(qq, "media/checks/heatmap_$(name)_$(vv)_$(bb).pdf")
+      end
+
+
     catch err
       if isa(err, NpseCollapse) || isa(err, Gpe3DCollapse)
         collapse_occured = true
@@ -193,12 +201,6 @@ function get_tiles(
       end
     end
 
-    if plot_finals
-      pp = plot_final_density([sol.u], sim; show=false)
-      savefig(pp, "media/checks/final_$(name)_$(vv)_$(bb).pdf")
-      qq = plot_axial_heatmap(sol.u, sim.t, sim; show=false)
-      savefig(qq, "media/checks/heatmap_$(name)_$(vv)_$(bb).pdf")
-    end
 
     # catch maxiters hit and set the transmission to zero
     if sim.manual == false
