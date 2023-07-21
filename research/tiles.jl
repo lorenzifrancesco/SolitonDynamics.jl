@@ -257,12 +257,52 @@ function view_all_tiles()
   tile_file = "results/tile_dict.jld2"
   @assert isfile(tile_file)
   td = load(tile_file)
-  @info td
   for (k, v) in td
     @info "found" ihs(k)
     axis = LinRange(0.0, 1.0, size(v)[1])
+    v, mask = process_tiles(v)
     ht = contour(axis, axis, v, clabels=true, xlabel="v", ylabel="b")
-    savefig(ht, "media/tiles_" * string(ihs(k)) * ".pdf")
-    #  display(ht)
+    contour!(ht, axis, axis, mask,  levels = [0.0], color=:turbo, linestyle=:dot ,linewidth=1.8)
+    savefig(ht, "media/tiles_" * string(ihs(k)) * "_ct.pdf")
+    ht2 = heatmap(axis, axis, mask, clabels=true, xlabel="v", ylabel="b")
+    savefig(ht2, "media/tiles_" * string(ihs(k)) * "_ht.pdf")
   end
+end
+
+function process_tiles(tt)
+  mask = ones(size(tt))
+  # FIXME the names
+  for bar in 1:size(tt)[1]
+    for vel in 2:size(tt)[2]
+      if abs(tt[vel, bar] - tt[vel-1, bar]) > 0.3
+        tt[vel, bar] = NaN
+        for velx in 1:vel
+          mask[velx, bar] = 0.0
+        end
+      end
+    end
+  end
+
+  flag_prev = true
+  flag_curr = true
+  posv = 1
+  posb = 1
+  for vel in 1:size(tt)[2]
+    flag_curr = true
+    for bar in 1:size(tt)[1]
+      if mask[vel, bar] == 0.0
+        flag_curr = false
+        posv = vel
+        posb = bar
+      end
+    end
+    if flag_prev == false && flag_curr == true
+      for velx in 1:posv
+        mask[velx, posb] = NaN
+      end
+      return tt, mask
+    end
+    flag_prev = flag_curr
+  end
+  return tt, mask
 end
