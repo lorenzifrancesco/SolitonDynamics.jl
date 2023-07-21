@@ -16,13 +16,6 @@ using ProgressBars, Colors
 pyplot()
 using PyCall
 const plt = pyimport("matplotlib.pyplot")
-plt.rcParams["figure.figsize"] = [8, 6]
-plt.rcParams["font.size"] = 12
-plt.rcParams["lines.linewidth"] = 2
-plt.rcParams.update({
-    "text.usetex": True,
-    "font.family": "Helvetica"
-})
 
 # # Set other parameters as needed
 # plt.rcParams["figure.figsize"] = [8, 6]

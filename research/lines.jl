@@ -1,5 +1,6 @@
 function lines(gamma_list = [0.65]
   ; use_precomputed_lines=false)
+
   if Threads.nthreads() == 1
     @warn "running in single thread mode!"
   else
@@ -11,12 +12,10 @@ function lines(gamma_list = [0.65]
   for gamma in gamma_list
     @info "==== Using gamma: " gamma
 
-    sd = load_parameters_alt(gamma_param=gamma; eqs=["G1"], nosaves=true)
+    sd = load_parameters_alt(gamma_param=gamma; eqs=["Np"], nosaves=true)
 
     @info "Required simulations: " keys(sd)
-
     prepare_for_collision!(sd, gamma; use_precomputed_gs=false)
-
     if isfile(save_path * "line_dict.jld2")
       @info "Loading Lines library..."
       line_dict = JLD2.load(save_path * "line_dict.jld2")

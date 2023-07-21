@@ -119,9 +119,9 @@ version = "0.4.2"
 
 [[deps.BandedMatrices]]
 deps = ["ArrayLayouts", "FillArrays", "LinearAlgebra", "PrecompileTools", "SparseArrays"]
-git-tree-sha1 = "793e547f59be89d6b32a588dbd6514b71f2bb92e"
+git-tree-sha1 = "5048c6811d416588e0c7f3341a906b57209abd34"
 uuid = "aae01518-5342-5314-be14-df237901396f"
-version = "0.17.31"
+version = "0.17.32"
 
 [[deps.Base64]]
 uuid = "2a0f44e3-6c83-55bd-87e4-b1978d98bd5f"
@@ -795,9 +795,9 @@ version = "0.9.4"
 
 [[deps.ImageIO]]
 deps = ["FileIO", "IndirectArrays", "JpegTurbo", "LazyModules", "Netpbm", "OpenEXR", "PNGFiles", "QOI", "Sixel", "TiffImages", "UUIDs"]
-git-tree-sha1 = "342f789fd041a55166764c351da1710db97ce0e0"
+git-tree-sha1 = "bca20b2f5d00c4fbc192c3212da8fa79f4688009"
 uuid = "82e4d734-157c-48bb-816b-45c225c6df19"
-version = "0.6.6"
+version = "0.6.7"
 
 [[deps.ImageMetadata]]
 deps = ["AxisArrays", "ImageAxes", "ImageBase", "ImageCore"]
@@ -1373,9 +1373,9 @@ version = "0.11.17"
 
 [[deps.PNGFiles]]
 deps = ["Base64", "CEnum", "ImageCore", "IndirectArrays", "OffsetArrays", "libpng_jll"]
-git-tree-sha1 = "f809158b27eba0c18c269cf2a2be6ed751d3e81d"
+git-tree-sha1 = "9b02b27ac477cad98114584ff964e3052f656a0f"
 uuid = "f57f5aa1-a3ce-4bc8-8ab9-96f992907883"
-version = "0.3.17"
+version = "0.4.0"
 
 [[deps.PackageExtensionCompat]]
 git-tree-sha1 = "32f3d52212a8d1c5d589a58851b1f04c97339110"
@@ -1432,9 +1432,9 @@ version = "1.3.5"
 
 [[deps.Polyester]]
 deps = ["ArrayInterface", "BitTwiddlingConvenienceFunctions", "CPUSummary", "IfElse", "ManualMemory", "PolyesterWeave", "Requires", "Static", "StaticArrayInterface", "StrideArraysCore", "ThreadingUtilities"]
-git-tree-sha1 = "0fe4e7c4d8ff4c70bfa507f0dd96fa161b115777"
+git-tree-sha1 = "0c6a162cb9a0ab8b7345793dd8369b595cb30db8"
 uuid = "f517fe37-dbe3-4b94-8317-1923a5111588"
-version = "0.7.3"
+version = "0.7.4"
 
 [[deps.PolyesterWeave]]
 deps = ["BitTwiddlingConvenienceFunctions", "CPUSummary", "IfElse", "Static", "ThreadingUtilities"]
