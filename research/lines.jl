@@ -1,4 +1,4 @@
-function lines(gamma_list = [0.55]
+function lines(gamma_list = [0.65]
   ; use_precomputed_lines=false)
   if Threads.nthreads() == 1
     @warn "running in single thread mode!"
@@ -11,11 +11,11 @@ function lines(gamma_list = [0.55]
   for gamma in gamma_list
     @info "==== Using gamma: " gamma
 
-    sd = load_parameters_alt(gamma_param=gamma; eqs=["Np"], nosaves=true)
+    sd = load_parameters_alt(gamma_param=gamma; eqs=["G1"], nosaves=true)
 
     @info "Required simulations: " keys(sd)
 
-    prepare_for_collision!(sd, gamma)
+    prepare_for_collision!(sd, gamma; use_precomputed_gs=false)
 
     if isfile(save_path * "line_dict.jld2")
       @info "Loading Lines library..."
@@ -290,12 +290,13 @@ function view_all_lines(; sweep="vel")
     for iy in 1:size(v)[1]
       plot!(p, collect(x), v[iy, :], label=string(iy))
     end
-    savefig(p, "media/lines_" * string(ihs(k)) * ".pdf")
+    savefig(p, "media/lines_" * string(ihs(k)) * ".pdf") 
     #  display(p)
   end
 end
 
-function compare_all_lines(; sweep="vel")
+function compare_all_lines(; slice_choice=1, sweep="vel")
+  # pyplot(size=(350, 220))
   line_file = "results/line_dict.jld2"
   @assert isfile(line_file)
   ld = load(line_file)
@@ -308,20 +309,22 @@ function compare_all_lines(; sweep="vel")
     x = LinRange(ebar(1), ebar(2), length(example[1, :]))
   end
 
+  @warn "check the order"
   lines  =  [:solid, :dot, :solid, :dash]
   labels = ["1D-GPE", "NPSE", "3D-GPE", "NPSE+"]
   cnt = 1
   @info keys(ld)
   for (k, v) in ld
     @info "found" ihs(k)
-    choice = 1
+    choice = slice_choice
     # for iy in 1:size(v)[1]
     plot!(p, collect(x), v[choice, :], linestyle=lines[cnt], label=labels[cnt])
     # end
     cnt +=  1
   end
-  plot!(grid=false, legend=:topleft)
+  plot!(p, grid=false, legend=:topleft)
   savefig(p, "media/compare_lines.pdf")
+  return p
 end
 
 function ebar(i)

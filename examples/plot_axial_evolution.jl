@@ -42,7 +42,7 @@ function plot_final_density!(p, u, sim::Sim{1, Array{ComplexF64}}; info=false, d
 end
 
 function plot_final_density(u, sim::Sim{3, CuArray{ComplexF64}}; axis=1, info=false, doifft=true, label="initial", title="", show=false)
-    @error "broken"
+    # @error "broken"
     @unpack t, X, dV = sim; x = Array(X[axis])
     dx = x[2]-x[1] |> real
     ax_list = (1, 2, 3)
@@ -58,7 +58,7 @@ function plot_final_density(u, sim::Sim{3, CuArray{ComplexF64}}; axis=1, info=fa
 end
 
 function plot_final_density!(p, u, sim::Sim{3, CuArray{ComplexF64}}; axis=1, info=false, doifft=true, label="initial", show=false)
-    @error "broken"
+    # @error "broken"
     @unpack t, X = sim; x = Array(X[axis])
     ax_list = (1, 2, 3)
     ax_list= filter(x->x!=axis, ax_list)
