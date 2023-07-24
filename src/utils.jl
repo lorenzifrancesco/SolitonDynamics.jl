@@ -2,14 +2,28 @@
 estimate the Gaussian sigma2 parameter from 3D data
 """
 
-function estimate_sigma2(psi_k, sim::Sim{1,Array{ComplexF64}})
+function estimate_sigma2k(psi_k, sim::Sim{1,Array{ComplexF64}})
+  @assert nsk(psi_k, sim) ≈ 1
+  tmp = xspace(psi_k, sim)
+  return estimate_sigma2(tmp, sim)
+end
+
+function estimate_sigma2(psi, sim::Sim{1,Array{ComplexF64}})
   @unpack equation, N, g, dV = sim
-  psi = xspace(psi_k, sim)
+  @assert ns(psi, sim) ≈ 1
   s2 = ones(N[1])
   if equation == GPE_1D
     return s2
   elseif equation == NPSE
-    @. s2 = sqrt(1 + sim.g * abs2(psi))
+    try
+      @. s2 = sqrt(1 + sim.g * abs2(psi))
+    catch err
+      if isa(err, DomainError)
+        s2 = ones(length(psi)) * NaN
+        throw(err)
+        throw(NpseCollapse(sim.g * maximum(abs2.(psi))))
+      end
+    end
   elseif equation == NPSE_plus
     # Nonlinear Finite Element routine
     b = (1 .+ g * abs2.(psi))
@@ -39,7 +53,7 @@ function sigma_eq(sigma, params)
   return f
 end
 
-function estimate_sigma2(psi_k, sim::Sim{3,CuArray{ComplexF64}})
+function estimate_sigma2k(psi_k, sim::Sim{3,CuArray{ComplexF64}})
   s2 = Array{Float64,1}(undef, sim.N[1])
   # MSE estimator
   psi = xspace(psi_k, sim)
@@ -216,7 +230,7 @@ function chempot(psi, sim)
     end
   elseif equation == NPSE
     s2 = estimate_sigma2(psi, sim)
-    mu = dV * sum((V0 + g * abs2.(psi) + 1 / 2 * (1 ./ s2 + s2)) .* abs2.(psi))
+    mu = dV * sum((V0 + g * abs2.(psi) ./ s2 + 1 / 2 * (1 ./ s2 + s2)) .* abs2.(psi))
     tmp = kspace(psi, sim)
     mu += 1 / Vol * sum(1 / 2 * ksquared .* abs2.(tmp))
     # mu *= 1 / nsk(tmp, sim)
@@ -226,7 +240,7 @@ function chempot(psi, sim)
     s2d = 1 / (2 * dV) * mat * s2
     s2d[1] -= 1 / (2 * dV) * s2[end]
     s2d[end] += 1 / (2 * dV) * s2[1]
-    mu = dV * sum((V0 + g * abs2.(psi) + 1 / 2 * (1 ./ s2 .* (1 .+ s2d .^ 2) + s2)) .* abs2.(psi))
+    mu = dV * sum((V0 + g * abs2.(psi) ./ s2 + 1 / 2 * (1 ./ s2 .* (1 .+ s2d .^ 2) + s2)) .* abs2.(psi))
     tmp = kspace(psi, sim)
     mu += 1 / Vol * sum(1 / 2 * ksquared .* abs2.(tmp))
   elseif equation == CQGPE

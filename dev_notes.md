@@ -37,3 +37,4 @@ Check docs http://www.fftw.org/fftw3_doc/The-1d-Discrete-Fourier-Transform-_0028
 - [ ] are we obtaining the 3D GPE collapse value?
 
 ## July 2023: Fix of correctness problem in transforms
+![Alt text](image.png)

@@ -16,7 +16,7 @@ function nlin_manual!(
    xspace!(psi,sim)
    @. psi *= exp(dt_order * -im*iswitch* (V0 + V(x,y,z,t)))
    @. psi *= exp(dt_order * -im*iswitch* (g*abs2(psi)))      
-   if maximum(abs2.(psi) * dV) > 0.05
+   if maximum(abs2.(psi) * dV) > 0.3
       throw(Gpe3DCollapse(maximum(abs2.(psi) * dV)))
    end
    debug && @warn "max prob" maximum(abs2.(psi) * dV)

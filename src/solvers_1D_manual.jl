@@ -58,7 +58,7 @@ function nlin_manual!(psi, sim::Sim{1,Array{ComplexF64}}, t; ss_buffer=nothing, 
   elseif equation == CQGPE
     @. psi *= exp(dt_order * -im * iswitch * (V0 + V(x, t) + g * abs2(psi) - 1 / 4 * g^2 * abs2(abs2(psi))))
   end
-  if maximum(abs2.(psi) * dV) > 0.5
+  if maximum(abs2.(psi) * dV) > 0.3
     throw(Gpe3DCollapse(maximum(abs2.(psi) * dV)))
   end
   kspace!(psi, sim)
