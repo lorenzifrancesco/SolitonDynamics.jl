@@ -290,14 +290,14 @@ plot!(p, x_axis, solution_3d(x_axis), label="GPE_3D", color=:red)
 # display(q)
 display(p)
 
-s2 = estimate_sigma2(kspace(initial_3d, sim_gpe_3d), sim_gpe_3d)
+s2 = estimate_sigma2k(kspace(initial_3d, sim_gpe_3d), sim_gpe_3d)
 sigma_2 = plot(x_axis_3d, s2, label="sigma2", color=:red, linestyle=:dot)
 dens = sum(abs2.(initial_3d), dims=(2, 3))[:, 1, 1] * sim_gpe_3d.dV / dx |> real
 plot!(sigma_2, x_axis_3d, dens, label="psi^2", color=:red)
 display(sigma_2)
 
 
-s2 = estimate_sigma2(gpe_3d, sim_gpe_3d)
+s2 = estimate_sigma2k(gpe_3d, sim_gpe_3d)
 sigma_2 = plot(x_axis_3d, s2, label="sigma2", color=:red)
 plot!(sigma_2, x_axis_3d, sigma2_old, label="NPSE", color=:red, linestyle=:dash)
 plot!(sigma_2, x_axis_3d, sigma2_new, label="NPSE:plus", color=:red, linestyle=:dot)

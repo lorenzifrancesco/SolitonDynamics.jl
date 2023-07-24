@@ -24,11 +24,11 @@ function manual_run(sim; info=false, debug=false, throw_collapse=true)
         ss_buffer = nothing
       end
 
-      minimum_evolution_time = 20.0
+      minimum_evolution_time = 40.0
       
       info && print("Interaction number")
       while cnt < maxiters && (cnt * sim.dt < minimum_evolution_time || abs(cp_diff) > abstol_diff)
-        tmp = chempotk(psi, sim)
+        tmp = chempotk_simple(psi, sim)
         try
           cp_diff = propagate_manual!(psi, sim, dt; info=info, ss_buffer=ss_buffer)
           sim.dt *= (1 - decay)
@@ -64,7 +64,7 @@ function manual_run(sim; info=false, debug=false, throw_collapse=true)
       tri_fwd = -SymTridiagonal(d_central, d_lu) + Diagonal(ones(taglia)) # Dx
       tri_bkw = SymTridiagonal(d_central, d_lu) + Diagonal(ones(taglia)) # Sx FIXME ??? sbagliato
       cnt = 0
-      tmp = chempot(psi, sim)
+      tmp = chempot_simple(psi, sim)
       while abs(cp_diff) > abstol_diff && cnt < maxiters
         cp_diff = func(psi, sim, dt, tri_fwd, tri_bkw)
         info && print("\n Interaction number")

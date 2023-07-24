@@ -35,10 +35,10 @@ function explore_collapse()
   return
 end
 
-function pinpoint_collapse(; dynamical::Bool=false)
+function pinpoint_collapse(; eq="N", dynamical::Bool=true, info::Bool=false)
   gamma = 0.6
   sd = load_parameters_collapse(gamma_param=gamma)
-  gg = sd["G3"]
+  gg = sd[eq]
 
   @unpack_Sim gg
   x = X[1] |> real
@@ -72,7 +72,7 @@ function pinpoint_collapse(; dynamical::Bool=false)
     gg.g = -2 * gmid
     gg.sigma2 = init_sigma2(gg.g)
     try
-      sol = runsim(gg; info=true)
+      sol = runsim(gg; info=info)
       sol = nothing
       gminus = gmid
     catch err

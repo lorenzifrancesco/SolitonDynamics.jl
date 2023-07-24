@@ -309,20 +309,17 @@ function compare_all_lines(; slice_choice=1, sweep="vel")
   end
 
   @warn "check the order"
-  lines  =  [:solid, :dot, :solid, :dash]
-  labels = ["1D-GPE", "NPSE", "3D-GPE", "NPSE+"]
   cnt = 1
   @info keys(ld)
   for (k, v) in ld
     @info "found" ihs(k)
-    choice = slice_choice
     # for iy in 1:size(v)[1]
-    plot!(p, collect(x), v[choice, :], linestyle=lines[cnt], label=labels[cnt])
+    plot!(p, collect(x), v[slice_choice, :], linestyle=lineof(k), color=colorof(k), label=nameof(k))
     # end
-    cnt +=  1
+    cnt += 1
   end
   plot!(p, grid=false, legend=:topleft)
-  savefig(p, "media/compare_lines.pdf")
+  savefig(p, "media/compare_lines_"*string(slice_choice)*".pdf")
   return p
 end
 

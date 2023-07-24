@@ -21,7 +21,7 @@ function gs_sigma2(gamma_list=[0.55])
     p = plot()
     for (k, v) in sd
       # plot_final_density!(p, [v.psi_0], v; show=true)
-      est = estimate_sigma2(v.psi_0, v)
+      est = estimate_sigma2k(v.psi_0, v)
       if length(v.N) == 3
         est += ones(length(est))* (1 - est[1])
         plot!(p, real(v.X[1]), circshift(est, Int(ceil(-512/4))), color=pal[i], linestyle=lines[i], label=labels[i])

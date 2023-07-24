@@ -54,7 +54,7 @@ function estimate_sigma2(psi_k, sim::Sim{3,CuArray{ComplexF64}})
   axial_density = sum(aa, dims=(2, 3))[:, 1, 1]
   ymask = (CuArray(sim.X[2]) .^ 2) * CuArray(ones(sim.N[2]))'
   zmask = CuArray(ones(sim.N[3])) * (CuArray(sim.X[3]) .^ 2)'
-  r2mask = ymask+zmask
+  r2mask = ymask + zmask
   for x in xax
     if axial_density[x] < 1e-300
       tmp[x] = 1.0
@@ -195,26 +195,66 @@ end
 chemical potential of GPE in a given configuration
 """
 function chempotk(psi, sim)
-  @unpack ksquared, dV, V0, Vol, g = sim
-  mu = 1 / Vol * sum(1 / 2 * ksquared .* abs2.(psi))
+  @assert nsk(psi, sim) ≈ 1
   tmp = xspace(psi, sim)
-  mu += dV * sum((V0 + g * abs2.(tmp)) .* abs2.(tmp))
-  mu *= 1 / ns(tmp, sim)
-  #mu += 1 # add one transverse energy unit (1D-GPE case)
-  return real(mu)
+  return chempot(tmp, sim)
 end
 
 """
 chemical potential of GPE in a given configuration
 """
 function chempot(psi, sim)
-  @unpack ksquared, dV, V0, Vol, g = sim
+  @unpack ksquared, dV, V0, Vol, g, equation = sim
+  @assert ns(psi, sim) ≈ 1
+  if equation == GPE_1D || equation == GPE_3D
+    mu = dV * sum((V0 + g * abs2.(psi)) .* abs2.(psi))
+    tmp = kspace(psi, sim)
+    mu += 1 / Vol * sum(1 / 2 * ksquared .* abs2.(tmp))
+    # mu *= 1 / nsk(tmp, sim)
+    if equation == GPE_1D
+      mu += 1 # add one transverse energy unit (1D-GPE case)
+    end
+  elseif equation == NPSE
+    s2 = estimate_sigma2(psi, sim)
+    mu = dV * sum((V0 + g * abs2.(psi) + 1 / 2 * (1 ./ s2 + s2)) .* abs2.(psi))
+    tmp = kspace(psi, sim)
+    mu += 1 / Vol * sum(1 / 2 * ksquared .* abs2.(tmp))
+    # mu *= 1 / nsk(tmp, sim)
+  elseif equation == NPSE_plus
+    s2 = estimate_sigma2(psi, sim)
+    mat = Tridiagonal(-ones(length(s2) - 1), zeros(length(s2)), ones(length(s2) - 1))
+    s2d = 1 / (2 * dV) * mat * s2
+    s2d[1] -= 1 / (2 * dV) * s2[end]
+    s2d[end] += 1 / (2 * dV) * s2[1]
+    mu = dV * sum((V0 + g * abs2.(psi) + 1 / 2 * (1 ./ s2 .* (1 .+ s2d .^ 2) + s2)) .* abs2.(psi))
+    tmp = kspace(psi, sim)
+    mu += 1 / Vol * sum(1 / 2 * ksquared .* abs2.(tmp))
+  elseif equation == CQGPE
+    mu = dV * sum((V0 + g * abs2.(psi) - 1 / 4 * g^2 * abs2.(psi) .^ 2) .* abs2.(psi))
+    tmp = kspace(psi, sim)
+    mu += 1 / Vol * sum(1 / 2 * ksquared .* abs2.(tmp))
+    # mu *= 1 / nsk(tmp, sim)
+    mu += 1 # add one transverse energy unit (1D-GPE case)
+  end
+  return real(mu)
+end
+
+function chempotk_simple(psi, sim)
+  @unpack ksquared, dV, V0, Vol, g, equation = sim
+  mu = 1 / Vol * sum(1 / 2 * ksquared .* abs2.(psi))
+  tmp = xspace(psi, sim)
+  mu += dV * sum((V0 + g * abs2.(tmp)) .* abs2.(tmp))
+  mu += 1 # add one transverse energy unit (1D-GPE case)
+  return mu
+end
+
+function chempot_simple(psi, sim)
+  @unpack ksquared, dV, V0, Vol, g, equation = sim
   mu = dV * sum((V0 + g * abs2.(psi)) .* abs2.(psi))
   tmp = kspace(psi, sim)
   mu += 1 / Vol * sum(1 / 2 * ksquared .* abs2.(tmp))
-  mu *= 1 / nsk(tmp, sim)
-  #mu += 1 # add one transverse energy unit (1D-GPE case)
-  return real(mu)
+  mu += 1 # add one transverse energy unit (1D-GPE case)
+  return mu
 end
 
 function sim_info(sim)

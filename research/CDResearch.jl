@@ -57,6 +57,9 @@ includet("lines.jl")
 ```
 includet("tiles.jl")
 
+includet("chempot.jl")
+
+
 includet("aux_collapse.jl")
 includet("aux_gs.jl")
 includet("aux_collision.jl")

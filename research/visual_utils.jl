@@ -62,7 +62,7 @@ end
 function show_sigma2(psi, sim)
     @unpack_Sim sim
     x = X[1] |> real
-    sigma2 = estimate_sigma2(psi, sim)
+    sigma2 = estimate_sigma2k(psi, sim)
     p = plot(x, sigma2, label = "σ^2")
     display(p) 
     return nothing

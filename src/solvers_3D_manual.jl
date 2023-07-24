@@ -16,7 +16,7 @@ function nlin_manual!(
    xspace!(psi,sim)
    @. psi *= exp(dt_order * -im*iswitch* (V0 + V(x,y,z,t)))
    @. psi *= exp(dt_order * -im*iswitch* (g*abs2(psi)))      
-   if maximum(abs2.(psi) * dV) > 0.2
+   if maximum(abs2.(psi) * dV) > 0.05
       throw(Gpe3DCollapse(maximum(abs2.(psi) * dV)))
    end
    debug && @warn "max prob" maximum(abs2.(psi) * dV)
@@ -38,8 +38,8 @@ function propagate_manual!(
    nlin_manual!(psi,sim,t; info=info)
    if iswitch == -im
       psi .= psi / sqrt(nsk(psi, sim))
-      info && print(" - chempot: ", chempotk(psi, sim))
-      cp_diff = (chempotk(psi, sim) - chempotk(psi_i, sim))/(chempotk(psi_i, sim)) / dt
+      info && print(" - schempot: ", chempotk_simple(psi, sim))
+      cp_diff = (chempotk_simple(psi, sim) - chempotk_simple(psi_i, sim))/(chempotk_simple(psi_i, sim)) / dt
       return cp_diff
    else
       return nothing

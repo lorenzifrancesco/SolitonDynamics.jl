@@ -58,7 +58,7 @@ function nlin_manual!(psi, sim::Sim{1,Array{ComplexF64}}, t; ss_buffer=nothing, 
   elseif equation == CQGPE
     @. psi *= exp(dt_order * -im * iswitch * (V0 + V(x, t) + g * abs2(psi) - 1 / 4 * g^2 * abs2(abs2(psi))))
   end
-  if maximum(abs2.(psi) * dV) > 0.2
+  if maximum(abs2.(psi) * dV) > 0.5
     throw(Gpe3DCollapse(maximum(abs2.(psi) * dV)))
   end
   kspace!(psi, sim)
@@ -75,8 +75,8 @@ function propagate_manual!(psi, sim::Sim{1,Array{ComplexF64}}, t; ss_buffer=noth
   nlin_manual!(psi, sim, t; ss_buffer=ss_buffer, info=info)
   if iswitch == -im
     psi .= psi / sqrt(nsk(psi, sim))
-    info && print(" - chempot: ", abs(chempotk(psi, sim)))
-    cp_diff = (chempotk(psi, sim) - chempotk(psi_i, sim)) / chempotk(psi_i, sim) / dt
+    info && print(" - schempot: ", abs(chempotk_simple(psi, sim)))
+    cp_diff = (chempotk_simple(psi, sim) - chempotk_simple(psi_i, sim)) / chempotk_simple(psi_i, sim) / dt
     return cp_diff
   else
     return nothing
@@ -99,7 +99,7 @@ function cn_ground_state!(psi, sim::Sim{1,Array{ComplexF64}}, dt, tri_fwd, tri_b
   psi .= tri_fwd * psi
   psi .= transpose(\(psi, tri_bkw))
   psi .= psi / sqrt(ns(psi, sim))
-  cp_diff = (chempot(psi, sim) - chempot(psi_i, sim)) / chempot(psi_i, sim) / dt
+  cp_diff = (chempot_simple(psi, sim) - chempot_simple(psi_i, sim)) / chempot_simple(psi_i, sim) / dt
   return cp_diff
 end
 
@@ -129,7 +129,7 @@ function pc_ground_state!(psi, sim::Sim{1,Array{ComplexF64}}, dt, tri_fwd, tri_b
   info && @info display(sum(psi))
 
   psi .= psi / sqrt(ns(psi, sim))
-  cp_diff = (chempot(psi, sim) - chempot(psi_i, sim)) / chempot(psi_i, sim) / dt
+  cp_diff = (chempot_simple(psi, sim) - chempot_simple(psi_i, sim)) / chempot_simple(psi_i, sim) / dt
   return cp_diff
 end
 
@@ -147,6 +147,6 @@ function be_ground_state!(psi, sim::Sim{1,Array{ComplexF64}}, dt, tri_fwd, tri_b
   tri_bkw_complete = tri_bkw - Diagonal(nonlin)
   psi .= transpose(\(psi, tri_bkw_complete))
   psi .= psi / sqrt(ns(psi, sim))
-  cp_diff = (chempot(psi, sim) - chempot(psi_i, sim)) / chempot(psi_i, sim) / dt
+  cp_diff = (chempot_simple(psi, sim) - chempot_simple(psi_i, sim)) / chempot_simple(psi_i, sim) / dt
   return cp_diff
 end
