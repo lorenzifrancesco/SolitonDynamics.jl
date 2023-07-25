@@ -12,7 +12,7 @@ function lines(gamma_list = [0.65]
   for gamma in gamma_list
     @info "==== Using gamma: " gamma
 
-    sd = load_parameters_alt(gamma_param=gamma; eqs=["Np"], nosaves=true)
+    sd = load_parameters_alt(gamma_param=gamma; eqs=["G3","N", "G1", "Np"], nosaves=true)
 
     @info "Required simulations: " keys(sd)
     prepare_for_collision!(sd, gamma; use_precomputed_gs=false)
@@ -26,7 +26,7 @@ function lines(gamma_list = [0.65]
     end
 
     for (name, sim) in sd
-      @info "Tiling " name
+      @info "Lining " name
       if haskey(line_dict, hs(name, gamma)) && use_precomputed_lines
         @info "Already found line for " name, gamma
       else
@@ -34,9 +34,9 @@ function lines(gamma_list = [0.65]
         line = get_lines(
           sim,
           name;
-          lines=2,
-          sweep="vel",
-          points=100)
+          lines=4,
+          sweep="bar",
+          points=50)
 
         push!(line_dict, hs(name, gamma) => line)
         JLD2.save(save_path * "line_dict.jld2", line_dict)
@@ -152,7 +152,7 @@ function get_lines(
       @warn "T+R != 1.0"
     end
   end
-  @info "Tiling time            = " full_time
+  @info "Lining time            = " full_time
   @info "Total time in solver   = " avg_iteration_time
   @info "Average iteration time = " avg_iteration_time / lines^2
 
@@ -198,7 +198,7 @@ function get_lines(
   mask_refl = map(xx -> xx > 0, archetype.X[1] |> real)
   mask_tran = map(xx -> xx < 0, archetype.X[1] |> real)
 
-  @info "Running tiling..."
+  @info "Running lining..."
   avg_iteration_time = 0.0
   iter = Iterators.product(enumerate(y_axis), enumerate(x_axis))
   full_time = @elapsed for ((iy, y), (ix, x)) in ProgressBar(iter)
@@ -258,7 +258,7 @@ function get_lines(
       @warn "T+R != 1.0"
     end
   end
-  @info "Tiling time            = " full_time
+  @info "Lining time            = " full_time
   @info "Total time in solver   = " avg_iteration_time
   @info "Average iteration time = " avg_iteration_time / lines^2
 
@@ -270,7 +270,7 @@ function get_lines(
   return tran
 end
 
-function view_all_lines(; sweep="vel")
+function view_all_lines(; sweep="bar")
   line_file = "results/line_dict.jld2"
   @assert isfile(line_file)
   ld = load(line_file)
@@ -294,12 +294,19 @@ function view_all_lines(; sweep="vel")
   end
 end
 
-function compare_all_lines(; slice_choice=1, sweep="vel")
+function plot_all_lines(number_of_lines=4, sweep="bar")
+  for i in 1:number_of_lines
+    compare_all_lines(slice_choice=i, sweep=sweep)
+  end
+end
+
+function compare_all_lines(; slice_choice=1, sweep="bar")
   # pyplot(size=(350, 220))
   line_file = "results/line_dict.jld2"
   @assert isfile(line_file)
   ld = load(line_file)
   example = collect(values(ld))[1]
+  @warn example
   if sweep == "vel"
     p = plot(xlabel=L"v", ylabel=L"T")
     x = LinRange(evel(1), evel(2), length(example[1, :]))
@@ -314,11 +321,11 @@ function compare_all_lines(; slice_choice=1, sweep="vel")
   for (k, v) in ld
     @info "found" ihs(k)
     # for iy in 1:size(v)[1]
-    plot!(p, collect(x), v[slice_choice, :], linestyle=lineof(k), color=colorof(k), label=nameof(k))
+    plot!(p, collect(x), v[slice_choice, :], linestyle=lineof(ihs(k)), color=colorof(ihs(k)), label=nameof(ihs(k)))
     # end
     cnt += 1
   end
-  plot!(p, grid=false, legend=:topleft)
+  plot!(p, grid=false, legend=:topright)
   savefig(p, "media/compare_lines_"*string(slice_choice)*".pdf")
   return p
 end

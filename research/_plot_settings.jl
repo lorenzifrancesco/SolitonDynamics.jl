@@ -1,6 +1,6 @@
 
 function colorof(key::Tuple{String, Float64})
-  name = ihs(key)[1]
+  name = key[1]
   return colorof(name)
 end
 
@@ -15,11 +15,13 @@ function colorof(name::String)
     return :green
   elseif name == "CQ"
     return :blue
+  else 
+    return :black
   end
 end
 
 function lineof(key::Tuple{String, Float64})
-  name = ihs(key)[1]
+  name = key[1]
   return lineof(name)
 end
 
@@ -35,11 +37,13 @@ function lineof(name::String)
     return :dash
   elseif name == "CQ"
     return :dashdot
+  else 
+    return :solid
   end
 end
 
 function nameof(key::Tuple{String, Float64})
-  name = ihs(key)[1]
+  name = key[1]
   return nameof(name)
 end
 
@@ -54,5 +58,7 @@ function nameof(name::String)
     return "NPSE+"
   elseif name == "CQ"
     return "CQ-GPE"
+  else 
+    return "Unknown"
   end
 end

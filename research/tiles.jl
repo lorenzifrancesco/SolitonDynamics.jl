@@ -264,7 +264,7 @@ function view_all_tiles()
     ht = contour(axis, axis, v, clabels=true, xlabel="v", ylabel="b")
     contour!(ht, axis, axis, mask,  levels = [0.0], color=:turbo, linestyle=:dot ,linewidth=1.8)
     savefig(ht, "media/tiles_" * string(ihs(k)) * "_ct.pdf")
-    ht2 = heatmap(axis, axis, mask, clabels=true, xlabel="v", ylabel="b")
+    ht2 = heatmap(axis, axis, v, clabels=true, xlabel="v", ylabel="b")
     savefig(ht2, "media/tiles_" * string(ihs(k)) * "_ht.pdf")
   end
 end

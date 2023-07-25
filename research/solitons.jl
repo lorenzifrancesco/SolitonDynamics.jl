@@ -16,8 +16,10 @@ function hs(eq::String, g::Float64)
     n += 2000
   elseif eq == "G3"
     n += 3000
-  else
+  elseif eq == "CQ"
     n += 4000
+  else
+    throw("Unknown equation")
   end
   n += Int(round(g * 100))
   # print("\nCompute hash: ", n, "\n")
@@ -32,8 +34,10 @@ function ihs(s::String)
     return ("N", (n - 1000) / 100)
   elseif n < 2500
     return ("Np", (n - 2000) / 100)
-  else
+  elseif n < 3500
     return ("G3", (n - 3000) / 100)
+  else
+    return ("CQ", (n - 4000) / 100)
   end
 end
 
