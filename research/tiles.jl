@@ -13,7 +13,7 @@ function tiles(; use_precomputed_tiles=false)
 
   for gamma in gamma_list
     @info "==== Using gamma: " gamma
-    sd = load_parameters_alt(gamma_param=gamma; eqs=["G3"], nosaves=true)
+    sd = load_parameters_alt(gamma_param=gamma; eqs=["Np"], nosaves=true)
     @info "Required simulations: " keys(sd)
     prepare_for_collision!(sd, gamma)
 
@@ -44,7 +44,7 @@ function tiles(; use_precomputed_tiles=false)
       if haskey(tile_dict, hs(name, gamma)) && use_precomputed_tiles
         @info "Already found tile for " name, gamma
       else
-        tile = get_tiles(sim, name; tiles=100)
+        tile = get_tiles(sim, name; tiles=50)
         push!(tile_dict, hs(name, gamma) => tile)
         JLD2.save(save_path * "tile_dict.jld2", tile_dict)
       end
@@ -259,13 +259,14 @@ function view_all_tiles()
   td = load(tile_file)
   for (k, v) in td
     @info "found" ihs(k)
-    axis = LinRange(0.0, 1.0, size(v)[1])
-    v, mask = process_tiles(v)
-    ht = contour(axis, axis, v, clabels=true, xlabel="v", ylabel="b")
-    contour!(ht, axis, axis, mask,  levels = [0.0], color=:turbo, linestyle=:dot ,linewidth=1.8)
-    savefig(ht, "media/tiles_" * string(ihs(k)) * "_ct.pdf")
-    ht2 = heatmap(axis, axis, v, clabels=true, xlabel="v", ylabel="b")
+    baxis = LinRange(0.0, 1.0, size(v)[1])
+    vaxis = LinRange(0.1, 1.0, size(v)[1])
+    ht2 = heatmap(vaxis, baxis, v, clabels=true, xlabel="v", ylabel="b")
     savefig(ht2, "media/tiles_" * string(ihs(k)) * "_ht.pdf")
+    v, mask = process_tiles(v)
+    ht = contour(vaxis, baxis, v, clabels=true, xlabel="v", ylabel="b")
+    contour!(ht, vaxis, baxis, mask,  levels = [0.0], color=:turbo, linestyle=:dot ,linewidth=1.8)
+    savefig(ht, "media/tiles_" * string(ihs(k)) * "_ct.pdf")
   end
 end
 
