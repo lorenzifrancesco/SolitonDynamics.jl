@@ -159,7 +159,6 @@ function get_tiles(
   name::String="noname";
   tiles=100,
   plot_finals=false)
-
   saveto = "../media/tiles_$(name).pdf"
   max_vel = 1
   max_bar = 1
@@ -254,20 +253,41 @@ function get_tiles(
 end
 
 function view_all_tiles()
+  pyplot(size=(300, 220))
   tile_file = "results/tile_dict.jld2"
   @assert isfile(tile_file)
   td = load(tile_file)
+  delete!(td, hs("CQ", 0.65))
+  ht_list = []
+  ct_list = []
+  vaxx = []
+  baxx = []
+  vaxis = nothing
+  baxis = nothing
+
   for (k, v) in td
     @info "found" ihs(k)
     baxis = LinRange(0.0, 1.0, size(v)[1])
     vaxis = LinRange(0.1, 1.0, size(v)[1])
-    ht2 = heatmap(vaxis, baxis, v, clabels=true, xlabel="v", ylabel="b")
+    push!(vaxx, vaxis)
+    push!(baxx, baxis)
+    ht2 = heatmap(vaxis, baxis, v, clabels=true, xlabel=L"v", ylabel=L"b", colorbar_title=L"T")
     savefig(ht2, "media/tiles_" * string(ihs(k)) * "_ht.pdf")
+    push!(ht_list, deepcopy(v))
     v, mask = process_tiles(v)
-    ht = contour(vaxis, baxis, v, clabels=true, xlabel="v", ylabel="b")
+    ht = contour(vaxis, baxis, v, clabels=true, xlabel=L"v", ylabel=L"b")
     contour!(ht, vaxis, baxis, mask,  levels = [0.0], color=:turbo, linestyle=:dot ,linewidth=1.8)
+    push!(ct_list, deepcopy(mask))
     savefig(ht, "media/tiles_" * string(ihs(k)) * "_ct.pdf")
   end
+  ht_comp = plot([heatmap(vaxx[i], baxx[i], ht_list[i], clabels=true, xlabel=L"v", ylabel=L"b", aspect_ratio=:equal) for i in 1:length(ht_list)]..., layout=(1, 3), size=(800, 800))
+  
+  display(ht_comp)
+  # ht_comp = heatmap(vaxis, baxis, ht_list, layout=(4, 1), clabels=true, xlabel=L"v", ylabel=L"b", colorbar_title=L"T")
+  # ct_comp = contour(vaxis, baxis, ct_list, layout=(4, 1), clabels=true, xlabel=L"v", ylabel=L"b")
+  # display(ct_comp)
+  savefig(ht_comp, "media/tiles_ht_comp.pdf")
+  # savefig("ct_comparison.pdf", ct_comp)
 end
 
 function process_tiles(tt)
