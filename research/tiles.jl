@@ -264,11 +264,12 @@ function view_all_tiles()
   baxx = []
   vaxis = nothing
   baxis = nothing
-
+  kk = []
   for (k, v) in td
+    push!(kk, k)
     @info "found" ihs(k)
     if ihs(k)[1] == "G3"
-      preprocess_tiles_3d(v)
+      preprocess_tiles_3d!(v)
     end
     baxis = LinRange(0.0, 1.0, size(v)[1])
     vaxis = LinRange(0.1, 1.0, size(v)[1])
@@ -283,7 +284,7 @@ function view_all_tiles()
     push!(ct_list, deepcopy(mask))
     savefig(ht, "media/tiles_" * string(ihs(k)) * "_ct.pdf")
   end
-  ht_comp = plot([heatmap(vaxx[i], baxx[i], ht_list[i], clabels=true, xlabel=L"v", ylabel=L"b", aspect_ratio=:equal) for i in 1:length(ht_list)]..., layout=(1, 3), size=(800, 800))
+  ht_comp = plot([heatmap(vaxx[i], baxx[i], ht_list[i], clabels=true, xlabel=L"v", ylabel=L"b", aspect_ratio=:equal) for i in 1:length(ht_list)]..., layout=(1, 3), size=(850, 220))
   
   display(ht_comp)
   # ht_comp = heatmap(vaxis, baxis, ht_list, layout=(4, 1), clabels=true, xlabel=L"v", ylabel=L"b", colorbar_title=L"T")
@@ -296,9 +297,9 @@ end
 function preprocess_tiles_3d!(tt)
   for bar in 1:size(tt)[1]
     for vel in 2:size(tt)[2]
-      if tt[vel, bar] - tt[vel-1, bar] < -0.1
+      if tt[vel, bar] - tt[vel-1, bar] > 0.01
         tt[vel, bar] = NaN
-        for velx in vel:length(tt)[2]
+        for velx in vel:size(tt)[2]
           tt[velx, bar] = NaN
         end
       end
