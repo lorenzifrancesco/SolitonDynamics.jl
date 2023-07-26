@@ -259,6 +259,9 @@ function view_all_tiles()
   td = load(tile_file)
   for (k, v) in td
     @info "found" ihs(k)
+    if ihs(k)[1] == "G3"
+      preprocess_tiles_3d(v)
+    end
     baxis = LinRange(0.0, 1.0, size(v)[1])
     vaxis = LinRange(0.1, 1.0, size(v)[1])
     ht2 = heatmap(vaxis, baxis, v, clabels=true, xlabel="v", ylabel="b")
@@ -268,6 +271,20 @@ function view_all_tiles()
     contour!(ht, vaxis, baxis, mask,  levels = [0.0], color=:turbo, linestyle=:dot ,linewidth=1.8)
     savefig(ht, "media/tiles_" * string(ihs(k)) * "_ct.pdf")
   end
+end
+
+function preprocess_tiles_3d!(tt)
+  for bar in 1:size(tt)[1]
+    for vel in 2:size(tt)[2]
+      if tt[vel, bar] - tt[vel-1, bar] < -0.1
+        tt[vel, bar] = NaN
+        for velx in vel:length(tt)[2]
+          tt[velx, bar] = NaN
+        end
+      end
+    end
+  end
+  return tt
 end
 
 function process_tiles(tt)
