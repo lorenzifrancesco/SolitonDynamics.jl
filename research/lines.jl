@@ -12,7 +12,7 @@ function lines(gamma_list = [0.65]
   for gamma in gamma_list
     @info "==== Using gamma: " gamma
 
-    sd = load_parameters_alt(gamma_param=gamma; eqs=["G1", "N", "Np", "G3","CQ"], nosaves=true)
+    sd = load_parameters_alt(gamma_param=gamma; eqs=["N", "Np", "G3"], nosaves=true)
 
     @info "Required simulations: " keys(sd)
     prepare_for_collision!(sd, gamma; use_precomputed_gs=false)
@@ -356,10 +356,10 @@ function compare_all_lines(; slice_choice=1, sweep="bar")
 end
 
 function ebar(i)
-  extremes = [0.1, 0.25]
+  extremes = [0.0, 0.25]
   return extremes[i]
 end
 function evel(i)
-  extremes = [0.1, 0.3]
+  extremes = [0.2, 0.4]
   return extremes[i]
 end
