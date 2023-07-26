@@ -1,22 +1,21 @@
 using ColorSchemes
 
 # use the 512 version (long run)
-function gs_sigma2(gamma_list=[0.55])
+function gs_sigma2(gamma_list=[0.65])
+  pyplot(size=(350, 220))
   for gamma in gamma_list
     sd = load_parameters_alt(gamma_param=gamma)
     delete!(sd, "CQ")
     prepare_for_collision!(sd, gamma; use_precomputed_gs=true, info=true)
 
     p=plot(title="gamma=$(gamma)")
-    if length(sd)>1
-      pal = palette([:blue, :red], length(sd))
-      pal = [:blue, :red, :grey, :black]
-      @assert length(sd) == 4
-      lines = beauty_lines()
-      labels = beauty_labels()
-    else
-      pal = [:red]
-    end
+    # if length(sd)>1
+    #   pal = palette([:blue, :red], length(sd))
+    #   pal = [:blue, :red, :grey, :black]
+    #   @assert length(sd) == 4
+    # else
+    #   pal = [:red]
+    # end
     i = 1
     p = plot()
     for (k, v) in sd
@@ -24,9 +23,10 @@ function gs_sigma2(gamma_list=[0.55])
       est = estimate_sigma2k(v.psi_0, v)
       if length(v.N) == 3
         est += ones(length(est))* (1 - est[1])
-        plot!(p, real(v.X[1]), circshift(est, Int(ceil(-512/4))), color=pal[i], linestyle=lines[i], label=labels[i])
+        print("asdvasdvasdv___> ", k )
+        plot!(p, real(v.X[1]), circshift(est, Int(ceil(-256/4))), color=colorof(k), linestyle=lineof(k), label=nameof(k))
       else
-        plot!(p, real(v.X[1]), circshift(est, Int(ceil(-1024/4))), color=pal[i], linestyle=lines[i], label=labels[i])
+        plot!(p, real(v.X[1]), circshift(est, Int(ceil(-256/4))), color=colorof(k), linestyle=lineof(k), label=nameof(k))
       end
 
       if gamma == 0.55

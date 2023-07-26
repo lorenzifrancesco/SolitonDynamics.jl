@@ -12,7 +12,7 @@ function lines(gamma_list = [0.65]
   for gamma in gamma_list
     @info "==== Using gamma: " gamma
 
-    sd = load_parameters_alt(gamma_param=gamma; eqs=["G3","N", "G1", "Np"], nosaves=true)
+    sd = load_parameters_alt(gamma_param=gamma; eqs=["G1", "N", "Np", "G3","CQ"], nosaves=true)
 
     @info "Required simulations: " keys(sd)
     prepare_for_collision!(sd, gamma; use_precomputed_gs=false)
@@ -34,7 +34,7 @@ function lines(gamma_list = [0.65]
         line = get_lines(
           sim,
           name;
-          lines=4,
+          lines=2,
           sweep="bar",
           points=50)
 
@@ -295,6 +295,7 @@ function view_all_lines(; sweep="bar")
 end
 
 function plot_all_lines(number_of_lines=4, sweep="bar")
+  pyplot(size=(350, 220))
   for i in 1:number_of_lines
     compare_all_lines(slice_choice=i, sweep=sweep)
   end
@@ -306,7 +307,6 @@ function compare_all_lines(; slice_choice=1, sweep="bar")
   @assert isfile(line_file)
   ld = load(line_file)
   example = collect(values(ld))[1]
-  @warn example
   if sweep == "vel"
     p = plot(xlabel=L"v", ylabel=L"T")
     x = LinRange(evel(1), evel(2), length(example[1, :]))
@@ -315,13 +315,38 @@ function compare_all_lines(; slice_choice=1, sweep="bar")
     x = LinRange(ebar(1), ebar(2), length(example[1, :]))
   end
 
-  @warn "check the order"
   cnt = 1
   @info keys(ld)
+  delete!(ld, hs("CQ", 0.65))
+  delete!(ld, hs("G1", 0.65))
   for (k, v) in ld
     @info "found" ihs(k)
     # for iy in 1:size(v)[1]
-    plot!(p, collect(x), v[slice_choice, :], linestyle=lineof(ihs(k)), color=colorof(ihs(k)), label=nameof(ihs(k)))
+    @warn "using a trick for the correct CQ"
+    if ihs(k)[1] == "CQ"
+      @info "found CQ"
+      choice = v[slice_choice+2, :]
+    else
+      choice = v[slice_choice, :]  
+    end
+    
+    if true
+      if slice_choice == 2
+        if ihs(k)[1] == "G3"
+          choice[32:end] = ones(50-31) * NaN
+        elseif ihs(k)[1] == "Np"
+          choice[39:end] = ones(50-38) * NaN 
+        end
+      end
+      if slice_choice == 1
+        if ihs(k)[1] == "G3"
+          choice[16:end] = ones(50-15) * NaN
+        elseif ihs(k)[1] == "Np"
+          choice[35:end] = ones(50-34) * NaN 
+        end
+      end
+    end
+    plot!(p, collect(x), choice, linestyle=lineof(ihs(k)), color=colorof(ihs(k)), label=nameof(ihs(k)))
     # end
     cnt += 1
   end
@@ -331,10 +356,10 @@ function compare_all_lines(; slice_choice=1, sweep="bar")
 end
 
 function ebar(i)
-  extremes = [0.1, 1.0]
+  extremes = [0.1, 0.25]
   return extremes[i]
 end
 function evel(i)
-  extremes = [0.1, 1.0]
+  extremes = [0.1, 0.3]
   return extremes[i]
 end

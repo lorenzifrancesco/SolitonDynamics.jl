@@ -325,7 +325,7 @@ function solitons(
       @info "non special case, but applying lims as 0.65"
       plot!(p, xlims=(-4, 4), ylims=(0.0, 0.6))
     end
-    plot!(p, xlabel=L"x", ylabel=L"|\phi|^2", legend=:topright, grid=false, smooth=true)
+    plot!(p, xlabel=L"x", ylabel=L"|f|^2", legend=:topright, grid=false, smooth=true)
     # display and save
     if show_plots
       display(p)
