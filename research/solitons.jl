@@ -45,7 +45,7 @@ end
 
 function solitons(
   ; plus::Bool=false,
-  use_precomputed::Bool=false,
+  use_precomputed::Bool=true,
   take_advantage::Bool=true,
   saveplots::Bool=true,
   show_plots::Bool=false,
@@ -94,7 +94,7 @@ function solitons(
     p = plot()
     # == GPE 1D =======================================================
     if haskey(gs_dict, hs("G1", gamma_param))
-      if use_precomputed
+      if use_precomputed 
         @info "\t using precomputed solution G1"
       else
         @info "\t deleting and recomputing solution G1"
@@ -335,7 +335,7 @@ function solitons(
     if show_plots
       display(p)
     end
-    plot!(p, xlims=(-1, 1), ylims=(0.4, 0.45)) # 0.4, 0.45 for gamma 065
+    plot!(p, xlims=(-1, 1), ylims=(0.30, 0.52)) # 0.4, 0.45 for gamma 065
     saveplots ? savefig(p, "media/" * string(gamma_param) * "_ground_states_zoom.pdf") : nothing
   end
   return gs_dict

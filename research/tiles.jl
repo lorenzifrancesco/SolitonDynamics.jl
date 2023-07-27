@@ -92,6 +92,9 @@ function get_tiles(
     sol = nothing
     try
       avg_iteration_time += @elapsed sol = runsim(sim; info=false)
+      # avoid NPSE+ memory filling problem
+      @info "GC..."
+      GC.gc()
       if plot_finals
         pp = plot_final_density(sol.u, sim; show=false)
         savefig(pp, "media/checks/final_$(name)_$(vv)_$(bb).pdf")
