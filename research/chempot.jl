@@ -4,7 +4,7 @@ function compare_chempot(; use_precomputed=true, take_advantage=true)
   sd = load_parameters_alt(eqs=["G1", "N", "Np","G3"])
   FFTW.set_num_threads(1)
   gamma_range = LinRange(0.0, 1.0, 40)
-  p = plot(xlabel="gamma", ylabel="mu")
+  p = plot(xlabel=L"\gamma", ylabel=L"\mu")
 
   if isfile("results/mu_db.jld2")
     @info "=> Found dictionary, loading..."

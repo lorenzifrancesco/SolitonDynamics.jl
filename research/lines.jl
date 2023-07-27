@@ -12,7 +12,7 @@ function lines(gamma_list = [0.65]
   for gamma in gamma_list
     @info "==== Using gamma: " gamma
 
-    sd = load_parameters_alt(gamma_param=gamma; eqs=["N", "Np", "G3"], nosaves=true)
+    sd = load_parameters_alt(gamma_param=gamma; eqs=["N", "Np", "G3", "G1"], nosaves=true)
 
     @info "Required simulations: " keys(sd)
     prepare_for_collision!(sd, gamma; use_precomputed_gs=false)
