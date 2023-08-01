@@ -2,12 +2,12 @@ using ColorSchemes
 # no saves
 function collide()
     gamma = 0.65
-    sd = load_parameters_alt(gamma_param=gamma; nosaves=true)
+    sd = load_parameters_alt(gamma_param=gamma; eqs=["Np"], nosaves=true)
     prepare_for_collision!(sd, gamma)
     meas = []
     for (name, sim) in sd
       @info "---> Computing for" ihs(name)
-      sim = sd["G1"]
+      sim = sd["Np"]
 
       imprint_vel_set_bar!(sim; vv=1.0, bb=1.0)
 
@@ -21,7 +21,7 @@ function collide()
           @unpack_Sim sim
           dt = 0.01
           @pack_Sim! sim
-          sol = runsim(sim; info=false)
+          @time sol = runsim(sim; info=false)
 
           final = xspace(sol.u[end], sim)
           plot_final_density(sol.u, sim; show=true)

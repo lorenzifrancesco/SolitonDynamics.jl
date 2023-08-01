@@ -53,6 +53,19 @@ function sigma_eq(sigma, params)
   return f
 end
 
+function sigma_eq_jacobian(sigma, params) # slower than automatic differentiation
+  b = params[1]
+  A0 = params[2]
+  dV = params[3]
+  N = length(sigma)
+  lud = SymTridiagonal(0 * ones(N), ones(N))
+  J = Diagonal(- 1 / (2 * dV)* sigma + 2*A0*sigma + 4*sigma.^3) + 1/(2 * dV) * lud * Diagonal(-1/2 * sigma + 2 *lud*sigma) - 1/(2*dV) *  - Diagonal([-1/(2*dV), zeros(N-2)..., -1/(2*dV)])
+  return J
+end
+
+sigma_eq_nf = NonlinearFunction(sigma_eq; jac=sigma_eq_jacobian)
+
+
 function estimate_sigma2k(psi_k, sim::Sim{3,CuArray{ComplexF64}})
   s2 = Array{Float64,1}(undef, sim.N[1])
   # MSE estimator

@@ -33,7 +33,7 @@ function nlin_manual!(psi, sim::Sim{1,Array{ComplexF64}}, t; ss_buffer=nothing, 
         ss = ss_buffer
       end
 
-      prob = NonlinearProblem(sigma_eq, ss, [b, A0, dV])
+      prob = NonlinearProblem(sigma_eq_nf, ss, [b, A0, dV])
       sol = solve(prob, NewtonRaphson(), reltol=1e-6)
       sigma2_plus = (sol.u) .^ 2
       ss_buffer .= sol.u
