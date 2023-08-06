@@ -33,16 +33,16 @@ function nlin_manual!(psi, sim::Sim{1,Array{ComplexF64}}, t; ss_buffer=nothing, 
         ss = ss_buffer
       end
 
-      prob = NonlinearProblem(sigma_eq_nf, ss, [b, A0, dV])
+      prob = NonlinearProblem(sigma_eq, ss, [b, A0, dV])
       sol = solve(prob, NewtonRaphson(), reltol=1e-6)
       sigma2_plus = (sol.u) .^ 2
       ss_buffer .= sol.u
 
-      # === scientific debug zone
-      append!(time_of_sigma, t)
-      append!(sigma2_new, [sigma2_plus])
-      append!(sigma2_old, [1 .+ g * abs2.(psi)])
-      # === end scientific debug zone
+      # # === scientific debug zone
+      # append!(time_of_sigma, t)
+      # append!(sigma2_new, [sigma2_plus])
+      # append!(sigma2_old, [1 .+ g * abs2.(psi)])
+      # # === end scientific debug zone
     catch err
       if isa(err, DomainError)
         sigma2_plus = NaN
@@ -54,7 +54,6 @@ function nlin_manual!(psi, sim::Sim{1,Array{ComplexF64}}, t; ss_buffer=nothing, 
     temp = copy(sigma2_plus)
     nonlinear = g * abs2.(psi) ./ sigma2_plus + (1 / 2 * sigma2_plus .+ (1 ./ (2 * sigma2_plus)) .* (1 .+ (1 / dV * diff(prepend!(temp, 1.0))) .^ 2))
     @. psi = exp(dt_order * -im * iswitch * (V0 + V(x, t) + nonlinear)) * psi
-    # Base.GC.gc()  
   elseif equation == CQGPE
     @. psi *= exp(dt_order * -im * iswitch * (V0 + V(x, t) + g * abs2(psi) - 1 / 4 * g^2 * abs2(abs2(psi))))
   end
