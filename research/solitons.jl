@@ -149,7 +149,7 @@ function solitons(
       push!(gs_dict, hs("CQ", gamma_param) => sol.u)
     end
     cc = gs_dict[hs("CQ", gamma_param)]
-    plot_final_density!(p, [cc], sim_cc; label="CQ-GPE", color=:blue, ls=:dashdot)
+    # plot_final_density!(p, [cc], sim_cc; label="CQ-GPE", color=:blue, ls=:dashdot)
     JLD2.save(join([save_path, "gs_dict.jld2"]), gs_dict)
 
     # == NPSE =======================================================

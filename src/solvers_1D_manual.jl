@@ -55,7 +55,7 @@ function nlin_manual!(psi, sim::Sim{1,Array{ComplexF64}}, t; ss_buffer=nothing, 
     nonlinear = g * abs2.(psi) ./ sigma2_plus + (1 / 2 * sigma2_plus .+ (1 ./ (2 * sigma2_plus)) .* (1 .+ (1 / dV * diff(prepend!(temp, 1.0))) .^ 2))
     @. psi = exp(dt_order * -im * iswitch * (V0 + V(x, t) + nonlinear)) * psi
   elseif equation == CQGPE
-    @. psi *= exp(dt_order * -im * iswitch * (V0 + V(x, t) + g * abs2(psi) - 1 / 4 * g^2 * abs2(abs2(psi))))
+    @. psi *= exp(dt_order * -im * iswitch * (V0 + V(x, t) + g * abs2(psi) - 6*log(4/3) * g^2 * abs2(abs2(psi))))
   end
   if maximum(abs2.(psi) * dV) > 0.8
     throw(Gpe3DCollapse(maximum(abs2.(psi) * dV)))
