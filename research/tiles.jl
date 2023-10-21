@@ -1,6 +1,8 @@
 JULIA_CUDA_SOFT_MEMORY_LIMIT = "95%"
 
-function tiles(; use_precomputed_tiles=false)
+function tiles(; 
+  use_precomputed_tiles=false,
+  return_maximum=true)
   pyplot()
   if Threads.nthreads() == 1
     @warn "running in single thread mode!"
@@ -13,7 +15,7 @@ function tiles(; use_precomputed_tiles=false)
 
   for gamma in gamma_list
     @info "==== Using gamma: " gamma
-    sd = load_parameters_alt(gamma_param=gamma; eqs=["Np", "G1"], nosaves=true)
+    sd = load_parameters_alt(gamma_param=gamma; eqs=["G3"], nosaves=true)
     @info "Required simulations: " keys(sd)
     prepare_for_collision!(sd, gamma)
 
@@ -119,6 +121,7 @@ function get_tiles(
         refl[bx, vx] = 1.0
         @info "T = " tran[bx, vx]
       else
+        # CHANGE : saving the maximum value occured in the iterations
         final = sol.u[end]
         @info "Run complete, computing transmission..."
         xspace!(final, sim)

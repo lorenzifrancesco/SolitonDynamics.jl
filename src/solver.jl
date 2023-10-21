@@ -4,9 +4,18 @@ include("solvers_1D_manual.jl")
 include("solvers_3D_auto.jl")
 include("solvers_3D_manual.jl")
 
-function manual_run(sim; info=false, debug=false, throw_collapse=true)
+function manual_run(sim; 
+                    info=false, 
+                    debug=false, 
+                    throw_collapse=true,
+                    return_maximum=false)
   @unpack psi_0, dV, dt, ti, tf, t, solver, iswitch, abstol, reltol, N, Nt, V0, maxiters, time_steps, equation = sim
   psi = deepcopy(psi_0)
+  
+
+  #######################
+  # Imaginary time 
+  ######################
   if iswitch == -im # select solver and run manual convergence routine 
     # in manual GS mode the maximum number of steps is specified by maxiters
     if solver == SplitStep
@@ -14,7 +23,7 @@ function manual_run(sim; info=false, debug=false, throw_collapse=true)
       abstol_diff = abstol
       cnt = 0
       info && print("\n")
-
+      #
       debug && @info maxiters
       decay = 0 * 1e-5
       debug && @info "setting exp decay rate to" decay
@@ -23,9 +32,9 @@ function manual_run(sim; info=false, debug=false, throw_collapse=true)
       else
         ss_buffer = nothing
       end
-
+      #
       minimum_evolution_time = 40.0
-      
+      #
       info && print("Interaction number")
       while cnt < maxiters && (cnt * sim.dt < minimum_evolution_time || abs(cp_diff) > abstol_diff)
         tmp = chempotk_simple(psi, sim)
@@ -77,16 +86,27 @@ function manual_run(sim; info=false, debug=false, throw_collapse=true)
       sol = CustomSolution(u=psi, t=t, cnt=cnt)
     end
     return sol
+
+  #######################
+  # Real time 
+  ######################
   else
     # in manual run mode the number of steps is specified by time_steps
     time = 0.0
+    
+    if return_maximum
+      maximum = -1.0 
+    end
+    #######################
+    # D = 1 case
+    ######################
     if length(N) == 1
       collection = Array{ComplexF64,2}(undef, (length(psi), Nt))
       collection = zeros((length(psi), Nt)) |> complex
       collection[:, 1] = psi
       save_counter = 1
       solve_time_axis = LinRange(ti, tf, time_steps)
-
+      #
       if equation == NPSE_plus
         ss_buffer = ones(N[1])
       else
@@ -96,6 +116,12 @@ function manual_run(sim; info=false, debug=false, throw_collapse=true)
       for i in 1:time_steps
         try
           propagate_manual!(psi, sim, time; ss_buffer=ss_buffer)
+          if return_maximum
+            candidate_maximum = maximum(abs2.(psi))
+            if candidate_maximum > maximum
+              maximum = candidate_maximum
+            end
+          end
         catch err
           if isa(err, NpseCollapse) && !throw_collapse
             showerror(stdout, err)
@@ -113,6 +139,10 @@ function manual_run(sim; info=false, debug=false, throw_collapse=true)
       end
       collection[:, Nt] = psi
       sol = CustomSolution(u=[collection[:, k] for k in 1:Nt], t=t, cnt=time_steps)
+
+    #######################
+    # D = 3 case
+    ######################
     elseif length(N) == 3
       collection = CuArray{ComplexF64,4}(undef, (N..., Nt))
       collection[:, :, :, 1] = psi
@@ -122,6 +152,12 @@ function manual_run(sim; info=false, debug=false, throw_collapse=true)
       for i in 1:time_steps
         try
           propagate_manual!(psi, sim, time)
+          if return_maximum
+            candidate_maximum = maximum(abs2.(psi))
+            if candidate_maximum > maximum
+              maximum = candidate_maximum
+            end
+          end
         catch err
           if isa(err, NpseCollapse) && !throw_collapse
             showerror(stdout, err)
@@ -139,7 +175,12 @@ function manual_run(sim; info=false, debug=false, throw_collapse=true)
       collection[:, :, :, Nt] = psi
       sol = CustomSolution(u=[collection[:, :, :, k] for k in 1:Nt], t=t, cnt=time_steps)
     end
-    return sol
+
+    if return_maximum
+      return sol, maximum
+    else
+      return sol
+    end
   end
 end
 
