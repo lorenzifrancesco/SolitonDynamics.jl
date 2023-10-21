@@ -37,7 +37,10 @@ function nlin!(dpsi,psi,sim::Sim{1, Array{ComplexF64}},t)
       nonlinear = g*abs2.(dpsi) ./sigma2_plus +  (1/2 * sigma2_plus .+ (1 ./(2*sigma2_plus)).* (1 .+ (1/dV * diff(prepend!(sigma2_plus, 1.0))).^2))
       # warning: sigma2_plus gets modified by prepend!
       @. dpsi *= -im*iswitch* (V0 + V(x, t) + nonlinear) + mu_im
-   end
+    elseif equation == CQGPE
+      throw("unimplemented") 
+      @. dpsi = (-im*iswitch* (V0 + V(x, t) + g*abs2(dpsi))) * dpsi + abs2(abs2(dpsi)) * dpsi
+    end
    kspace!(dpsi,sim)
    return nothing
 end

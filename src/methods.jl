@@ -12,7 +12,7 @@ V(x, y, z, t) = 0.0
 
 Create `x` values with correct periodicity for box specified by length `λ`, using `N` points.
 """
-xvec(L,N) = LinRange(-L/2,L/2,N) |> collect
+xvec(L,N) = collect(LinRange(-L/2,L/2,N+1))[1:end-1]
 
 """
     k = kvec(λ,N)
@@ -23,7 +23,7 @@ function kvec(L,N)
     # @assert iseven(N)
     # nk = 0:Int(N/2)
     # k = [nk[1:end-1];-reverse(nk[2:end])]*2*π/λ
-    k = fftfreq(N)*N*2*π/L
+    k = fftfreq(N)*N*2*π/L 
     return k
 end
 
@@ -72,7 +72,7 @@ return spatial volume element
 function volume_element(L, N)
     dV=1
     for i in eachindex(L)
-        dV *= L[i]/(N[i]-1)
+        dV *= L[i]/(N[i])
     end
     return dV
 end
@@ -130,15 +130,19 @@ end
 Measures that make `fft`, `ifft` 2-norm preserving.
 Correct measures for mapping between `x`- and `k`-space.
 """
+# TODO 1
+# --> into transforms
 function dfft(x,k)
     dx = x[2]-x[1]
-    Dx = dx
+    Dx = dx 
     Dk = 1/Dx
     return Dx, Dk
 end
 
+# TODO 2
+# --> into nsk, ns
 function measures(L, N)
-    dX = L ./ (N .- 1)
+    dX = L ./ (N)
     dK = 1 ./ (dX .* N)
     return  prod(dX), prod(dK)
 end
@@ -179,31 +183,6 @@ function kspace!(ψ,sim)
     T.Txk!*ψ
     return nothing
 end
-
-# """
-#     CuArrays versions
-# """
-# function xspace(ϕ::CuArray,sim)
-#     @unpack T = sim
-#     return CUDA.CUFFT.:(*)(T.Tkx::AbstractFFTs.Plan{T}, ϕ)
-# end
-
-# function xspace!(ψ::CuArray,sim)
-#     @unpack T = sim
-#     T.Tkx!*ψ
-#     return nothing
-# end
-
-# function kspace(ψ::CuArray,sim)
-#     @unpack T = sim
-#     return T.Txk*ψ
-# end
-
-# function kspace!(ψ::CuArray,sim)
-#     @unpack T = sim
-#     T.Txk!*ψ
-#     return nothing
-# end
 
 """
     definetransforms(funcs,args,meas,kwargs)

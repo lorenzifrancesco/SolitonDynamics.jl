@@ -15,6 +15,7 @@ const GPE_1D =    EquationType(1, 1)
 const NPSE =      EquationType(2, 1)
 const NPSE_plus = EquationType(3, 1)
 const GPE_3D =    EquationType(4, 3)
+const CQGPE =    EquationType(5, 1)
 
 abstract type Simulation{D} end
 
@@ -49,6 +50,9 @@ end
 struct NpseCollapse <: Exception
     var::Float64
 end
+struct Gpe3DCollapse <: Exception
+    var::Float64
+end
 
 Base.showerror(io::IO, e::NpseCollapse) = print(io, "NPSE collapse detected, g * max(|f|^2) = ", e.var, "!")
 
@@ -73,6 +77,7 @@ end
 end
 
 @with_kw mutable struct Sim{D, A <: AbstractArray}
+    name::String = "default"
     # === solver and algorithm
     equation::EquationType = GPE_1D
     manual::Bool = false
@@ -96,7 +101,7 @@ end
     dt::Float64 = 1e-3  # used in manual solvers
     time_steps = 5000   # used in manual solvers
     # === nonlinearity
-    g::Float64 = 0.1
+    g::Float64 = 0.0
     gamma_damp::Float64 = 0.0; @assert gamma_damp >= 0.0 # damping parameter
     mu::Float64 = 0.0 # fixed chemical potential for ground state solution
     sigma2 = init_sigma2(g) 
@@ -123,6 +128,7 @@ end
 @with_kw mutable struct CustomSolution
     u
     t
+    cnt::Int64 = 0
 end
 
 InitSim(L,N,A,par) = Sim{length(L), A}(L=L,N=N,params=par)

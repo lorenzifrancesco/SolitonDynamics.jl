@@ -2,7 +2,7 @@ using BenchmarkTools
 using CondensateDynamics
 
 function run_benchmarks()
-    include("research/simulations_parameters.jl")
+    include("research/init.jl")
     simulations_dict = load_parameters_gs()
     @info "Available simulations" simulations_dict
     bms = BenchmarkTools.Trial[]
