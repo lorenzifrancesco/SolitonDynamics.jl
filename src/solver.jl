@@ -37,7 +37,12 @@ function manual_run(sim;
       info && print("Interaction number")
       while cnt < maxiters && (cnt * sim.dt < minimum_evolution_time || abs(cp_diff) > abstol_diff)
         tmp = chempotk_simple(psi, sim)
-        try
+        @warn "no catching"
+        cp_diff = propagate_manual!(psi, sim, dt; info=info, ss_buffer=ss_buffer)
+          sim.dt *= (1 - decay)
+          info && print("\r", cnt, " - chempot diff: ", cp_diff)
+      
+          try
           cp_diff = propagate_manual!(psi, sim, dt; info=info, ss_buffer=ss_buffer)
           sim.dt *= (1 - decay)
           info && print("\r", cnt, " - chempot diff: ", cp_diff)

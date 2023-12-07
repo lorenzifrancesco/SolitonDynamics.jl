@@ -56,17 +56,23 @@ function sigma_eq(sigma, params)
   b =     params[1]
   D1 =    params[2]
   D2 =    params[3]
-  fterm = params[4]
+  fterm = 0.0*params[4]
   bc1 =   params[5]
   bc2 =   params[6]
+  bc3 =   params[7]
   d1sigma = D1*sigma
   d2sigma = D2*sigma
-  sigma_2 = zeros(length(bc2))
-  sigma_2[1] = sigma[2]
-  sigma_2[end] = sigma[end-1]
   # structure: NPSE + derivatives + boundary conditions
-  ret = (- sigma .^ 4 + b) + (-(d1sigma).^2 + sigma .* d2sigma + sigma .* fterm .* d1sigma) + (bc2 - 2 * bc2 .* sigma_2  + bc2 .* sigma + sigma .* fterm .* bc1)
-  @warn ret
+  ret = (- sigma .^ 4 + b) + (-(d1sigma).^2 + sigma .* d2sigma + sigma .* fterm .* d1sigma) + (bc2 - 2 * bc3 .* sigma + bc2 .* sigma + sigma .* fterm .* bc1)
+  return ret
+end
+
+function sigma_eq_speed(sigma, params)
+  # d1sigma = D1*sigma
+  # d2sigma = D2*sigma
+  # structure: NPSE + derivatives + boundary conditions
+  # ret = (- sigma .^ 4 + b) + (-(d1sigma).^2 + sigma .* d2sigma + sigma .* fterm .* d1sigma) + (bc2 - 2 * bc3 .* sigma + bc2 .* sigma + sigma .* fterm .* bc1)
+  ret = - sigma .^4 + params
   return ret
 end
 

@@ -18,34 +18,80 @@ function nlin_manual!(psi, sim::Sim{1,Array{ComplexF64}}, t; ss_buffer=nothing, 
     @. psi = exp(dt_order * -im * iswitch * (V0 + V(x, t) + nonlinear)) * psi
   elseif equation == NPSE_plus
     sigma2_plus = zeros(length(x))
-    try
-      # Nonlinear Finite Element routine
-      b = (1 .+ g * abs2.(psi)) 
-      b[1] += 1.0 * 1 / (4 * dV)
-      b[end] += 1.0 * 1 / (4 * dV)
-      a = ones(length(b))
-      D1 = 1 / (2 * dV) * Tridiagonal(-a[1:end-1], 0*a, a[1:end-1])
-      D2 = 1 / (2 * dV) * SymTridiagonal(2 * a, -a)
-      fterm = D1 * abs2.(psi) ./ abs2.(psi)
-      bc1 = zeros(length(b))
-      bc1[1] = -1.0
-      bc1[end] = 1.0
-      bc2 = bc1
-      bc2[1] += 2.0
-      bc1 /= (2*dV)
-      bc2 /= (2*dV)
+      # load past solution
       if isnothing(ss_buffer)
         ss = ones(N)
       else
-        # info && @info "using ss_buffer with min: " minimum(ss_buffer)
         ss = ss_buffer
       end
+      
+      ## BVP routine 
+      ## ==================================
+      # # not good: taked half a second to solve a single BVP, even with this simple BC
+      # # will probably be worse with a big peak in the middle
+      
+      # NEED an interpolation, or can we just round the indices? 
+      # interpolate also the term with the f?
+      function sigma_bvp!(du, u, p, t)
+        sigma = u[1]
+        dsigma = u[2]
+        du[1] = dsigma
+        du[2] = sigma^3 - (1 .+ g*abs2.(psi[t]))/sigma + dsigma^2/sigma - dsigma  
+      end
+      
+      function bc_left_right!(residue, u, p, t)
+        residue[1] = u[1][1]-1.0
+        residue[2] = u[end][1]-1.0
+      end
 
-      prob = NonlinearProblem(sigma_eq, ss, [b, D1, D2, fterm, bc1, bc2])
-      sol = solve(prob, NewtonRaphson(), reltol=1e-6)
-      sigma2_plus = (sol.u) .^ 2
-      ss_buffer .= sol.u
+      xspan = (real(x[1]), real(x[end])) 
+      @time begin
+      tpbvp = BVProblem(sigma_bvp!, bc_left_right!, [1.0, 0.0], xspan)
+      sol = solve(tpbvp, MIRK4(), dt = real(x[2]-x[1]))
+      end
 
+      sigma2_plus = (sol[1, :]) .^ 2
+      ss_buffer .= sol[1, :]
+
+      # # Nonlinear Finite Element routine
+      # # ==================================
+      # function fast_sigma_eq(sigma, p)
+      #   # 101 KiB
+      #   b = (1 .+ g * abs2.(psi)) 
+      #   b[1] += 1.0 * 1 / (4 * dV)
+      #   b[end] += 1.0 * 1 / (4 * dV)
+      #   a = ones(length(b))
+      #   D1 = 1 / (2 * dV) * Tridiagonal(-a[1:end-1], 0*a, a[1:end-1])
+      #   D2 = 1 / (2 * dV) * SymTridiagonal(2 * a, -a)
+      #   fterm = (D1 * abs2.(psi)) ./ abs2.(psi)
+      #   bc1 = zeros(length(b))
+      #   bc1[1] = -1.0
+      #   bc1[end] = 1.0
+      #   bc2 = bc1
+      #   bc2[1] += 2.0
+      #   bc1 /= (2*dV)
+      #   bc2 /= (2*dV)
+      #   bc3 = zeros(length(b))
+      #   bc3[2] = 1.0
+      #   bc3[end-1] = 1.0
+      #   bc3 /= (2*dV)
+      #   d1sigma = D1 * sigma
+      #   d2sigma = D2 * sigma
+      #   # 366 KiB
+      #   ret = (- sigma .^ 4 + b) + (-(d1sigma).^2 + sigma .* d2sigma + sigma .* fterm .* d1sigma) + (bc2 - 2 * bc3 .* sigma + bc2 .* sigma + sigma .* fterm .* bc1)
+      #   return ret
+      # end
+
+      # @time begin
+      # #[b, D1, D2, fterm, bc1, bc2, bc3])
+      # prob = NonlinearSolve.NonlinearProblem(fast_sigma_eq, ss, 0.0)
+      # sol = NonlinearSolve.solve(prob, NonlinearSolve.NewtonRaphson(), reltol=1e-6)
+      # end
+      
+      # sigma2_plus = (sol.u) .^ 2
+      # ss_buffer .= sol.u
+
+    try
     catch err
       if isa(err, DomainError)
         sigma2_plus = NaN
@@ -54,9 +100,9 @@ function nlin_manual!(psi, sim::Sim{1,Array{ComplexF64}}, t; ss_buffer=nothing, 
         throw(err)
       end
     end
-    temp = copy(sigma2_plus)
-    nonlinear = g * abs2.(psi) ./ sigma2_plus + (1 / 2 * sigma2_plus .+ (1 ./ (2 * sigma2_plus)) .* (1 .+ (1 / dV * diff(prepend!(temp, 1.0))) .^ 2))
-    @. psi = exp(dt_order * -im * iswitch * (V0 + V(x, t) + nonlinear)) * psi
+    # temp = copy(sigma2_plus)
+    # nonlinear = g * abs2.(psi) ./ sigma2_plus + (1 / 2 * sigma2_plus .+ (1 ./ (2 * sigma2_plus)) .* (1 .+ (1 / dV * diff(prepend!(temp, 1.0))) .^ 2))
+    # @. psi = exp(dt_order * -im * iswitch * (V0 + V(x, t) + nonlinear)) * psi
   elseif equation == CQGPE
     @. psi *= exp(dt_order * -im * iswitch * (V0 + V(x, t) + g * abs2(psi) - 6*log(4/3) * g^2 * abs2(abs2(psi))))
   end

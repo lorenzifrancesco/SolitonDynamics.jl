@@ -76,13 +76,10 @@ function solitons(
     sim_npse = sd["N"]
     sim_npse_plus = sd["Np"]
     sim_gpe_3d = sd["G3"]
-    # @assert sim_gpe_1d.abstol    <= 1e-7
-    # @assert sim_npse.abstol      <= 1e-7
-    # @assert sim_npse_plus.abstol <= 1e-7
-    # @assert sim_gpe_3d.abstol    <= 1e-7
 
     @info "Computing for gamma = $(gamma_param)"
-
+    @info "\t EQ:comp| load"
+    @info "============================"
     # =========================================================
     Plots.CURRENT_PLOT.nullableplot = nothing
     x = sim_gpe_1d.X[1] |> real
@@ -95,16 +92,16 @@ function solitons(
     # == GPE 1D =======================================================
     if haskey(gs_dict, hs("G1", gamma_param))
       if use_precomputed 
-        @info "\t using precomputed solution G1"
+        @info "\t G1:    |  x  "
       else
-        @info "\t deleting and recomputing solution G1"
+        @info "\t G1: x  |      (deleting)"
         delete!(gs_dict, hs("G1", gamma_param))
         sol = runsim(sim_gpe_1d; info=info)
         @info "total imaginary time $(sol.cnt * sim_gpe_1d.dt)"
         push!(gs_dict, hs("G1", gamma_param) => sol.u)
       end
     else
-      @info "computing G1"
+      @info "\t G1: x  |       "
       sol = runsim(sim_gpe_1d; info=info)
       push!(gs_dict, hs("G1", gamma_param) => sol.u)
     end
@@ -119,9 +116,9 @@ function solitons(
     end
     if haskey(gs_dict, hs("CQ", gamma_param))
       if use_precomputed
-        @info "\t using precomputed solution CQ"
+        @info "\t CQ:    |  x  "
       else
-        @info "\t deleting and recomputing solution CQ"
+        @info "\t CQ:  x |     (deleting)"
         delete!(gs_dict, hs("CQ", gamma_param))
         try
           sol = runsim(sim_cc; info=info)
@@ -136,7 +133,7 @@ function solitons(
         push!(gs_dict, hs("CQ", gamma_param) => sol.u)
       end
     else
-      @info "computing CQ"
+      @info "\t CQ:  x |     "
       try
         sol = runsim(sim_cc; info=info)
       catch err
@@ -160,9 +157,9 @@ function solitons(
     end
     if haskey(gs_dict, hs("N", gamma_param))
       if use_precomputed
-        @info "\t using precomputed solution N"
+        @info "\t N :    |  x  "
       else
-        @info "\t deleting and recomputing solution N"
+        @info "\t N :  x |     (deleting)"
         delete!(gs_dict, hs("N", gamma_param))
         try
           sol = runsim(sim_npse; info=info)
@@ -198,10 +195,10 @@ function solitons(
       sim_npse_plus.psi_0 = npse
     end
     if haskey(gs_dict, hs("Np", gamma_param))
-      if use_precomputed
-        @info "\t using precomputed solution Np"
+      if use_precomputed && false
+        @info "\t Np:    |  x  "
       else
-        @info "\t deleting and recomputing solution Np"
+        @info "\t Np:  x |     (deleting)"
         delete!(gs_dict, hs("Np", gamma_param))
         try
           sol = runsim(sim_npse_plus; info=info)
@@ -216,7 +213,7 @@ function solitons(
         push!(gs_dict, hs("Np", gamma_param) => sol.u)
       end
     else
-      @info "computing Np"
+        @info "\t Np:  x |     "
       try
         sol = runsim(sim_npse_plus; info=info)
       catch err
@@ -269,9 +266,9 @@ function solitons(
 
     if haskey(gs_dict, hs("G3", gamma_param))
       if use_precomputed
-        @info "\t using precomputed solution G3"
+        @info "\t G3:    |  x  "
       else
-        @info "\t deleting and recomputing solution G3"
+        @info "\t G3:  x |     (deleting)"
         delete!(gs_dict, hs("G3", gamma_param))
         try
           sol = runsim(sim_gpe_3d; info=info)
@@ -286,7 +283,7 @@ function solitons(
         push!(gs_dict, hs("G3", gamma_param) => Array(sol.u))
       end
     else
-      @info "computing GPE_3D"
+        @info "\t G3:  x |     "
       try
         sol = runsim(sim_gpe_3d; info=info)
       catch err
