@@ -95,7 +95,7 @@ function manual_run(sim;
     time = 0.0
     
     if return_maximum
-      maximum = -1.0 
+      max_prob = -1.0 
     end
     #######################
     # D = 1 case
@@ -118,8 +118,8 @@ function manual_run(sim;
           propagate_manual!(psi, sim, time; ss_buffer=ss_buffer)
           if return_maximum
             candidate_maximum = maximum(abs2.(psi))
-            if candidate_maximum > maximum
-              maximum = candidate_maximum
+            if candidate_maximum > max_prob
+              max_prob = candidate_maximum
             end
           end
         catch err
@@ -154,8 +154,8 @@ function manual_run(sim;
           propagate_manual!(psi, sim, time)
           if return_maximum
             candidate_maximum = maximum(abs2.(psi))
-            if candidate_maximum > maximum
-              maximum = candidate_maximum
+            if candidate_maximum > max_prob
+              max_prob = candidate_maximum
             end
           end
         catch err
@@ -177,7 +177,7 @@ function manual_run(sim;
     end
 
     if return_maximum
-      return sol, maximum
+      return sol, max_prob
     else
       return sol
     end
@@ -247,8 +247,9 @@ end
 """
 Main solution routine
 """
-function runsim(sim; info=false)
+function runsim(sim; info=false, return_maximum=false)
   @unpack psi_0, dV, dt, ti, tf, t, solver, iswitch, abstol, reltol, N, Nt, V0, maxiters, time_steps, manual = sim
+  @assert !(!manual && return_maximum) # formal implication
   function savefunction(psi...)
     isdir(path) || mkpath(path)
     i = findfirst(x -> x == psi[2], sim.t)
@@ -267,7 +268,12 @@ function runsim(sim; info=false)
 
   @assert isapprox(nsk(psi_0, sim), 1.0, rtol=1e-9)
   if manual == true
-    sol = manual_run(sim; info=info)
+    if return_maximum
+      sol, max_prob = manual_run(sim; info=info, return_maximum=true)
+      return sol, max_prob
+    else
+      sol = manual_run(sim; info=info, return_maximum=false)
+    end
   else
     sol = auto_run(sim; info=info)
   end

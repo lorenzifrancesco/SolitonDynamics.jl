@@ -1,8 +1,10 @@
 JULIA_CUDA_SOFT_MEMORY_LIMIT = "95%"
 
-function tiles(; 
+function tiles(;
+  n_tiles = 4,
   use_precomputed_tiles=false,
-  return_maximum=true)
+  return_maximum=true,
+  )
   pyplot()
   if Threads.nthreads() == 1
     @warn "running in single thread mode!"
@@ -25,7 +27,8 @@ function tiles(;
       check_eq = "G3"
       four_extremes = get_tiles(sd[check_eq], check_eq;
         tiles=2,
-        plot_finals=true)
+        return_maximum=return_maximum,
+        plot_finals=true,)
       print("--> Extremes computed. Going on? [N/y]")
       ans = readline()
       if ans != "y"
@@ -46,7 +49,7 @@ function tiles(;
       if haskey(tile_dict, hs(name, gamma)) && use_precomputed_tiles
         @info "Already found tile for " name, gamma
       else
-        tile = get_tiles(sim, name; tiles=50)
+        tile = get_tiles(sim, name; tiles=n_tiles, return_maximum=return_maximum)
         push!(tile_dict, hs(name, gamma) => tile)
         JLD2.save(save_path * "tile_dict.jld2", tile_dict)
       end
@@ -58,7 +61,8 @@ function get_tiles(
   sim::Sim{1,Array{Complex{Float64}}},
   name::String="noname";
   tiles=100,
-  plot_finals=false)
+  plot_finals=false,
+  return_maximum=true)
 
   saveto = "../media/tiles_$(name).pdf"
   max_vel = 1
@@ -68,6 +72,7 @@ function get_tiles(
   bar_list = LinRange(0, max_bar, tiles)
   tran = Array{Float64,2}(undef, (tiles, tiles))
   refl = Array{Float64,2}(undef, (tiles, tiles))
+  maximum = Array{Float64,2}(undef, (tiles, tiles))
 
   @info "Filling sim grid..."
   sgrid = Array{Sim,2}(undef, (tiles, tiles))
@@ -152,8 +157,7 @@ function get_tiles(
 
   JLD2.@save("tran_$(name).jld2", tran)
   JLD2.@save("refl_$(name).jld2", refl)
-  norm_bar = bar_list / max_bar
-  norm_vel = vel_list / max_vel
+
   return tran
 end
 
@@ -164,7 +168,8 @@ function get_tiles(
   archetype::Sim{3,CuArray{Complex{Float64}}},
   name::String="noname";
   tiles=100,
-  plot_finals=false)
+  plot_finals=false,
+  return_maximum=false)
   saveto = "../media/tiles_$(name).pdf"
   max_vel = 1
   max_bar = 1
@@ -173,7 +178,9 @@ function get_tiles(
   bar_list = LinRange(0, max_bar, tiles)
   tran = Array{Float64,2}(undef, (tiles, tiles))
   refl = Array{Float64,2}(undef, (tiles, tiles))
-
+  if return_maximum
+    max_prob = Array{Float64,2}(undef, (tiles, tiles))
+  end
   @info "Proceeding serially from the archetype..."
   # all sims have the same x
   mask_refl = map(xx -> xx > 0, archetype.X[1] |> real)
@@ -189,15 +196,17 @@ function get_tiles(
     @info "Computing tile" (vv, bb)
     sol = nothing
     try
-      avg_iteration_time += @elapsed sol = runsim(sim; info=false)
+      if return_maximum
+        avg_iteration_time += @elapsed sol, max_prob[bx, vx] = runsim(sim; info=false, return_maximum=true)
+      else
+        avg_iteration_time += @elapsed sol = runsim(sim; info=false, return_maximum=false)
+      end
       if plot_finals
         pp = plot_final_density(sol.u, sim; show=false)
         savefig(pp, "media/checks/final_$(name)_$(vv)_$(bb).pdf")
         qq = plot_axial_heatmap(sol.u, sim.t, sim; show=false)
         savefig(qq, "media/checks/heatmap_$(name)_$(vv)_$(bb).pdf")
       end
-
-
     catch err
       if isa(err, NpseCollapse) || isa(err, Gpe3DCollapse)
         collapse_occured = true
@@ -225,6 +234,9 @@ function get_tiles(
         else
           @info "Run complete, detected collapse..."
           tran[bx, vx] = NaN
+          if return_maximum
+            max_prob[bx, vx] = NaN
+          end
         end
         @info "T = " tran[bx, vx]
       end
@@ -250,15 +262,21 @@ function get_tiles(
   @info "Total time in solver   = " avg_iteration_time
   @info "Average iteration time = " avg_iteration_time / tiles^2
 
+  if return_maximum
+    JLD2.@save("max_$(name).jld2", max_prob)
+  end
   JLD2.@save("tran_$(name).jld2", tran)
   JLD2.@save("refl_$(name).jld2", refl)
   norm_bar = bar_list / max_bar
   norm_vel = vel_list / max_vel
-  return tran
-  return tran
+  if return_maximum
+    return max_prob
+  else
+    return tran
+  end
 end
 
-function view_all_tiles()
+function view_all_tiles(return_maximum=false)
   # pyplot(size=(300, 220))
   pyplot(size=(300, 260))
   tile_file = "results/tile_dict.jld2"
@@ -304,63 +322,64 @@ function view_all_tiles()
     contour!(ht, vaxis, baxis, mask,  levels = [0.0], color=:turbo, linestyle=:dot ,linewidth=1.8)
     push!(ct_list, deepcopy(mask))
     savefig(ht, "media/tiles_" * string(ihs(k)) * "_ct.pdf")
+
   end
 
-  try
-    margins = -4
-    heat_first = heatmap(
-      vaxx[1], 
-      baxx[1], 
-      ht_list[1], 
-      clabels=true, 
-      xlabel=L"v", 
-      ylabel=L"b", 
-      aspect_ratio=:equal,
-      # legend=:none,
-      margin= margins * Plots.mm
-      )
+  # try
+  #   margins = -4
+  #   heat_first = heatmap(
+  #     vaxx[1], 
+  #     baxx[1], 
+  #     ht_list[1], 
+  #     clabels=true, 
+  #     xlabel=L"v", 
+  #     ylabel=L"b", 
+  #     aspect_ratio=:equal,
+  #     # legend=:none,
+  #     margin= margins * Plots.mm
+  #     )
 
-    last_idx = length(ht_list)
-    heat_last = heatmap(
-      vaxx[last_idx], 
-      baxx[last_idx], 
-      ht_list[last_idx], 
-      clabels=true, 
-      xlabel=L"v", 
-      aspect_ratio=:equal,
-      margin= margins * Plots.mm
-      )
+  #   last_idx = length(ht_list)
+  #   heat_last = heatmap(
+  #     vaxx[last_idx], 
+  #     baxx[last_idx], 
+  #     ht_list[last_idx], 
+  #     clabels=true, 
+  #     xlabel=L"v", 
+  #     aspect_ratio=:equal,
+  #     margin= margins * Plots.mm
+  #     )
 
-    layout = grid(1, length(ht_list), widths=[0.25, 0.25, 0.25, 0.25])
+  #   layout = grid(1, length(ht_list), widths=[0.25, 0.25, 0.25, 0.25])
 
-    ht_comp = plot(heat_first, [
-      heatmap(
-        vaxx[i], 
-        baxx[i], 
-        ht_list[i], 
-        clabels=true, 
-        xlabel=L"v", 
-        aspect_ratio=:equal,
-        # legend=:none,
-        margin = margins *Plots.mm
-        )
-        for i in eachindex(ht_list)[2:end-1]
-          ]...,
-        heat_last,
-        layout=layout,
-        link=:y,
-        leg=false,
-        yformatter = _->"",
-        # size=(900, 250),
-        framestyle=:none
-    )
+  #   ht_comp = plot(heat_first, [
+  #     heatmap(
+  #       vaxx[i], 
+  #       baxx[i], 
+  #       ht_list[i], 
+  #       clabels=true, 
+  #       xlabel=L"v", 
+  #       aspect_ratio=:equal,
+  #       # legend=:none,
+  #       margin = margins *Plots.mm
+  #       )
+  #       for i in eachindex(ht_list)[2:end-1]
+  #         ]...,
+  #       heat_last,
+  #       layout=layout,
+  #       link=:y,
+  #       leg=false,
+  #       yformatter = _->"",
+  #       # size=(900, 250),
+  #       framestyle=:none
+  #   )
   
-    # display(ht_comp)
-    savefig(ht_comp, "media/tiles_ht_comp.pdf")
-  catch err
-    @info "not plotting comparison"
-    rethrow(err)
-  end
+  #   # display(ht_comp)
+  #   savefig(ht_comp, "media/tiles_ht_comp.pdf")
+  # catch err
+  #   @info "not plotting comparison"
+  #   rethrow(err)
+  # end
 end
 
 function preprocess_tiles_3d!(tt)

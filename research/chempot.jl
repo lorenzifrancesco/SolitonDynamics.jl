@@ -5,6 +5,7 @@ function compare_chempot(; use_precomputed=true, take_advantage=true)
   FFTW.set_num_threads(1)
   gamma_range = LinRange(0.0, 1.0, 40)
   p = plot(xlabel=L"\gamma", ylabel=L"\mu")
+  pp = plot(xlabel=L"\gamma", ylabel=L"E", legend = :bottomright)
 
   if isfile("results/mu_db.jld2")
     @info "=> Found dictionary, loading..."
@@ -19,7 +20,8 @@ function compare_chempot(; use_precomputed=true, take_advantage=true)
   for (k, sim) in sd
     @info "==>Running for $k"
     mu_vec = zeros(length(gamma_range))
-    
+    energy = zeros(length(gamma_range))
+
     if haskey(mud, hs(k, 0.666)) && use_precomputed
       @info "--> Loading for $k..."
       mu_vec = mud[hs(k, 0.666)]
@@ -61,14 +63,29 @@ function compare_chempot(; use_precomputed=true, take_advantage=true)
             rethrow(e)
           end
         end
-
       end
-
       @warn "pushing"
       push!(mud, hs(k, 0.666) => mu_vec)
       save("results/mu_db.jld2", "mud", mud)
     end
+    for (ig, gamma) in enumerate(gamma_range)
+      for ig2 in 1:ig
+        energy[ig] += mu_vec[ig2]
+        println(ig2)
+      end
+    end
+    display(energy)
+    plot!(pp, xlims=(0.6, 0.7), ylims=(22, 26))
+
     plot!(p, gamma_range, mu_vec, label=nameof(k), color=colorof(k), linestyle=lineof(k))
+    plot!(pp, gamma_range, energy, label=nameof(k), color=colorof(k), linestyle=lineof(k))
   end
   savefig(p, "media/chempot_compare.pdf")
+  savefig(pp, "media/energy_compare.pdf")
+end
+
+function energy_compare(; use_precomputed=true, take_advantage=true)
+
+  savefig(p, "media/energy_compare.pdf")
+  return 
 end
