@@ -9,6 +9,7 @@ function estimate_sigma2k(psi_k, sim::Sim{1,Array{ComplexF64}})
 end
 
 function estimate_sigma2(psi, sim::Sim{1,Array{ComplexF64}})
+  @assert false # need to fix tridiagonal matrix
   @unpack equation, N, g, dV = sim
   @assert ns(psi, sim) ≈ 1
   s2 = ones(N[1])
@@ -64,7 +65,8 @@ function sigma_eq(sigma, params)
   sigma_2[1] = sigma[2]
   sigma_2[end] = sigma[end-1]
   # structure: NPSE + derivatives + boundary conditions
-  ret = (- sigma .^4 + b) + (-(d1sigma)^2 + sigma .* d2sigma + sigma .* fterm .* d1sigma) + (bc2 - 2 * bc2 .* sigma_2  + bc2 .* sigma + sigma .* fterm .* bc1)
+  ret = (- sigma .^ 4 + b) + (-(d1sigma).^2 + sigma .* d2sigma + sigma .* fterm .* d1sigma) + (bc2 - 2 * bc2 .* sigma_2  + bc2 .* sigma + sigma .* fterm .* bc1)
+  @warn ret
   return ret
 end
 

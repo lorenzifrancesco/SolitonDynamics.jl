@@ -11,7 +11,6 @@ function manual_run(sim;
                     return_maximum=false)
   @unpack psi_0, dV, dt, ti, tf, t, solver, iswitch, abstol, reltol, N, Nt, V0, maxiters, time_steps, equation = sim
   psi = deepcopy(psi_0)
-  
 
   #######################
   # Imaginary time 

@@ -66,6 +66,6 @@ numerical_gs = xspace(sol.u, sim)
 @warn "too loose nonlinear 1D soliton test"
 @info ns(numerical_gs, sim)
 @info ns(analytical_gs, sim)
-jldsave("analytical_gs.jld2"; analytical_gs)
-jldsave("numerical_gs.jld2"; numerical_gs)
+save("analytical_gs.jld2"; analytical_gs)
+save("numerical_gs.jld2"; numerical_gs)
 @test isapprox(ns((numerical_gs-analytical_gs), sim), 0.0, atol=1e-6)
