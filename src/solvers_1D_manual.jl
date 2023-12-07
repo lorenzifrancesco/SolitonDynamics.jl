@@ -20,12 +20,20 @@ function nlin_manual!(psi, sim::Sim{1,Array{ComplexF64}}, t; ss_buffer=nothing, 
     sigma2_plus = zeros(length(x))
     try
       # Nonlinear Finite Element routine
-      b = (1 .+ g * abs2.(psi))
+      b = (1 .+ g * abs2.(psi)) 
       b[1] += 1.0 * 1 / (4 * dV)
       b[end] += 1.0 * 1 / (4 * dV)
-
       a = ones(length(b))
-      A0 = 1 / (2 * dV) * SymTridiagonal(2 * a, -a)
+      D1 = 1 / (2 * dV) * Tridiagonal(-a, 0, a)
+      D2 = 1 / (2 * dV) * SymTridiagonal(2 * a, -a)
+      fterm = D1 * abs2.(psi) ./ abs2.(psi)
+      bc1 = zeros(length(b))
+      bc1[1] = -1.0
+      bc1[end] = 1.0
+      bc2 = bc1
+      bc2[1] += 2.0
+      bc1 /= (2*dV)
+      bc2 /= (2*dV)
       if isnothing(ss_buffer)
         ss = ones(N)
       else
@@ -33,16 +41,11 @@ function nlin_manual!(psi, sim::Sim{1,Array{ComplexF64}}, t; ss_buffer=nothing, 
         ss = ss_buffer
       end
 
-      prob = NonlinearProblem(sigma_eq, ss, [b, A0, dV])
+      prob = NonlinearProblem(sigma_eq, ss, [b, D1, D2, fterm, bc1, bc2])
       sol = solve(prob, NewtonRaphson(), reltol=1e-6)
       sigma2_plus = (sol.u) .^ 2
       ss_buffer .= sol.u
 
-      # # === scientific debug zone
-      # append!(time_of_sigma, t)
-      # append!(sigma2_new, [sigma2_plus])
-      # append!(sigma2_old, [1 .+ g * abs2.(psi)])
-      # # === end scientific debug zone
     catch err
       if isa(err, DomainError)
         sigma2_plus = NaN

@@ -26,6 +26,7 @@ function hs(eq::String, g::Float64)
   return string(n)
 end
 
+
 function ihs(s::String)
   n = parse(Int, s)
   if n < 500
@@ -40,7 +41,6 @@ function ihs(s::String)
     return ("CQ", (n - 4000) / 100)
   end
 end
-
 
 
 function solitons(

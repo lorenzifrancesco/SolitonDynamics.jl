@@ -1,5 +1,3 @@
-using CondensateDynamics
-
 ## Solve the 1D harmonic oscillator
 # problem with 1D-GPE 
 L = (40.0,)
@@ -38,7 +36,7 @@ numerical_gs = xspace(sol.u, sim)
 # problem with 1D-GPE 
 L = (40.0,)
 N = (4096,)
-sim = Sim{length(L), Array{Complex{Float64}}}(L=L, N=N)
+sim = Sim{length(L), Array{Complex{Float64}}}(L=L, N=N) 
 
 @unpack_Sim sim
 
@@ -58,7 +56,7 @@ kspace!(psi_0, sim)
 
 @pack_Sim! sim
 
-# Analytical solution: soliton
+# Analytical solution: soliton in 1D-GPE
 analytical_gs = zeros(N)
 @. analytical_gs = sqrt(g_param/2) * 2/(exp(g_param*x) + exp(-x*g_param))
 
@@ -66,4 +64,8 @@ sol, err = testsim(sim)
 @test err == false
 numerical_gs = xspace(sol.u, sim)
 @warn "too loose nonlinear 1D soliton test"
+@info ns(numerical_gs, sim)
+@info ns(analytical_gs, sim)
+jldsave("analytical_gs.jld2"; analytical_gs)
+jldsave("numerical_gs.jld2"; numerical_gs)
 @test isapprox(ns((numerical_gs-analytical_gs), sim), 0.0, atol=1e-6)

@@ -29,12 +29,22 @@ function estimate_sigma2(psi, sim::Sim{1,Array{ComplexF64}})
     b = (1 .+ g * abs2.(psi))
     b[1] += 1.0 * 1 / (4 * dV)
     b[end] += 1.0 * 1 / (4 * dV)
-
     a = ones(length(b))
-    A0 = 1 / (2 * dV) * SymTridiagonal(2 * a, -a)
-
+    bc1 = zeros(length(b))
+    bc1[1] = -1.0
+    bc1[end] = 1.0
+    bc2 = bc1
+    bc2[1] += 2.0
+    bc1 /= (2*dV)
+    bc2 /= (2*dV)
+    fterm = D1 * abs2.(psi) ./ abs2.(psi)
+    @info bc1[1]
+    @info bc2[1]
+    D1 = 1 / (2 * dV) * Tridiagonal(-a, 0, a)
+    D2 = 1 / (2 * dV) * SymTridiagonal(2 * a, -a)
+    fterm = D1 * abs2.(psi) ./ abs2.(psi)
     ss = ones(N[1])
-    prob = NonlinearProblem(sigma_eq, ss, [b, A0, dV])
+    prob = NonlinearProblem(sigma_eq, ss, [b, D1, D2, fterm, bc1, bc2])
     sol = solve(prob, NewtonRaphson(), reltol=1e-6)
     s2 = (sol.u) .^ 2
   end
@@ -42,15 +52,20 @@ function estimate_sigma2(psi, sim::Sim{1,Array{ComplexF64}})
 end
 
 function sigma_eq(sigma, params)
-  b = params[1]
-  A0 = params[2]
-  dV = params[3]
-  N = length(sigma)
-  bc = zeros(N)
-  bc[1] = 1
-  bc[end] = 1
-  f = -1 / 2 * (A0 * sigma .^ 2) + 2 * sigma .* (A0 * sigma) + sigma .^ 4 - b - 1 / (2 * dV) * bc .* sigma
-  return f
+  b =     params[1]
+  D1 =    params[2]
+  D2 =    params[3]
+  fterm = params[4]
+  bc1 =   params[5]
+  bc2 =   params[6]
+  d1sigma = D1*sigma
+  d2sigma = D2*sigma
+  sigma_2 = zeros(length(bc2))
+  sigma_2[1] = sigma[2]
+  sigma_2[end] = sigma[end-1]
+  # structure: NPSE + derivatives + boundary conditions
+  ret = (- sigma .^4 + b) + (-(d1sigma)^2 + sigma .* d2sigma + sigma .* fterm .* d1sigma) + (bc2 - 2 * bc2 .* sigma_2  + bc2 .* sigma + sigma .* fterm .* bc1)
+  return ret
 end
 
 function sigma_eq_jacobian(sigma, params) # slower than automatic differentiation

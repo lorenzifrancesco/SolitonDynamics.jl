@@ -30,5 +30,6 @@ include("utils.jl")
 include("arrays.jl")
 include("solver.jl")
 include("normalization.jl")
+
 @exportAll()
 end # module CondensateDynamics
