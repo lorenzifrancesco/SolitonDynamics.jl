@@ -28,34 +28,6 @@ function nlin_manual!(psi, sim::Sim{1,Array{ComplexF64}}, t; ss_buffer=nothing, 
       else
         ss = sqrt.(ss_buffer)
       end
-      
-      # ## BVP routine 
-      # ## ==================================
-      # # # not good: taked half a second to solve a single BVP, even with this simple BC
-      # # # will probably be worse with a big peak in the middle
-      #
-      # # NEED an interpolation, or can we just round the indices? 
-      # # interpolate also the term with the f?
-      # function sigma_bvp!(du, u, p, t)
-      #   sigma = u[1]
-      #   dsigma = u[2]
-      #   du[1] = dsigma
-      #   du[2] = sigma^3 - (1 .+ g*abs2.(psi[t]))/sigma + dsigma^2/sigma - dsigma  
-      # end
-      #
-      # function bc_left_right!(residue, u, p, t)
-      #   residue[1] = u[1][1]-1.0
-      #   residue[2] = u[end][1]-1.0
-      # end
-      #
-      # xspan = (real(x[1]), real(x[end])) 
-      # @time begin
-      # tpbvp = BVProblem(sigma_bvp!, bc_left_right!, [1.0, 0.0], xspan)
-      # sol = solve(tpbvp, MIRK4(), dt = real(x[2]-x[1]))
-      # end
-      #
-      # sigma2_plus = (sol[1, :]) .^ 2
-      # ss_buffer .= sol[1, :]
 
       # Nonlinear Finite Difference routine
       # ==================================
