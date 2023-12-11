@@ -2,7 +2,7 @@ JULIA_CUDA_SOFT_MEMORY_LIMIT = "95%"
 
 function tiles(; 
   use_precomputed_tiles=false,
-  return_maximum=true)
+  return_maximum=false)
   pyplot()
   if Threads.nthreads() == 1
     @warn "running in single thread mode!"
@@ -15,7 +15,7 @@ function tiles(;
 
   for gamma in gamma_list
     @info "==== Using gamma: " gamma
-    sd = load_parameters_alt(gamma_param=gamma; eqs=["G3"], nosaves=true)
+    sd = load_parameters_alt(gamma_param=gamma; eqs=["Np"], nosaves=true)
     @info "Required simulations: " keys(sd)
     prepare_for_collision!(sd, gamma)
 
@@ -46,7 +46,7 @@ function tiles(;
       if haskey(tile_dict, hs(name, gamma)) && use_precomputed_tiles
         @info "Already found tile for " name, gamma
       else
-        tile = get_tiles(sim, name; tiles=50)
+        tile = get_tiles(sim, name; tiles=10)
         push!(tile_dict, hs(name, gamma) => tile)
         JLD2.save(save_path * "tile_dict.jld2", tile_dict)
       end
