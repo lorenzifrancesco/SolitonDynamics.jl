@@ -13,7 +13,6 @@ function nlin_manual!(psi, sim::Sim{1,Array{ComplexF64}}, t; ss_buffer=nothing, 
   if equation == GPE_1D
     @. psi *= exp(dt_order * -im * iswitch * (V0 + V(x, t) + g * abs2(psi)))
   elseif equation == NPSE
-    # @warn "whois sigma2? if appropriate this is zero" sigma2(Complex(sqrt(minimum(abs2.(psi)))))
     nonlinear = g * abs2.(psi) ./ sigma2.(psi) + (1 ./ (2 * sigma2.(psi)) + 1 / 2 * sigma2.(psi))
     @. psi = exp(dt_order * -im * iswitch * (V0 + V(x, t) + nonlinear)) * psi
   elseif equation == NPSE_plus
@@ -78,12 +77,13 @@ function nlin_manual!(psi, sim::Sim{1,Array{ComplexF64}}, t; ss_buffer=nothing, 
       M = N[1]
       dxx = 2*dV
       function sigma_loop!(ret,sigma, params)
-        # structure: NPSE + derivatives + boundary conditions
+        # structure: NPSE + simple derivatives + derivatives involving psi^2
         @inbounds for j in 2:M-1
-          ret[j] = (- sigma[j] .^ 4 + (1 + g*psisq[j]))# - ((sigma[j+1]-sigma[j-1])/dxx)^2 +  sigma[j] * ((sigma[j-1]-2*sigma[j]+sigma[j+1])/(dxx)) # + (sigma[j+1]-sigma[j-1])/dxx * sigma[j] * (psisq[j+1]-psisq[j-1])/(dxx*psisq[j])
+          ret[j] = (- sigma[j] .^ 4 + (1 + g*psisq[j])) - ((sigma[j+1]-sigma[j-1])/dxx)^2 +  sigma[j] * ((sigma[j-1]-2*sigma[j]+sigma[j+1])/(dxx))  #+ (sigma[j+1]-sigma[j-1])/dxx * sigma[j] * (psisq[j+1]-psisq[j-1])/(dxx*psisq[j])
+          # ultimo termine pericoloso!!
         end
-        ret[1] = (- sigma[1] .^ 4 + (1 + g*psisq[1])) #- ((sigma[2]-1.0)/dxx)^2 +  ((1.0-2*sigma[1]+sigma[2])/(dxx)) * sigma[1]
-        ret[M] = (- sigma[M] .^ 4 + (1 + g*psisq[M])) #- ((1.0-sigma[M-1])/dxx)^2 +  ((sigma[M-1]-2*sigma[M]+1.0)/(dxx)) * sigma[M]
+        ret[1] = (- sigma[1] .^ 4 + (1 + g*psisq[1])) - ((sigma[2]-1.0)/dxx)^2 +  ((1.0-2*sigma[1]+sigma[2])/(dxx)) * sigma[1]
+        ret[M] = (- sigma[M] .^ 4 + (1 + g*psisq[M])) - ((1.0-sigma[M-1])/dxx)^2 +  ((sigma[M-1]-2*sigma[M]+1.0)/(dxx)) * sigma[M]
       end
       @time begin
       prob = NonlinearProblem(sigma_loop!, ss, 0.0)
@@ -104,7 +104,15 @@ function nlin_manual!(psi, sim::Sim{1,Array{ComplexF64}}, t; ss_buffer=nothing, 
       end
     end
     temp = copy(sigma2_plus)
-    nonlinear = g * abs2.(psi) ./ sigma2_plus + (1 / 2 * sigma2_plus .+ (1 ./ (2 * sigma2_plus)) .* (1 .+ (1 / dV * diff(prepend!(temp, 1.0))) .^ 2))
+    temp = sqrt.(temp)
+    temp_diff = copy(temp)
+    # generate symmetric difference 
+    temp_diff[1] = (temp[2]-temp[1])/dV 
+    temp_diff[M] = (temp[M]-temp[M-1])/dV
+    for i in 2:M-1
+      temp_diff[i] = (temp[i+1]-temp[i-1])/dxx
+    end
+    nonlinear = g * abs2.(psi) ./ sigma2_plus + (1 / 2 * sigma2_plus) .+ (1 ./ (2 * sigma2_plus)) .* (1 .+ (temp_diff.^ 2))
     @. psi = exp(dt_order * -im * iswitch * (V0 + V(x, t) + nonlinear)) * psi
   elseif equation == CQGPE
     @. psi *= exp(dt_order * -im * iswitch * (V0 + V(x, t) + g * abs2(psi) - 6*log(4/3) * g^2 * abs2(abs2(psi))))
