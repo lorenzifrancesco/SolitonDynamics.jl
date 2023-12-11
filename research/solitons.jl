@@ -66,6 +66,7 @@ function solitons(
     JLD2.save(join([save_path, "gs_dict.jld2"]), gs_dict)
   end
 
+  time_requirement = zeros(5)
   gamma_param_list = [0.65]
   @info "Starting simulations..."
   for gamma_param in gamma_param_list
@@ -90,39 +91,54 @@ function solitons(
     # p = plot_final_density([analytical_gs], sim_gpe_1d; label="analytical", color=:orange, doifft=false, ls=:dashdot, title="gamma = $gamma_param")
     p = plot()
     # == GPE 1D =======================================================
-    if haskey(gs_dict, hs("G1", gamma_param))
-      if use_precomputed 
-        @info "\t G1:    |  x  "
+    time_requirement[1] = @elapsed begin
+      if haskey(gs_dict, hs("G1", gamma_param))
+        if use_precomputed 
+          @info "\t G1:    |  x  "
+        else
+          @info "\t G1: x  |      (deleting)"
+          delete!(gs_dict, hs("G1", gamma_param))
+          sol = runsim(sim_gpe_1d; info=info)
+          @info "total imaginary time $(sol.cnt * sim_gpe_1d.dt)"
+          push!(gs_dict, hs("G1", gamma_param) => sol.u)
+        end
       else
-        @info "\t G1: x  |      (deleting)"
-        delete!(gs_dict, hs("G1", gamma_param))
+        @info "\t G1: x  |       "
         sol = runsim(sim_gpe_1d; info=info)
-        @info "total imaginary time $(sol.cnt * sim_gpe_1d.dt)"
         push!(gs_dict, hs("G1", gamma_param) => sol.u)
       end
-    else
-      @info "\t G1: x  |       "
-      sol = runsim(sim_gpe_1d; info=info)
-      push!(gs_dict, hs("G1", gamma_param) => sol.u)
     end
     gpe_1d = gs_dict[hs("G1", gamma_param)]
-
     plot_final_density!(p, [gpe_1d], sim_gpe_1d; label="1D-GPE", color=:grey, ls=:solid)
     JLD2.save(join([save_path, "gs_dict.jld2"]), gs_dict)
 
     # == CQGPE =======================================================
-    if take_advantage
-      sim_cc.psi_0 = gpe_1d
-    end
-    if haskey(gs_dict, hs("CQ", gamma_param))
-      if use_precomputed
-        @info "\t CQ:    |  x  "
+    time_requirement[2] = @elapsed begin
+      if take_advantage
+        sim_cc.psi_0 = gpe_1d
+      end
+      if haskey(gs_dict, hs("CQ", gamma_param))
+        if use_precomputed
+          @info "\t CQ:    |  x  "
+        else
+          @info "\t CQ:  x |     (deleting)"
+          delete!(gs_dict, hs("CQ", gamma_param))
+          try
+            sol = runsim(sim_cc; info=info)
+            @info "total imaginary time $(sol.cnt * sim_cc.dt)"
+          catch err
+            if isa(err, Gpe3DCollapse)
+              @warn "Cubic Quintic collapsed"
+            else
+              throw(err)
+            end
+          end
+          push!(gs_dict, hs("CQ", gamma_param) => sol.u)
+        end
       else
-        @info "\t CQ:  x |     (deleting)"
-        delete!(gs_dict, hs("CQ", gamma_param))
+        @info "\t CQ:  x |     "
         try
           sol = runsim(sim_cc; info=info)
-          @info "total imaginary time $(sol.cnt * sim_cc.dt)"
         catch err
           if isa(err, Gpe3DCollapse)
             @warn "Cubic Quintic collapsed"
@@ -132,40 +148,41 @@ function solitons(
         end
         push!(gs_dict, hs("CQ", gamma_param) => sol.u)
       end
-    else
-      @info "\t CQ:  x |     "
-      try
-        sol = runsim(sim_cc; info=info)
-      catch err
-        if isa(err, Gpe3DCollapse)
-          @warn "Cubic Quintic collapsed"
-        else
-          throw(err)
-        end
-      end
-      push!(gs_dict, hs("CQ", gamma_param) => sol.u)
     end
     cc = gs_dict[hs("CQ", gamma_param)]
     # plot_final_density!(p, [cc], sim_cc; label="CQ-GPE", color=:blue, ls=:dashdot)
     JLD2.save(join([save_path, "gs_dict.jld2"]), gs_dict)
-
     # == NPSE =======================================================
-    # estimate width
-    initial_sigma_improved = sqrt(sum(abs2.(sim_gpe_1d.X[1]) .* abs2.(gpe_1d) * sim_gpe_1d.dV) |> real)
-    if take_advantage
-      sim_npse.psi_0 = gpe_1d
-    end
-    if haskey(gs_dict, hs("N", gamma_param))
-      if use_precomputed
-        @info "\t N :    |  x  "
+    time_requirement[3] = @elapsed begin
+      # estimate width
+      initial_sigma_improved = sqrt(sum(abs2.(sim_gpe_1d.X[1]) .* abs2.(gpe_1d) * sim_gpe_1d.dV) |> real)
+      if take_advantage
+        sim_npse.psi_0 = gpe_1d
+      end
+      if haskey(gs_dict, hs("N", gamma_param))
+        if use_precomputed
+          @info "\t N :    |  x  "
+        else
+          @info "\t N :  x |     (deleting)"
+          delete!(gs_dict, hs("N", gamma_param))
+          try
+            sol = runsim(sim_npse; info=info)
+            @info "total imaginary time $(sol.cnt * sim_npse.dt)"
+          catch err
+            if err == NpseCollapse
+              @warn "NPSE collapsed"
+            else
+              throw(err)
+            end
+          end
+          push!(gs_dict, hs("N", gamma_param) => sol.u)
+        end
       else
-        @info "\t N :  x |     (deleting)"
-        delete!(gs_dict, hs("N", gamma_param))
+        @info "computing N"
         try
           sol = runsim(sim_npse; info=info)
-          @info "total imaginary time $(sol.cnt * sim_npse.dt)"
         catch err
-          if err == NpseCollapse
+          if isa(err, NpseCollapse)
             @warn "NPSE collapsed"
           else
             throw(err)
@@ -173,36 +190,38 @@ function solitons(
         end
         push!(gs_dict, hs("N", gamma_param) => sol.u)
       end
-    else
-      @info "computing N"
-      try
-        sol = runsim(sim_npse; info=info)
-      catch err
-        if isa(err, NpseCollapse)
-          @warn "NPSE collapsed"
-        else
-          throw(err)
-        end
-      end
-      push!(gs_dict, hs("N", gamma_param) => sol.u)
     end
     npse = gs_dict[hs("N", gamma_param)]
     plot_final_density!(p, [npse], sim_npse; label="NPSE", color=:green, ls=:dot)
     JLD2.save(join([save_path, "gs_dict.jld2"]), gs_dict)
 
     # == NPSE plus =======================================================
-    if take_advantage
-      sim_npse_plus.psi_0 = npse
-    end
-    if haskey(gs_dict, hs("Np", gamma_param))
-      if use_precomputed && false
-        @info "\t Np:    |  x  "
+    time_requirement[4] = @elapsed begin
+      if take_advantage
+        sim_npse_plus.psi_0 = npse
+      end
+      if haskey(gs_dict, hs("Np", gamma_param))
+        if use_precomputed && false
+          @info "\t Np:    |  x  "
+        else
+          @info "\t Np:  x |     (deleting)"
+          delete!(gs_dict, hs("Np", gamma_param))
+          try
+            sol = runsim(sim_npse_plus; info=info)
+            @info "total imaginary time $(sol.cnt * sim_npse_plus.dt)"
+          catch err
+            if isa(err, Gpe3DCollapse)
+              @warn "NPSE+ collapsed"
+            else
+              throw(err)
+            end
+          end
+          push!(gs_dict, hs("Np", gamma_param) => sol.u)
+        end
       else
-        @info "\t Np:  x |     (deleting)"
-        delete!(gs_dict, hs("Np", gamma_param))
+          @info "\t Np:  x |     "
         try
           sol = runsim(sim_npse_plus; info=info)
-          @info "total imaginary time $(sol.cnt * sim_npse_plus.dt)"
         catch err
           if isa(err, Gpe3DCollapse)
             @warn "NPSE+ collapsed"
@@ -212,67 +231,68 @@ function solitons(
         end
         push!(gs_dict, hs("Np", gamma_param) => sol.u)
       end
-    else
-        @info "\t Np:  x |     "
-      try
-        sol = runsim(sim_npse_plus; info=info)
-      catch err
-        if isa(err, Gpe3DCollapse)
-          @warn "NPSE+ collapsed"
-        else
-          throw(err)
-        end
-      end
-      push!(gs_dict, hs("Np", gamma_param) => sol.u)
     end
     npse_plus = gs_dict[hs("Np", gamma_param)]
     plot_final_density!(p, [npse_plus], sim_npse_plus; label="NPSE+", ls=:dash, color=:green)
     JLD2.save(join([save_path, "gs_dict.jld2"]), gs_dict)
 
-
     # == GPE 3D =======================================================
-    x_3d_range = range(-sim_gpe_3d.L[1] / 2, sim_gpe_3d.L[1] / 2, length(sim_gpe_3d.X[1])+1)[1:end-1]
-    x_axis = sim_npse.X[1] |> real
-    x_axis_3d = sim_gpe_3d.X[1] |> real
-    x_1d_range = range(-sim_npse.L[1] / 2, sim_npse.L[1] / 2, length(sim_npse.X[1])+1)[1:end-1]
-    if take_advantage
-      x = Array(sim_gpe_3d.X[1] |> real)
-      y = Array(sim_gpe_3d.X[2] |> real)
-      z = Array(sim_gpe_3d.X[3] |> real)
+    time_requirement[5] = @elapsed begin
+      x_3d_range = range(-sim_gpe_3d.L[1] / 2, sim_gpe_3d.L[1] / 2, length(sim_gpe_3d.X[1])+1)[1:end-1]
+      x_axis = sim_npse.X[1] |> real
+      x_axis_3d = sim_gpe_3d.X[1] |> real
+      x_1d_range = range(-sim_npse.L[1] / 2, sim_npse.L[1] / 2, length(sim_npse.X[1])+1)[1:end-1]
+      if take_advantage
+        x = Array(sim_gpe_3d.X[1] |> real)
+        y = Array(sim_gpe_3d.X[2] |> real)
+        z = Array(sim_gpe_3d.X[3] |> real)
 
-      tmp = zeros(sim_gpe_3d.N[1], sim_gpe_3d.N[2], sim_gpe_3d.N[3]) |> complex
-      if plus
-        axial = sqrt.(abs2.(xspace(npse_plus, sim_npse_plus)))
-      else
-        axial = sqrt.(abs2.(xspace(npse, sim_npse)))
-      end
-      axial_imprint = LinearInterpolation(x_1d_range, axial, extrapolation_bc=Line())
-      for (ix, x) in enumerate(x)
-        for (iy, y) in enumerate(y)
-          for (iz, z) in enumerate(z)
-            tmp[ix, iy, iz] = axial_imprint(x) * exp(-1 / 2 * (y^2 + z^2))
+        tmp = zeros(sim_gpe_3d.N[1], sim_gpe_3d.N[2], sim_gpe_3d.N[3]) |> complex
+        if plus
+          axial = sqrt.(abs2.(xspace(npse_plus, sim_npse_plus)))
+        else
+          axial = sqrt.(abs2.(xspace(npse, sim_npse)))
+        end
+        axial_imprint = LinearInterpolation(x_1d_range, axial, extrapolation_bc=Line())
+        for (ix, x) in enumerate(x)
+          for (iy, y) in enumerate(y)
+            for (iz, z) in enumerate(z)
+              tmp[ix, iy, iz] = axial_imprint(x) * exp(-1 / 2 * (y^2 + z^2))
+            end
           end
         end
+        sim_gpe_3d.psi_0 = CuArray(tmp)
+        sim_gpe_3d.psi_0 .= sim_gpe_3d.psi_0 / sqrt(sum(abs2.(sim_gpe_3d.psi_0) * sim_gpe_3d.dV)) #this may be responsible for the strange behaviour
+        initial_3d = copy(sim_gpe_3d.psi_0)
+        kspace!(sim_gpe_3d.psi_0, sim_gpe_3d)
+        # pp = plot(x, axial_imprint(x), label="dovrebbe")
+        # plot!(pp, x, sum(abs2.(xspace(sim_gpe_3d.psi_0, sim_gpe_3d)), dims=(2, 3))[:, 1, 1] * (real(y[2]-y[1])^2), label="è")
+        # display(pp)
+        # @warn sum(abs2.(axial_imprint.(x))) * (x[2]-x[1]) # FIXME (i'm off by 3/1000)
       end
-      sim_gpe_3d.psi_0 = CuArray(tmp)
-      sim_gpe_3d.psi_0 .= sim_gpe_3d.psi_0 / sqrt(sum(abs2.(sim_gpe_3d.psi_0) * sim_gpe_3d.dV)) #this may be responsible for the strange behaviour
-      initial_3d = copy(sim_gpe_3d.psi_0)
-      kspace!(sim_gpe_3d.psi_0, sim_gpe_3d)
-      # pp = plot(x, axial_imprint(x), label="dovrebbe")
-      # plot!(pp, x, sum(abs2.(xspace(sim_gpe_3d.psi_0, sim_gpe_3d)), dims=(2, 3))[:, 1, 1] * (real(y[2]-y[1])^2), label="è")
-      # display(pp)
-      # @warn sum(abs2.(axial_imprint.(x))) * (x[2]-x[1]) # FIXME (i'm off by 3/1000)
-    end
 
-    if haskey(gs_dict, hs("G3", gamma_param))
-      if use_precomputed
-        @info "\t G3:    |  x  "
+      if haskey(gs_dict, hs("G3", gamma_param))
+        if use_precomputed
+          @info "\t G3:    |  x  "
+        else
+          @info "\t G3:  x |     (deleting)"
+          delete!(gs_dict, hs("G3", gamma_param))
+          try
+            sol = runsim(sim_gpe_3d; info=info)
+            @info "total imaginary time $(sol.cnt * sim_gpe_3d.dt)"
+          catch err
+            if isa(err, Gpe3DCollapse)
+              @warn "3D GPE collapsed"
+            else
+              throw(err)
+            end
+          end
+          push!(gs_dict, hs("G3", gamma_param) => Array(sol.u))
+        end
       else
-        @info "\t G3:  x |     (deleting)"
-        delete!(gs_dict, hs("G3", gamma_param))
+          @info "\t G3:  x |     "
         try
           sol = runsim(sim_gpe_3d; info=info)
-          @info "total imaginary time $(sol.cnt * sim_gpe_3d.dt)"
         catch err
           if isa(err, Gpe3DCollapse)
             @warn "3D GPE collapsed"
@@ -282,22 +302,9 @@ function solitons(
         end
         push!(gs_dict, hs("G3", gamma_param) => Array(sol.u))
       end
-    else
-        @info "\t G3:  x |     "
-      try
-        sol = runsim(sim_gpe_3d; info=info)
-      catch err
-        if isa(err, Gpe3DCollapse)
-          @warn "3D GPE collapsed"
-        else
-          throw(err)
-        end
-      end
-      push!(gs_dict, hs("G3", gamma_param) => Array(sol.u))
+      gpe_3d = CuArray(gs_dict[hs("G3", gamma_param)])
+      JLD2.save(join([save_path, "gs_dict.jld2"]), gs_dict)
     end
-    gpe_3d = CuArray(gs_dict[hs("G3", gamma_param)])
-    JLD2.save(join([save_path, "gs_dict.jld2"]), gs_dict)
-
     # linear interpolation      
     x_axis_3d = sim_gpe_3d.X[1] |> real
     dx = sim_gpe_3d.X[1][2] - sim_gpe_3d.X[1][1]
@@ -307,6 +314,8 @@ function solitons(
     
     solution_3d = LinearInterpolation(x_3d_range, final_axial, extrapolation_bc=Line())
     plot!(p, x_axis, solution_3d(x_axis), label="3D-GPE", color=:red)
+
+    @info time_requirement
     # =========================================================
     # set attributes
     if gamma_param == 0.15
