@@ -46,7 +46,7 @@ end
 function solitons(
   ; plus::Bool=false,
   use_precomputed::Bool=true,
-  take_advantage::Bool=true,
+  take_advantage::Bool=false,
   saveplots::Bool=true,
   show_plots::Bool=false,
   info::Bool=false

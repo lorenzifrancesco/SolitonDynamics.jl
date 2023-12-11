@@ -9,7 +9,6 @@ function estimate_sigma2k(psi_k, sim::Sim{1,Array{ComplexF64}})
 end
 
 function estimate_sigma2(psi, sim::Sim{1,Array{ComplexF64}})
-  @assert false # need to fix tridiagonal matrix
   @unpack equation, N, g, dV = sim
   @assert ns(psi, sim) ≈ 1
   s2 = ones(N[1])
@@ -27,32 +26,18 @@ function estimate_sigma2(psi, sim::Sim{1,Array{ComplexF64}})
     end
   elseif equation == NPSE_plus
     # Nonlinear Finite Element routine
-    b = (1 .+ g * abs2.(psi))
-    b[1] += 1.0 * 1 / (4 * dV)
-    b[end] += 1.0 * 1 / (4 * dV)
-    a = ones(length(b))
-    bc1 = zeros(length(b))
-    bc1[1] = -1.0
-    bc1[end] = 1.0
-    bc2 = bc1
-    bc2[1] += 2.0
-    bc1 /= (2*dV)
-    bc2 /= (2*dV)
-    fterm = D1 * abs2.(psi) ./ abs2.(psi)
-    @info bc1[1]
-    @info bc2[1]
-    D1 = 1 / (2 * dV) * Tridiagonal(-a, 0, a)
-    D2 = 1 / (2 * dV) * SymTridiagonal(2 * a, -a)
-    fterm = D1 * abs2.(psi) ./ abs2.(psi)
+    psisq = abs2.(psi)
+    dxx = 2*dV
+    Nx = N[1]
     ss = ones(N[1])
-    prob = NonlinearProblem(sigma_eq, ss, [b, D1, D2, fterm, bc1, bc2])
-    sol = solve(prob, NewtonRaphson(), reltol=1e-6)
+    prob = NonlinearSolve.NonlinearProblem(sigma_loop_external!, ss, [dxx, psisq, g, Nx])
+    sol = NonlinearSolve.solve(prob, NonlinearSolve.NewtonRaphson(), reltol=1e-6)
     s2 = (sol.u) .^ 2
   end
   return s2
 end
 
-function sigma_eq(sigma, params)
+function sigma_eq(ret, sigma, params)
   b =     params[1]
   D1 =    params[2]
   D2 =    params[3]
@@ -63,31 +48,25 @@ function sigma_eq(sigma, params)
   d1sigma = D1*sigma
   d2sigma = D2*sigma
   # structure: NPSE + derivatives + boundary conditions
-  ret = (- sigma .^ 4 + b) + (-(d1sigma).^2 + sigma .* d2sigma + sigma .* fterm .* d1sigma) + (bc2 - 2 * bc3 .* sigma + bc2 .* sigma + sigma .* fterm .* bc1)
-  return ret
+  ret .= (- sigma .^ 4 + b) + (-(d1sigma).^2 + sigma .* d2sigma + sigma .* fterm .* d1sigma) + (bc2 - 2 * bc3 .* sigma + bc2 .* sigma + sigma .* fterm .* bc1)
 end
 
-function sigma_eq_speed(sigma, params)
-  # d1sigma = D1*sigma
-  # d2sigma = D2*sigma
+
+function sigma_loop_external!(ret,sigma, params)
   # structure: NPSE + derivatives + boundary conditions
-  # ret = (- sigma .^ 4 + b) + (-(d1sigma).^2 + sigma .* d2sigma + sigma .* fterm .* d1sigma) + (bc2 - 2 * bc3 .* sigma + bc2 .* sigma + sigma .* fterm .* bc1)
-  ret = - sigma .^4 + params
-  return ret
+  dxx = 2*params[1]
+  psisq = params[2]
+  g = params[3]
+  Nx = params[4]
+  ret[1] = (- sigma[1] .^ 4 + (1 + g*psisq[1])) - ((1.0-2*sigma[1]+sigma[2])/(dxx))^2 + (sigma[2]-1.0)/(dxx) * sigma[1]
+  @inbounds for j in 2:Nx-1
+    ret[j] = (- sigma[j] .^ 4 + (1 + g*psisq[j])) - ((sigma[j+1]-sigma[j-1])/dxx)^2 +  ((sigma[j-1]-2*sigma[j]+sigma[j+1])/(dxx)) * sigma[j] + (sigma[j+1]-sigma[j-1])/dxx * sigma[j] * (psisq[j+1]-psisq[j-1])/(dxx*psisq[j])
+  end
+  ret[1] = (- sigma[1] .^ 4 + (1 + g*psisq[1])) - ((sigma[2]-1.0)/dxx)^2 +  ((1.0-2*sigma[1]+sigma[2])/(dxx)) * sigma[1] 
+  ret[Nx] = (- sigma[Nx] .^ 4 + (1 + g*psisq[Nx])) - ((1.0-sigma[Nx-1])/dxx)^2 +  ((sigma[Nx-1]-2*sigma[Nx]+1.0)/(dxx)) * sigma[Nx] 
 end
-
-function sigma_eq_jacobian(sigma, params) # slower than automatic differentiation
-  b = params[1]
-  A0 = params[2]
-  dV = params[3]
-  N = length(sigma)
-  lud = SymTridiagonal(0 * ones(N), ones(N))
-  J = Diagonal(- 1 / (2 * dV)* sigma + 2*A0*sigma + 4*sigma.^3) + 1/(2 * dV) * lud * Diagonal(-1/2 * sigma + 2 *lud*sigma) - 1/(2*dV) *  - Diagonal([-1/(2*dV), zeros(N-2)..., -1/(2*dV)])
-  return J
-end
-
-sigma_eq_nf = NonlinearFunction(sigma_eq; jac=sigma_eq_jacobian)
-
+# sigma_eq_nf = NonlinearFunction(sigma_eq; jac=sigma_eq_jacobian)
+# sigma_eq_fast = NonlinearFunction(sigma_eq; sparsity = )
 
 function estimate_sigma2k(psi_k, sim::Sim{3,CuArray{ComplexF64}})
   s2 = Array{Float64,1}(undef, sim.N[1])

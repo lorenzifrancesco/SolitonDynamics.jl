@@ -53,44 +53,47 @@ function nlin_manual!(psi, sim::Sim{1,Array{ComplexF64}}, t; ss_buffer=nothing, 
       # sigma2_plus = (sol[1, :]) .^ 2
       # ss_buffer .= sol[1, :]
 
-      # Nonlinear Finite Element routine
+      # Nonlinear Finite Difference routine
       # ==================================
-      function fast_sigma_eq(sigma, p)
-        # 101 KiB
-        b = (1 .+ g * abs2.(psi)) 
-        b[1] += 1.0 * 1 / (4 * dV)
-        b[end] += 1.0 * 1 / (4 * dV)
-        a = ones(length(b))
-        D1 = 1 / (2 * dV) * Tridiagonal(-a[1:end-1], 0*a, a[1:end-1])
-        D2 = 1 / (2 * dV) * SymTridiagonal(2 * a, -a)
-        fterm = (D1 * abs2.(psi)) ./ abs2.(psi)
-        bc1 = zeros(length(b))
-        bc1[1] = -1.0
-        bc1[end] = 1.0
-        bc2 = bc1
-        bc2[1] += 2.0
-        bc1 /= (2*dV)
-        bc2 /= (2*dV)
-        bc3 = zeros(length(b))
-        bc3[2] = 1.0
-        bc3[end-1] = 1.0
-        bc3 /= (2*dV)
-        d1sigma = D1 * sigma
-        d2sigma = D2 * sigma
-        # 366 KiB
-        ret = (- sigma .^ 4 + b) + (-(d1sigma).^2 + sigma .* d2sigma + sigma .* fterm .* d1sigma) + (bc2 - 2 * bc3 .* sigma + bc2 .* sigma + sigma .* fterm .* bc1)
-        return ret
+      # b = (1 .+ g * abs2.(psi)) 
+      # b[1] += 1.0 * 1 / (4 * dV)
+      # b[end] += 1.0 * 1 / (4 * dV)
+      # a = ones(length(b))
+      # D1 = 1 / (2 * dV) * Tridiagonal(-a[1:end-1], 0*a, a[1:end-1])
+      # D2 = 1 / (2 * dV) * SymTridiagonal(2 * a, -a)
+      # fterm = (D1 * abs2.(psi)) ./ abs2.(psi)
+      # bc1 = zeros(length(b))
+      # bc1[1] = -1.0
+      # bc1[end] = 1.0
+      # bc2 = bc1
+      # bc2[1] += 2.0
+      # bc1 /= (2*dV)
+      # bc2 /= (2*dV)
+      # bc3 = zeros(length(b))
+      # bc3[2] = 1.0
+      # bc3[end-1] = 1.0
+      # bc3 /= (2*dV)
+    
+      psisq = abs2.(psi)
+      M = N[1]
+      dxx = 2*dV
+      function sigma_loop!(ret,sigma, params)
+        # structure: NPSE + derivatives + boundary conditions
+        @inbounds for j in 2:M-1
+          ret[j] = (- sigma[j] .^ 4 + (1 + g*psisq[j]))# - ((sigma[j+1]-sigma[j-1])/dxx)^2 +  sigma[j] * ((sigma[j-1]-2*sigma[j]+sigma[j+1])/(dxx)) # + (sigma[j+1]-sigma[j-1])/dxx * sigma[j] * (psisq[j+1]-psisq[j-1])/(dxx*psisq[j])
+        end
+        ret[1] = (- sigma[1] .^ 4 + (1 + g*psisq[1])) #- ((sigma[2]-1.0)/dxx)^2 +  ((1.0-2*sigma[1]+sigma[2])/(dxx)) * sigma[1]
+        ret[M] = (- sigma[M] .^ 4 + (1 + g*psisq[M])) #- ((1.0-sigma[M-1])/dxx)^2 +  ((sigma[M-1]-2*sigma[M]+1.0)/(dxx)) * sigma[M]
       end
-
       @time begin
-      #[b, D1, D2, fterm, bc1, bc2, bc3])
-      prob = NonlinearSolve.NonlinearProblem(fast_sigma_eq, ss, 0.0)
+      prob = NonlinearProblem(sigma_loop!, ss, 0.0)
       sol = NonlinearSolve.solve(prob, NonlinearSolve.NewtonRaphson(), reltol=1e-6)
+      # display(prob)
       end
       
       sigma2_plus = (sol.u) .^ 2
       ss_buffer .= sol.u
-
+      # display(ss_buffer)
     try
     catch err
       if isa(err, DomainError)
@@ -100,9 +103,9 @@ function nlin_manual!(psi, sim::Sim{1,Array{ComplexF64}}, t; ss_buffer=nothing, 
         throw(err)
       end
     end
-    # temp = copy(sigma2_plus)
-    # nonlinear = g * abs2.(psi) ./ sigma2_plus + (1 / 2 * sigma2_plus .+ (1 ./ (2 * sigma2_plus)) .* (1 .+ (1 / dV * diff(prepend!(temp, 1.0))) .^ 2))
-    # @. psi = exp(dt_order * -im * iswitch * (V0 + V(x, t) + nonlinear)) * psi
+    temp = copy(sigma2_plus)
+    nonlinear = g * abs2.(psi) ./ sigma2_plus + (1 / 2 * sigma2_plus .+ (1 ./ (2 * sigma2_plus)) .* (1 .+ (1 / dV * diff(prepend!(temp, 1.0))) .^ 2))
+    @. psi = exp(dt_order * -im * iswitch * (V0 + V(x, t) + nonlinear)) * psi
   elseif equation == CQGPE
     @. psi *= exp(dt_order * -im * iswitch * (V0 + V(x, t) + g * abs2(psi) - 6*log(4/3) * g^2 * abs2(abs2(psi))))
   end
