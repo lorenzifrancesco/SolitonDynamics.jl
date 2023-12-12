@@ -1,7 +1,7 @@
-name = "CondensateDynamics"
+name = "SolitonDynamics"
 uuid = "a462cd4a-e029-4138-aed7-681342f91064"
 authors = ["lorenzifrancesco <francesco.lorenzi.2@studenti.unipd.it>"]
-version = "0.1.0"
+version = "0.2.0"
 
 [deps]
 Adapt = "79e6a3ab-5dfb-504d-930d-738a2a938a0e"
