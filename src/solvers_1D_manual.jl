@@ -25,7 +25,7 @@ function nlin_manual!(psi, sim::Sim{1,Array{ComplexF64}}, t; ss_buffer=nothing, 
     if isnothing(ss_buffer)
       ss = ones(N)
     else
-      ss = sqrt.(ss_buffer)
+      ss = ss_buffer
     end
     sigma2_plus = zeros(length(x))
     M = N[1]
