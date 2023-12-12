@@ -1,4 +1,4 @@
-module CondensateDynamics
+module SolitonDynamics
 
 # dev settings
 using ExportAll

@@ -22,11 +22,12 @@ function nlin_manual!(psi, sim::Sim{1,Array{ComplexF64}}, t; ss_buffer=nothing, 
   # NPSE+
   elseif equation == NPSE_plus
     # load past solution
-    if isnothing(ss_buffer)
+    if true || isnothing(ss_buffer)
       ss = ones(N)
     else
-      ss = ss_buffer
+      ss = abs.(ss_buffer)
     end
+    # ss0 = ones(N)
     sigma2_plus = zeros(length(x))
     M = N[1]
     dxx = 2*dV
@@ -43,8 +44,9 @@ function nlin_manual!(psi, sim::Sim{1,Array{ComplexF64}}, t; ss_buffer=nothing, 
         ret[M] = (- sigma[M] .^ 4 + (1 + g*psisq[M])) - ((1.0-sigma[M-1])/dxx)^2 + ((sigma[M-1]-2*sigma[M]+1.0)/(dV^2)) * sigma[M] + (1.0-sigma[M-1])/dxx * sigma[M] * (0.0- psisq[M-1])/(dxx*psisq[M])
       end
       prob = NonlinearSolve.NonlinearProblem(sigma_loop!, ss, 0.0)
-      sol = NonlinearSolve.solve(prob, NonlinearSolve.NewtonRaphson(), reltol=1e-6)
+      sol = NonlinearSolve.solve(prob, NonlinearSolve.NewtonRaphson(), reltol=1e-3)
       sigma2_plus = (sol.u) .^ 2
+      info && print("\n L2 err:", sum(abs2.(ss_buffer-sol.u)))
       ss_buffer .= sol.u
     catch err
       if isa(err, DomainError)
@@ -55,8 +57,7 @@ function nlin_manual!(psi, sim::Sim{1,Array{ComplexF64}}, t; ss_buffer=nothing, 
       end
     end
     temp = copy(sigma2_plus)
-    temp = sqrt.(temp)
-    temp_diff = copy(temp)
+    temp_diff = sqrt.(temp)
     # generate symmetric difference 
     temp_diff[1] = (temp[2]-temp[1])/dV 
     temp_diff[M] = (temp[M]-temp[M-1])/dV
