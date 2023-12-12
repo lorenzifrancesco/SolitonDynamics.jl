@@ -21,32 +21,32 @@ function nlin_manual!(psi, sim::Sim{1,Array{ComplexF64}}, t; ss_buffer=nothing, 
   
   # NPSE+
   elseif equation == NPSE_plus
+    # load past solution
+    if isnothing(ss_buffer)
+      ss = ones(N)
+    else
+      ss = sqrt.(ss_buffer)
+    end
     sigma2_plus = zeros(length(x))
-      # load past solution
-      if isnothing(ss_buffer)
-        ss = ones(N)
-      else
-        ss = sqrt.(ss_buffer)
-      end
-
+    M = N[1]
+    dxx = 2*dV
+    psisq = abs2.(psi)
+    try
       # Nonlinear Finite Difference routine
-      # ==================================
-      psisq = abs2.(psi)
-      M = N[1]
-      dxx = 2*dV
+      # ===================================
       function sigma_loop!(ret,sigma, params)
-        # structure: NPSE + simple derivatives + derivatives involving psi^2
+        # structure: [NPSE] + [simple derivatives of sigma] + [derivatives involving psi^2]
         @inbounds for j in 2:M-1
-          ret[j] = (- sigma[j] .^ 4 + (1 + g*psisq[j])) - ((sigma[j+1]-sigma[j-1])/dxx)^2 +  sigma[j] * ((sigma[j-1]-2*sigma[j]+sigma[j+1])/(dxx)) + (sigma[j+1]-sigma[j-1])/dxx * sigma[j] * (psisq[j+1]-psisq[j-1])/(dxx*psisq[j])
+          # ret[j] = (- sigma[j] .^ 4 + (1 + g*psisq[j])) - ((sigma[j+1]-sigma[j-1])/dxx)^2 +  sigma[j] * ((sigma[j-1]-2*sigma[j]+sigma[j+1])/(dxx)) #+ (sigma[j+1]-sigma[j-1])/dxx * sigma[j] * (psisq[j+1]-psisq[j-1])/(dxx*psisq[j])
+          ret[j] = (- sigma[j] .^ 4 + (1 + g*psisq[j])) - ((sigma[j+1]-sigma[j-1])/dxx)^2 +  sigma[j] * ((sigma[j-1]-2*sigma[j]+sigma[j+1])/(dxx)) + sigma[j]*(sigma[j+1]-sigma[j-1])/dxx * (psisq[j+1]-psisq[j-1])/(dxx*psisq[j]) + (sigma[j+1]-sigma[j-1])/dxx * sigma[j] * (psisq[j+1]-psisq[j-1])/(dxx*psisq[j])
         end
         ret[1] = (- sigma[1] .^ 4 + (1 + g*psisq[1])) + ((sigma[2]-1.0)/dxx)^2 + ((1.0-2*sigma[1]+sigma[2])/(dxx)) * sigma[1] +  (sigma[2]-1.0)/dxx * sigma[1] * (psisq[2]-0.0)/(dxx*psisq[1])
         ret[M] = (- sigma[M] .^ 4 + (1 + g*psisq[M])) - ((1.0-sigma[M-1])/dxx)^2 + ((sigma[M-1]-2*sigma[M]+1.0)/(dxx)) * sigma[M] + (1.0-sigma[M-1])/dxx * sigma[M] * (0.0- psisq[M-1])/(dxx*psisq[M])
       end
-      prob = NonlinearProblem(sigma_loop!, ss, 0.0)
+      prob = NonlinearSolve.NonlinearProblem(sigma_loop!, ss, 0.0)
       sol = NonlinearSolve.solve(prob, NonlinearSolve.NewtonRaphson(), reltol=1e-6)
       sigma2_plus = (sol.u) .^ 2
       ss_buffer .= sol.u
-    try
     catch err
       if isa(err, DomainError)
         sigma2_plus = NaN
