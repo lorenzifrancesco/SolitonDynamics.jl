@@ -37,11 +37,10 @@ function nlin_manual!(psi, sim::Sim{1,Array{ComplexF64}}, t; ss_buffer=nothing, 
       function sigma_loop!(ret,sigma, params)
         # structure: [NPSE] + [simple derivatives of sigma] + [derivatives involving psi^2]
         @inbounds for j in 2:M-1
-          # ret[j] = (- sigma[j] .^ 4 + (1 + g*psisq[j])) - ((sigma[j+1]-sigma[j-1])/dxx)^2 +  sigma[j] * ((sigma[j-1]-2*sigma[j]+sigma[j+1])/(dxx)) #+ (sigma[j+1]-sigma[j-1])/dxx * sigma[j] * (psisq[j+1]-psisq[j-1])/(dxx*psisq[j])
-          ret[j] = (- sigma[j] .^ 4 + (1 + g*psisq[j])) - ((sigma[j+1]-sigma[j-1])/dxx)^2 +  sigma[j] * ((sigma[j-1]-2*sigma[j]+sigma[j+1])/(dxx)) + sigma[j]*(sigma[j+1]-sigma[j-1])/dxx * (psisq[j+1]-psisq[j-1])/(dxx*psisq[j]) + (sigma[j+1]-sigma[j-1])/dxx * sigma[j] * (psisq[j+1]-psisq[j-1])/(dxx*psisq[j])
+          ret[j] = (- sigma[j] .^ 4 + (1 + g*psisq[j])) - ((sigma[j+1]-sigma[j-1])/dxx)^2 +  sigma[j] * ((sigma[j-1]-2*sigma[j]+sigma[j+1])/(dV^2)) + sigma[j]*(sigma[j+1]-sigma[j-1])/dxx * (psisq[j+1]-psisq[j-1])/(dxx*psisq[j]) + (sigma[j+1]-sigma[j-1])/dxx * sigma[j] * (psisq[j+1]-psisq[j-1])/(dxx*psisq[j])
         end
-        ret[1] = (- sigma[1] .^ 4 + (1 + g*psisq[1])) + ((sigma[2]-1.0)/dxx)^2 + ((1.0-2*sigma[1]+sigma[2])/(dxx)) * sigma[1] +  (sigma[2]-1.0)/dxx * sigma[1] * (psisq[2]-0.0)/(dxx*psisq[1])
-        ret[M] = (- sigma[M] .^ 4 + (1 + g*psisq[M])) - ((1.0-sigma[M-1])/dxx)^2 + ((sigma[M-1]-2*sigma[M]+1.0)/(dxx)) * sigma[M] + (1.0-sigma[M-1])/dxx * sigma[M] * (0.0- psisq[M-1])/(dxx*psisq[M])
+        ret[1] = (- sigma[1] .^ 4 + (1 + g*psisq[1])) + ((sigma[2]-1.0)/dxx)^2 + ((1.0-2*sigma[1]+sigma[2])/(dV^2)) * sigma[1] +  (sigma[2]-1.0)/dxx * sigma[1] * (psisq[2]-0.0)/(dxx*psisq[1])
+        ret[M] = (- sigma[M] .^ 4 + (1 + g*psisq[M])) - ((1.0-sigma[M-1])/dxx)^2 + ((sigma[M-1]-2*sigma[M]+1.0)/(dV^2)) * sigma[M] + (1.0-sigma[M-1])/dxx * sigma[M] * (0.0- psisq[M-1])/(dxx*psisq[M])
       end
       prob = NonlinearSolve.NonlinearProblem(sigma_loop!, ss, 0.0)
       sol = NonlinearSolve.solve(prob, NonlinearSolve.NewtonRaphson(), reltol=1e-6)
