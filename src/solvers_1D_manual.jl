@@ -22,7 +22,7 @@ function nlin_manual!(psi, sim::Sim{1,Array{ComplexF64}}, t; ss_buffer=nothing, 
   # NPSE+
   elseif equation == NPSE_plus
     # load past solution
-    if true || isnothing(ss_buffer)
+    if isnothing(ss_buffer)
       ss = ones(N)
     else
       ss = abs.(ss_buffer)
