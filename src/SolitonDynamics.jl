@@ -4,7 +4,8 @@ module SolitonDynamics
 using ExportAll
 using PrecompileTools
 
-using FFTW, CUDA, Adapt # useful for loading sparse matrix in GPU
+using FFTW, CUDA, Adapt 
+using Distributed
 using Reexport
 using OrdinaryDiffEq, DiffEqCallbacks, SteadyStateDiffEq, DiffEqGPU
 import NonlinearSolve

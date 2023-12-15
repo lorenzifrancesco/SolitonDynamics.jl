@@ -61,7 +61,7 @@ function nlin_manual!(psi, sim::Sim{1,Array{ComplexF64}}, t; ss_buffer=nothing, 
     # generate symmetric difference 
     temp_diff[1] = (temp[2]-temp[1])/dV 
     temp_diff[M] = (temp[M]-temp[M-1])/dV
-    for i in 2:M-1
+    @inbounds for i in 2:M-1
       temp_diff[i] = (temp[i+1]-temp[i-1])/dxx
     end
     nonlinear = g * abs2.(psi) ./ sigma2_plus + (1 / 2 * sigma2_plus) .+ (1 ./ (2 * sigma2_plus)) .* (1 .+ (temp_diff.^ 2))
