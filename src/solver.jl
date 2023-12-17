@@ -11,7 +11,6 @@ function manual_run(sim;
                     return_maximum=false)
   @unpack psi_0, dV, dt, ti, tf, t, solver, iswitch, abstol, reltol, N, Nt, V0, maxiters, time_steps, equation = sim
   psi = deepcopy(psi_0)
-  
 
   #######################
   # Imaginary time 
@@ -37,7 +36,7 @@ function manual_run(sim;
       #
       info && print("Interaction number")
       while cnt < maxiters && (cnt * sim.dt < minimum_evolution_time || abs(cp_diff) > abstol_diff)
-        tmp = chempotk_simple(psi, sim)
+        tmp = chempotk_simple(psi, sim) 
         try
           cp_diff = propagate_manual!(psi, sim, dt; info=info, ss_buffer=ss_buffer)
           sim.dt *= (1 - decay)

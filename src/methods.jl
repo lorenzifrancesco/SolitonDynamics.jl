@@ -206,7 +206,7 @@ end
     T = makeT(X,K,j)
 """
 function makeT(X,K,T::Type{Array{ComplexF64}};flags=FFTW.MEASURE)
-    FFTW.set_num_threads(Sys.CPU_THREADS)
+    FFTW.set_num_threads(1)
     D = length(X)
     N = length.(X)
     DX,DK = dfftall(X,K)

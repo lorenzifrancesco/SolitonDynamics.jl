@@ -1,12 +1,14 @@
-module CondensateDynamics
+module SolitonDynamics
 
 # dev settings
 using ExportAll
+using PrecompileTools
 
-using FFTW, CUDA, Adapt # useful for loading sparse matrix in GPU
-using Parameters
+using FFTW, CUDA, Adapt 
+using Distributed
 using Reexport
-using OrdinaryDiffEq, DiffEqCallbacks, SteadyStateDiffEq, DiffEqGPU, BoundaryValueDiffEq, NonlinearSolve
+using OrdinaryDiffEq, DiffEqCallbacks, SteadyStateDiffEq, DiffEqGPU
+import NonlinearSolve
 using LoopVectorization
 using LinearAlgebra, RecursiveArrayTools, LazyArrays
 using IntervalRootFinding, IntervalArithmetic
@@ -30,5 +32,7 @@ include("utils.jl")
 include("arrays.jl")
 include("solver.jl")
 include("normalization.jl")
+
 @exportAll()
+
 end # module CondensateDynamics

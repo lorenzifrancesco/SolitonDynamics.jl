@@ -10,39 +10,44 @@ function nlin_manual!(psi, sim::Sim{1,Array{ComplexF64}}, t; ss_buffer=nothing, 
   x = X[1]
   N = N[1]
   xspace!(psi, sim)
+  # 1D-GPE
   if equation == GPE_1D
     @. psi *= exp(dt_order * -im * iswitch * (V0 + V(x, t) + g * abs2(psi)))
+  
+  # NPSE
   elseif equation == NPSE
-    # @warn "whois sigma2? if appropriate this is zero" sigma2(Complex(sqrt(minimum(abs2.(psi)))))
     nonlinear = g * abs2.(psi) ./ sigma2.(psi) + (1 ./ (2 * sigma2.(psi)) + 1 / 2 * sigma2.(psi))
     @. psi = exp(dt_order * -im * iswitch * (V0 + V(x, t) + nonlinear)) * psi
+  
+  # NPSE+
   elseif equation == NPSE_plus
+    # load past solution
+    if isnothing(ss_buffer)
+      ss = ones(N)
+    else
+      ss = abs.(ss_buffer)
+    end
+    # ss0 = ones(N)
     sigma2_plus = zeros(length(x))
+    M = N[1]
+    dxx = 2*dV
+    psisq = abs2.(psi)
     try
-      # Nonlinear Finite Element routine
-      b = (1 .+ g * abs2.(psi))
-      b[1] += 1.0 * 1 / (4 * dV)
-      b[end] += 1.0 * 1 / (4 * dV)
-
-      a = ones(length(b))
-      A0 = 1 / (2 * dV) * SymTridiagonal(2 * a, -a)
-      if isnothing(ss_buffer)
-        ss = ones(N)
-      else
-        # info && @info "using ss_buffer with min: " minimum(ss_buffer)
-        ss = ss_buffer
+      # Nonlinear Finite Difference routine
+      # ===================================
+      @inline function sigma_loop!(ret,sigma, params)
+        # structure: [NPSE] + [simple derivatives of sigma] + [derivatives involving psi^2]
+        @inbounds for j in 2:M-1
+          ret[j] = (- sigma[j] .^ 4 + (1 + g*psisq[j])) - ((sigma[j+1]-sigma[j-1])/dxx)^2 +  sigma[j] * ((sigma[j-1]-2*sigma[j]+sigma[j+1])/(dV^2)) + sigma[j]*(sigma[j+1]-sigma[j-1])/dxx * (psisq[j+1]-psisq[j-1])/(dxx*psisq[j]) + (sigma[j+1]-sigma[j-1])/dxx * sigma[j] * (psisq[j+1]-psisq[j-1])/(dxx*psisq[j])
+        end
+        ret[1] = (- sigma[1] .^ 4 + (1 + g*psisq[1])) + ((sigma[2]-1.0)/dxx)^2 + ((1.0-2*sigma[1]+sigma[2])/(dV^2)) * sigma[1] +  (sigma[2]-1.0)/dxx * sigma[1] * (psisq[2]-0.0)/(dxx*psisq[1])
+        ret[M] = (- sigma[M] .^ 4 + (1 + g*psisq[M])) - ((1.0-sigma[M-1])/dxx)^2 + ((sigma[M-1]-2*sigma[M]+1.0)/(dV^2)) * sigma[M] + (1.0-sigma[M-1])/dxx * sigma[M] * (0.0- psisq[M-1])/(dxx*psisq[M])
       end
-
-      prob = NonlinearProblem(sigma_eq, ss, [b, A0, dV])
-      sol = solve(prob, NewtonRaphson(), reltol=1e-6)
+      prob = NonlinearSolve.NonlinearProblem(sigma_loop!, ss, 0.0)
+      sol = NonlinearSolve.solve(prob, NonlinearSolve.NewtonRaphson(), reltol=1e-3)
       sigma2_plus = (sol.u) .^ 2
+      info && print("\n L2 err:", sum(abs2.(ss_buffer-sol.u)))
       ss_buffer .= sol.u
-
-      # # === scientific debug zone
-      # append!(time_of_sigma, t)
-      # append!(sigma2_new, [sigma2_plus])
-      # append!(sigma2_old, [1 .+ g * abs2.(psi)])
-      # # === end scientific debug zone
     catch err
       if isa(err, DomainError)
         sigma2_plus = NaN
@@ -52,11 +57,21 @@ function nlin_manual!(psi, sim::Sim{1,Array{ComplexF64}}, t; ss_buffer=nothing, 
       end
     end
     temp = copy(sigma2_plus)
-    nonlinear = g * abs2.(psi) ./ sigma2_plus + (1 / 2 * sigma2_plus .+ (1 ./ (2 * sigma2_plus)) .* (1 .+ (1 / dV * diff(prepend!(temp, 1.0))) .^ 2))
+    temp_diff = sqrt.(temp)
+    # generate symmetric difference 
+    temp_diff[1] = (temp[2]-temp[1])/dV 
+    temp_diff[M] = (temp[M]-temp[M-1])/dV
+    @inbounds for i in 2:M-1
+      temp_diff[i] = (temp[i+1]-temp[i-1])/dxx
+    end
+    nonlinear = g * abs2.(psi) ./ sigma2_plus + (1 / 2 * sigma2_plus) .+ (1 ./ (2 * sigma2_plus)) .* (1 .+ (temp_diff.^ 2))
     @. psi = exp(dt_order * -im * iswitch * (V0 + V(x, t) + nonlinear)) * psi
+
+  # CQGPE
   elseif equation == CQGPE
     @. psi *= exp(dt_order * -im * iswitch * (V0 + V(x, t) + g * abs2(psi) - 6*log(4/3) * g^2 * abs2(abs2(psi))))
   end
+
   if maximum(abs2.(psi) * dV) > 0.8
     throw(Gpe3DCollapse(maximum(abs2.(psi) * dV)))
   end

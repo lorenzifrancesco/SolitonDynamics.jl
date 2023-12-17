@@ -14,6 +14,7 @@ function nlin!(dpsi,psi,sim::Sim{1, Array{ComplexF64}},t)
       nonlinear = g*abs2.(dpsi) ./sigma2.(dpsi) + (1 ./(2*sigma2.(dpsi)) + 1/2*sigma2.(dpsi))
       @. dpsi *= -im*iswitch* (V0 + V(x, t) + nonlinear) + mu_im
    elseif equation == NPSE_plus
+      @assert false # still have to implement the corrections
       sigma2_plus = zeros(length(x))
       try
          # Nonlinear Finite Element routine

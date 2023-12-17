@@ -26,45 +26,16 @@ function estimate_sigma2(psi, sim::Sim{1,Array{ComplexF64}})
     end
   elseif equation == NPSE_plus
     # Nonlinear Finite Element routine
-    b = (1 .+ g * abs2.(psi))
-    b[1] += 1.0 * 1 / (4 * dV)
-    b[end] += 1.0 * 1 / (4 * dV)
-
-    a = ones(length(b))
-    A0 = 1 / (2 * dV) * SymTridiagonal(2 * a, -a)
-
+    psisq = abs2.(psi)
+    dxx = 2*dV
+    Nx = N[1]
     ss = ones(N[1])
-    prob = NonlinearProblem(sigma_eq, ss, [b, A0, dV])
-    sol = solve(prob, NewtonRaphson(), reltol=1e-6)
+    prob = NonlinearSolve.NonlinearProblem(sigma_loop_external!, ss, [dxx, psisq, g, Nx])
+    sol = NonlinearSolve.solve(prob, NonlinearSolve.NewtonRaphson(), reltol=1e-6)
     s2 = (sol.u) .^ 2
   end
   return s2
 end
-
-function sigma_eq(sigma, params)
-  b = params[1]
-  A0 = params[2]
-  dV = params[3]
-  N = length(sigma)
-  bc = zeros(N)
-  bc[1] = 1
-  bc[end] = 1
-  f = -1 / 2 * (A0 * sigma .^ 2) + 2 * sigma .* (A0 * sigma) + sigma .^ 4 - b - 1 / (2 * dV) * bc .* sigma
-  return f
-end
-
-function sigma_eq_jacobian(sigma, params) # slower than automatic differentiation
-  b = params[1]
-  A0 = params[2]
-  dV = params[3]
-  N = length(sigma)
-  lud = SymTridiagonal(0 * ones(N), ones(N))
-  J = Diagonal(- 1 / (2 * dV)* sigma + 2*A0*sigma + 4*sigma.^3) + 1/(2 * dV) * lud * Diagonal(-1/2 * sigma + 2 *lud*sigma) - 1/(2*dV) *  - Diagonal([-1/(2*dV), zeros(N-2)..., -1/(2*dV)])
-  return J
-end
-
-sigma_eq_nf = NonlinearFunction(sigma_eq; jac=sigma_eq_jacobian)
-
 
 function estimate_sigma2k(psi_k, sim::Sim{3,CuArray{ComplexF64}})
   s2 = Array{Float64,1}(undef, sim.N[1])
@@ -93,6 +64,37 @@ function estimate_sigma2k(psi_k, sim::Sim{3,CuArray{ComplexF64}})
   s2 = tmp
   return s2
 end
+
+function sigma_eq(ret, sigma, params)
+  b =     params[1]
+  D1 =    params[2]
+  D2 =    params[3]
+  fterm = 0.0*params[4]
+  bc1 =   params[5]
+  bc2 =   params[6]
+  bc3 =   params[7]
+  d1sigma = D1*sigma
+  d2sigma = D2*sigma
+  # structure: NPSE + derivatives + boundary conditions
+  ret .= (- sigma .^ 4 + b) + (-(d1sigma).^2 + sigma .* d2sigma + sigma .* fterm .* d1sigma) + (bc2 - 2 * bc3 .* sigma + bc2 .* sigma + sigma .* fterm .* bc1)
+end
+
+function sigma_loop_external!(ret,sigma, params)
+  # structure: NPSE + derivatives + boundary conditions
+  dxx = 2*params[1]
+  psisq = params[2]
+  g = params[3]
+  M = params[4]
+  @inbounds for j in 2:M-1
+    ret[j] = (- sigma[j] .^ 4 + (1 + g*psisq[j])) - ((sigma[j+1]-sigma[j-1])/dxx)^2 +  sigma[j] * ((sigma[j-1]-2*sigma[j]+sigma[j+1])/(dxx))  + (sigma[j+1]-sigma[j-1])/dxx * sigma[j] * (psisq[j+1]-psisq[j-1])/(dxx*psisq[j])
+          # ultimo termine pericoloso!!
+  end
+  ret[1] = (- sigma[1] .^ 4 + (1 + g*psisq[1])) - ((sigma[2]-1.0)/dxx)^2 +  ((1.0-2*sigma[1]+sigma[2])/(dxx)) * sigma[1]
+  ret[M] = (- sigma[M] .^ 4 + (1 + g*psisq[M])) - ((1.0-sigma[M-1])/dxx)^2 +  ((sigma[M-1]-2*sigma[M]+1.0)/(dxx)) * sigma[M]
+end
+
+# sigma_eq_nf = NonlinearFunction(sigma_eq; jac=sigma_eq_jacobian)
+# sigma_eq_fast = NonlinearFunction(sigma_eq; sparsity = )
 
 function project_radial(psi_k, sim::Sim{3,CuArray{ComplexF64}})
   # MSE estimator
