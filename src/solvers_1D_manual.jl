@@ -35,7 +35,7 @@ function nlin_manual!(psi, sim::Sim{1,Array{ComplexF64}}, t; ss_buffer=nothing, 
     try
       # Nonlinear Finite Difference routine
       # ===================================
-      function sigma_loop!(ret,sigma, params)
+      @inline function sigma_loop!(ret,sigma, params)
         # structure: [NPSE] + [simple derivatives of sigma] + [derivatives involving psi^2]
         @inbounds for j in 2:M-1
           ret[j] = (- sigma[j] .^ 4 + (1 + g*psisq[j])) - ((sigma[j+1]-sigma[j-1])/dxx)^2 +  sigma[j] * ((sigma[j-1]-2*sigma[j]+sigma[j+1])/(dV^2)) + sigma[j]*(sigma[j+1]-sigma[j-1])/dxx * (psisq[j+1]-psisq[j-1])/(dxx*psisq[j]) + (sigma[j+1]-sigma[j-1])/dxx * sigma[j] * (psisq[j+1]-psisq[j-1])/(dxx*psisq[j])
