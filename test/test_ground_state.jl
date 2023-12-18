@@ -28,9 +28,6 @@ analytical_gs = zeros(N)
 sol, err = testsim(sim)
 @test err == false
 numerical_gs = xspace(sol.u, sim)
-q = plot(real(x), abs2.(numerical_gs), color=:blue, label="num")
-plot!(q, real(x), abs2.(analytical_gs), color=:red, label="ana")
-savefig(q, "media/checks/test_gauss.pdf")
 @test isapprox(ns((numerical_gs - analytical_gs), sim), 0.0, atol = 1e-5)
 
 
@@ -66,9 +63,4 @@ numerical_gs = xspace(sol.u, sim)
 @warn "too loose nonlinear 1D soliton test"
 @info ns(numerical_gs, sim)
 @info ns(analytical_gs, sim)
-# save("analytical_gs.jld2"; analytical_gs)
-# save("numerical_gs.jld2"; numerical_gs)
-p = plot(real(x), abs2.(numerical_gs), color=:blue, label="num")
-plot!(p, real(x), abs2.(analytical_gs), color=:red, label="ana")
-savefig(p, "media/checks/test.pdf")
 @test isapprox(ns((numerical_gs - analytical_gs), sim), 0.0, atol = 1e-6)

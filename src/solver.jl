@@ -56,8 +56,7 @@ function manual_run(
                 (cnt * sim.dt < minimum_evolution_time || abs(cp_diff) > abstol_diff)
                 tmp = chempotk_simple(psi, sim)
                 try
-                    cp_diff =
-                        propagate_manual!(psi, sim, dt; info = info, ss_buffer = ss_buffer)
+                    cp_diff = propagate_manual!(psi, sim, dt; info = info, ss_buffer = ss_buffer)
                     sim.dt *= (1 - decay)
                     info && print("\r", cnt, " - chempot diff: ", cp_diff)
                     #@assert tmp * cp_diff > 0
@@ -134,7 +133,7 @@ function manual_run(
             debug && @warn "running with time_steps = " time_steps
             for i = 1:time_steps
                 try
-                    propagate_manual!(psi, sim, time; ss_buffer = ss_buffer)
+                    @time propagate_manual!(psi, sim, time; ss_buffer = ss_buffer)
                     if return_maximum
                         candidate_maximum = maximum(abs2.(psi))
                         if candidate_maximum > max_prob
