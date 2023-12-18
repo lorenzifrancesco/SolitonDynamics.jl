@@ -1,6 +1,5 @@
-abstract type TransformLibrary{A <: AbstractArray} end
+abstract type TransformLibrary{A<:AbstractArray} end
 abstract type Space end
-abstract type Time end
 # abstract parameter type: can also be a function of simulation time
 
 abstract type PotentialType end
@@ -12,17 +11,17 @@ struct EquationType
     D::Int64
 end
 
-const GPE_1D =    EquationType(1, 1)
-const NPSE =      EquationType(2, 1)
+const GPE_1D = EquationType(1, 1)
+const NPSE = EquationType(2, 1)
 const NPSE_plus = EquationType(3, 1)
-const GPE_3D =    EquationType(4, 3)
-const CQGPE =    EquationType(5, 1)
+const GPE_3D = EquationType(4, 3)
+const CQGPE = EquationType(5, 1)
 
 abstract type Simulation{D} end
 
 struct Solver
     number::Int64
-    spectral::Bool;
+    spectral::Bool
 end
 
 const SplitStep = Solver(1, true)
@@ -48,11 +47,6 @@ struct KSpace{D} <: Space
     K2::Array{Float64,D}
 end
 
-# struct TimeAxis <: Time
-
-# end
-
-
 struct NpseCollapse <: Exception
     var::Float64
 end
@@ -60,29 +54,62 @@ struct Gpe3DCollapse <: Exception
     var::Float64
 end
 
-Base.showerror(io::IO, e::NpseCollapse) = print(io, "NPSE collapse detected, g * max(|f|^2) = ", e.var, "!")
+Base.showerror(io::IO, e::NpseCollapse) =
+    print(io, "NPSE collapse detected, g * max(|f|^2) = ", e.var, "!")
 
 @with_kw mutable struct Params <: UserParams
     κ = 0.0 # a placeholder
 end
 
 @with_kw mutable struct Transforms{D,N,A} <: TransformLibrary{A}
-    Txk::AbstractFFTs.ScaledPlan{Complex{Float64},FFTW.cFFTWPlan{Complex{Float64},-1,false,D,UnitRange{Int64}},Float64} = 0.1* plan_fft(crandn_array(N, A))
-    Txk!::AbstractFFTs.ScaledPlan{Complex{Float64},FFTW.cFFTWPlan{Complex{Float64},-1,true,D,UnitRange{Int64}},Float64} = 0.1*plan_fft!(crandn_array(N, A))
-    Tkx::AbstractFFTs.ScaledPlan{Complex{Float64},FFTW.cFFTWPlan{Complex{Float64},1,false,D,UnitRange{Int64}},Float64} = 0.1* plan_ifft(crandn_array(N, A))
-    Tkx!::AbstractFFTs.ScaledPlan{Complex{Float64},FFTW.cFFTWPlan{Complex{Float64},1,true,D,UnitRange{Int64}},Float64} = 0.1*plan_ifft!(crandn_array(N, A))
+    Txk::AbstractFFTs.ScaledPlan{
+        Complex{Float64},
+        FFTW.cFFTWPlan{Complex{Float64},-1,false,D,UnitRange{Int64}},
+        Float64,
+    } = 0.1 * plan_fft(crandn_array(N, A))
+    Txk!::AbstractFFTs.ScaledPlan{
+        Complex{Float64},
+        FFTW.cFFTWPlan{Complex{Float64},-1,true,D,UnitRange{Int64}},
+        Float64,
+    } = 0.1 * plan_fft!(crandn_array(N, A))
+    Tkx::AbstractFFTs.ScaledPlan{
+        Complex{Float64},
+        FFTW.cFFTWPlan{Complex{Float64},1,false,D,UnitRange{Int64}},
+        Float64,
+    } = 0.1 * plan_ifft(crandn_array(N, A))
+    Tkx!::AbstractFFTs.ScaledPlan{
+        Complex{Float64},
+        FFTW.cFFTWPlan{Complex{Float64},1,true,D,UnitRange{Int64}},
+        Float64,
+    } = 0.1 * plan_ifft!(crandn_array(N, A))
     #psi::ArrayPartition = crandnpartition(D,N,A)
 end
 
 @with_kw mutable struct GPUTransforms{D,N,A} <: TransformLibrary{A}
-    Txk::AbstractFFTs.ScaledPlan{Complex{Float64}, CUDA.CUFFT.cCuFFTPlan{ComplexF64, -1, false, 3},Float64} = 0.1*CUDA.CUFFT.plan_fft(  CuArray(crandn_array(N, A)))
-    Txk!::AbstractFFTs.ScaledPlan{Complex{Float64},CUDA.CUFFT.cCuFFTPlan{ComplexF64, -1, true , 3},Float64} = 0.1*CUDA.CUFFT.plan_fft!( CuArray(crandn_array(N, A)))
-    Tkx::AbstractFFTs.ScaledPlan{Complex{Float64}, CUDA.CUFFT.cCuFFTPlan{ComplexF64,  1, false, 3},Float64} = 0.1*CUDA.CUFFT.plan_ifft( CuArray(crandn_array(N, A)))
-    Tkx!::AbstractFFTs.ScaledPlan{Complex{Float64},CUDA.CUFFT.cCuFFTPlan{ComplexF64,  1, true , 3},Float64} = 0.1*CUDA.CUFFT.plan_ifft!(CuArray(crandn_array(N, A)))
+    Txk::AbstractFFTs.ScaledPlan{
+        Complex{Float64},
+        CUDA.CUFFT.cCuFFTPlan{ComplexF64,-1,false,3},
+        Float64,
+    } = 0.1 * CUDA.CUFFT.plan_fft(CuArray(crandn_array(N, A)))
+    Txk!::AbstractFFTs.ScaledPlan{
+        Complex{Float64},
+        CUDA.CUFFT.cCuFFTPlan{ComplexF64,-1,true,3},
+        Float64,
+    } = 0.1 * CUDA.CUFFT.plan_fft!(CuArray(crandn_array(N, A)))
+    Tkx::AbstractFFTs.ScaledPlan{
+        Complex{Float64},
+        CUDA.CUFFT.cCuFFTPlan{ComplexF64,1,false,3},
+        Float64,
+    } = 0.1 * CUDA.CUFFT.plan_ifft(CuArray(crandn_array(N, A)))
+    Tkx!::AbstractFFTs.ScaledPlan{
+        Complex{Float64},
+        CUDA.CUFFT.cCuFFTPlan{ComplexF64,1,true,3},
+        Float64,
+    } = 0.1 * CUDA.CUFFT.plan_ifft!(CuArray(crandn_array(N, A)))
     #psi::ArrayPartition = crandnpartition(D,N,A)
 end
 
-@with_kw mutable struct Sim{D, A <: AbstractArray}
+@with_kw mutable struct Sim{D,A<:AbstractArray}
     name::String = "default"
     # === solver and algorithm
     equation::EquationType = GPE_1D
@@ -108,9 +135,10 @@ end
     time_steps = 5000   # used in manual solvers
     # === nonlinearity
     g::Float64 = 0.0
-    gamma_damp::Float64 = 0.0; @assert gamma_damp >= 0.0 # damping parameter
+    gamma_damp::Float64 = 0.0
+    @assert gamma_damp >= 0.0 # damping parameter
     mu::Float64 = 0.0 # fixed chemical potential for ground state solution
-    sigma2 = init_sigma2(g) 
+    sigma2 = init_sigma2(g)
     # === potential
     params::UserParams = Params() # optional user parameterss
     V0::A = zeros(N)
@@ -121,21 +149,21 @@ end
     # === saving
     nfiles::Bool = false
     Nt::Int64 = 5    # number of saves over (ti,tf)
-    t::LinRange{Float64} = LinRange(ti,tf,Nt) # time of saves
-    path::String = nfiles ? joinpath(@__DIR__,"data") : @__DIR__
+    t::LinRange{Float64} = LinRange(ti, tf, Nt) # time of saves
+    path::String = nfiles ? joinpath(@__DIR__, "data") : @__DIR__
     filename::String = "save"
 
     # === arrays, transforms, spectral operators
-    X::NTuple{D,A} = xvecs(L,N)
-    K::NTuple{D,A} = kvecs(L,N)
-    T::TransformLibrary{A} = makeT(X,K,A,flags=flags)
+    X::NTuple{D,A} = xvecs(L, N)
+    K::NTuple{D,A} = kvecs(L, N)
+    T::TransformLibrary{A} = makeT(X, K, A, flags = flags)
     ksquared::A = k2(K, A)
 end
 @with_kw mutable struct CustomSolution
-    u
-    t
+    u::Any
+    t::Any
     cnt::Int64 = 0
 end
 
-InitSim(L,N,A,par) = Sim{length(L), A}(L=L,N=N,params=par)
-InitSim(L,N,A) = Sim{length(L), A}(L=L,N=N,params=Params())
+InitSim(L, N, A, par) = Sim{length(L),A}(L = L, N = N, params = par)
+InitSim(L, N, A) = Sim{length(L),A}(L = L, N = N, params = Params())
