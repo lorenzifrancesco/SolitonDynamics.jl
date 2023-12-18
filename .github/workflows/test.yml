@@ -15,7 +15,7 @@ jobs:
       - uses: julia-actions/setup-julia@latest
       - uses: julia-actions/julia-buildpkg@latest
         with: 
-          project: "CondensateDynamics"
+          project: "SolitonDynamics"
       - uses: julia-actions/julia-runtest@v1
         with:
           annotate: true

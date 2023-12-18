@@ -2,10 +2,8 @@ module SolitonDynamics
 
 # dev settings
 using ExportAll
-using PrecompileTools
 
 using FFTW, CUDA, Adapt 
-using Distributed
 using Reexport
 using OrdinaryDiffEq, DiffEqCallbacks, SteadyStateDiffEq, DiffEqGPU
 import NonlinearSolve
@@ -13,6 +11,7 @@ using LoopVectorization
 using LinearAlgebra, RecursiveArrayTools, LazyArrays
 using IntervalRootFinding, IntervalArithmetic
 import JLD2 
+using StaticArrays
 
 @reexport using Parameters
 import FileIO

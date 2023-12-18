@@ -7,18 +7,8 @@ V(x, y, z, t) = 0.0
 
 # array methods
 # generate arrays 
-"""
-    x = xvec(λ,N)
+xvec(L,N) = LinRange(-L/2,L/2,N+1)[1:end-1]
 
-Create `x` values with correct periodicity for box specified by length `λ`, using `N` points.
-"""
-xvec(L,N) = collect(LinRange(-L/2,L/2,N+1))[1:end-1]
-
-"""
-    k = kvec(λ,N)
-
-Create `k` values with correct periodicity for box specified by length `L` for number of points `N`.
-"""
 function kvec(L,N)
     # @assert iseven(N)
     # nk = 0:Int(N/2)
@@ -27,11 +17,6 @@ function kvec(L,N)
     return k
 end
 
-"""
-    X = xvecs(L,N)
-
-Create a tuple containing the spatial coordinate array for each spatial dimension.
-"""
 function xvecs(L,N)
     X = []
     for (λ,ν) in zip(L,N)
@@ -41,11 +26,6 @@ function xvecs(L,N)
     return X |> Tuple
 end
 
-"""
-    K = kvecs(L,N)
-
-Create a tuple containing the spatial coordinate array for each spatial dimension.
-"""
 function kvecs(L,N)
     K = []
     for (λ,ν) in zip(L,N)
@@ -55,20 +35,12 @@ function kvecs(L,N)
     return K |> Tuple
 end
 
-"""
-    k² = k2(K)
-
-Create the kinetic energy array `k²` on the `k`-grid defined by the tuple `K`.
-"""
 function k2(K, A)
     kind = Iterators.product(K...)
     tmp::A = map(k-> sum(abs2.(k)),kind)
     return tmp
 end
 
-"""
-return spatial volume element
-"""
 function volume_element(L, N)
     dV=1
     for i in eachindex(L)
@@ -77,12 +49,6 @@ function volume_element(L, N)
     return dV
 end
 
-"""
-    X,K,dX,dK = makearrays(L,N)
-
-Create all `x` and `k` arrays for box specified by tuples `L=(Lx,...)` and `N=(Nx,...)`.
-For convenience, differentials `dX`, `dK` are also reaturned. `L` and `N` must be tuples of equal length.
-"""
 function makearrays(L,N)
     @assert length(L) == length(N)
     X = xvecs(L,N)

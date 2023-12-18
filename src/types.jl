@@ -1,5 +1,6 @@
 abstract type TransformLibrary{A <: AbstractArray} end
 abstract type Space end
+abstract type Time end
 # abstract parameter type: can also be a function of simulation time
 
 abstract type PotentialType end
@@ -46,6 +47,11 @@ struct KSpace{D} <: Space
     K::NTuple{D}
     K2::Array{Float64,D}
 end
+
+# struct TimeAxis <: Time
+
+# end
+
 
 struct NpseCollapse <: Exception
     var::Float64

@@ -1,4 +1,4 @@
-using CondensateDynamics 
+using SolitonDynamics 
 using CUDA
 using OrdinaryDiffEq
 

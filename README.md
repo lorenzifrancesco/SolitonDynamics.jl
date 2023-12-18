@@ -1,4 +1,4 @@
-# CondensateDynamics
+# SolitonDynamics
 
 ### Usage
 

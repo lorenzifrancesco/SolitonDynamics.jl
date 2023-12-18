@@ -43,8 +43,9 @@ function nlin_manual!(psi, sim::Sim{1,Array{ComplexF64}}, t; ss_buffer=nothing, 
         ret[1] = (- sigma[1] .^ 4 + (1 + g*psisq[1])) + ((sigma[2]-1.0)/dxx)^2 + ((1.0-2*sigma[1]+sigma[2])/(dV^2)) * sigma[1] +  (sigma[2]-1.0)/dxx * sigma[1] * (psisq[2]-0.0)/(dxx*psisq[1])
         ret[M] = (- sigma[M] .^ 4 + (1 + g*psisq[M])) - ((1.0-sigma[M-1])/dxx)^2 + ((sigma[M-1]-2*sigma[M]+1.0)/(dV^2)) * sigma[M] + (1.0-sigma[M-1])/dxx * sigma[M] * (0.0- psisq[M-1])/(dxx*psisq[M])
       end
+      
       prob = NonlinearSolve.NonlinearProblem(sigma_loop!, ss, 0.0)
-      sol = NonlinearSolve.solve(prob, NonlinearSolve.NewtonRaphson(), reltol=1e-3)
+      @time sol = NonlinearSolve.solve(prob, NonlinearSolve.NewtonRaphson(), reltol=1e-3)
       sigma2_plus = (sol.u) .^ 2
       info && print("\n L2 err:", sum(abs2.(ss_buffer-sol.u)))
       ss_buffer .= sol.u

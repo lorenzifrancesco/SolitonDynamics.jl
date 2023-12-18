@@ -1,5 +1,5 @@
 using BenchmarkTools
-using CondensateDynamics
+using SolitonDynamics
 
 function run_benchmarks()
     include("research/init.jl")
