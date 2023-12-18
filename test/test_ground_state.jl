@@ -41,7 +41,7 @@ g_param = 0.65
 
 @unpack_Sim sim
 iswitch = -im
-g = - 2* g_param
+g = -2 * g_param
 equation = GPE_1D
 manual = true
 abstol = 1e-12
@@ -60,7 +60,4 @@ analytical_gs = zeros(N)
 sol, err = testsim(sim)
 @test err == false
 numerical_gs = xspace(sol.u, sim)
-@warn "too loose nonlinear 1D soliton test"
-@info ns(numerical_gs, sim)
-@info ns(analytical_gs, sim)
 @test isapprox(ns((numerical_gs - analytical_gs), sim), 0.0, atol = 1e-6)

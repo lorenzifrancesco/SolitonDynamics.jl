@@ -3,8 +3,10 @@
 # ============== Manual SplitStep methods, improved with exp
 unpack_selection(sim, fields...) = map(x -> getfield(sim, x), fields)
 
-function nlin_manual!(
+@inline function nlin_manual!(
     psi,
+    ss,
+    real_psi,
     sim::Sim{1,Array{ComplexF64}},
     t;
     ss_buffer = nothing,
@@ -20,7 +22,6 @@ function nlin_manual!(
     # 1D-GPE
     if equation == GPE_1D
         @. psi *= exp(dt_order * -im * iswitch * (V0 + V(x, t) + g * abs2(psi)))
-
         # NPSE
     elseif equation == NPSE
         nonlinear =
@@ -70,8 +71,7 @@ function nlin_manual!(
             end
 
             prob = NonlinearSolve.NonlinearProblem(sigma_loop!, ss, 0.0)
-            @time sol =
-                NonlinearSolve.solve(prob, NonlinearSolve.NewtonRaphson(), reltol = 1e-3)
+            sol = NonlinearSolve.solve(prob, NonlinearSolve.NewtonRaphson(linsolve = LinearSolve.KrylovJL_GMRES()), reltol = 1e-3)
             sigma2_plus = (sol.u) .^ 2
             info && print("\n L2 err:", sum(abs2.(ss_buffer - sol.u)))
             ss_buffer .= sol.u
@@ -106,16 +106,22 @@ function nlin_manual!(
         )
     end
 
-    if maximum(abs2.(psi) * dV) > 0.8
-        throw(Gpe3DCollapse(maximum(abs2.(psi) * dV)))
+    if equation != GPE_1D
+      real_psi .= abs2.(psi)
+      if maximum(real_psi) > 0.8/dV
+          throw(Gpe3DCollapse(maximum(abs2.(psi) * dV)))
+      end
     end
     kspace!(psi, sim)
     return nothing
 end
 
 
-function propagate_manual!(
+@inline function propagate_manual!(
     psi,
+    psi_i,
+    tmp_psi2,
+    real_psi,
     sim::Sim{1,Array{ComplexF64}},
     t;
     ss_buffer = nothing,
@@ -123,12 +129,11 @@ function propagate_manual!(
 )
     (ksquared, iswitch, mu, gamma_damp, dt) =
         unpack_selection(sim, :ksquared, :iswitch, :mu, :gamma_damp, :dt)
-    psi_i = copy(psi)
     # splitting: N/2, N/2, L
     @. psi =
         exp(dt * iswitch * (1.0 - im * gamma_damp) * (-im * (1 / 2 * ksquared - mu))) * psi
-    nlin_manual!(psi, sim, t; ss_buffer = ss_buffer, info = info)
-    nlin_manual!(psi, sim, t; ss_buffer = ss_buffer, info = info)
+    nlin_manual!(psi, tmp_psi2, real_psi, sim, t; ss_buffer = ss_buffer, info = info)
+    nlin_manual!(psi, tmp_psi2, real_psi, sim, t; ss_buffer = ss_buffer, info = info)
     if iswitch == -im
         psi .= psi / sqrt(nsk(psi, sim))
         info && print(" - schempot: ", abs(chempotk_simple(psi, sim)))
@@ -154,7 +159,7 @@ function cn_ground_state!(
     tri_fwd,
     tri_bkw;
     info = false,
-)
+ )
     @unpack dt, g, X, V0, iswitch, dV, Vol = sim
     x = X[1]
     psi_i = copy(psi)
@@ -183,7 +188,7 @@ function pc_ground_state!(
     tri_fwd,
     tri_bkw;
     info = false,
-)
+ )
     @unpack dt, g, X, V0, iswitch, dV, Vol, N = sim
     x = X[1]
     psi_i = copy(psi)
@@ -222,7 +227,7 @@ function be_ground_state!(
     tri_fwd,
     tri_bkw;
     info = false,
-)
+ )
     @unpack dt, g, X, V0, iswitch, dV, Vol, N = sim
     x = X[1]
     psi_i = copy(psi)

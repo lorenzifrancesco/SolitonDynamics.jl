@@ -52,11 +52,12 @@ function manual_run(
             minimum_evolution_time = 40.0
             #
             info && print("Interaction number")
+            tmp_psi = copy(psi)
             while cnt < maxiters &&
                 (cnt * sim.dt < minimum_evolution_time || abs(cp_diff) > abstol_diff)
                 tmp = chempotk_simple(psi, sim)
                 try
-                    cp_diff = propagate_manual!(psi, sim, dt; info = info, ss_buffer = ss_buffer)
+                    cp_diff = propagate_manual!(psi, tmp_psi, sim, dt; info = info, ss_buffer = ss_buffer)
                     sim.dt *= (1 - decay)
                     info && print("\r", cnt, " - chempot diff: ", cp_diff)
                     #@assert tmp * cp_diff > 0
@@ -105,9 +106,9 @@ function manual_run(
         end
         return sol
 
-        #######################
-        # Real time 
-        ######################
+    #######################
+    # Real time 
+    ######################
     else
         # in manual run mode the number of steps is specified by time_steps
         time = 0.0
@@ -131,9 +132,12 @@ function manual_run(
                 ss_buffer = nothing
             end
             debug && @warn "running with time_steps = " time_steps
+            tmp_psi = copy(psi)
+            tmp_psi2 = (copy(psi))
+            real_psi = abs2.(copy(psi))
             for i = 1:time_steps
                 try
-                    @time propagate_manual!(psi, sim, time; ss_buffer = ss_buffer)
+                    @time propagate_manual!(psi, tmp_psi, tmp_psi2, real_psi, sim, time; ss_buffer = ss_buffer)
                     if return_maximum
                         candidate_maximum = maximum(abs2.(psi))
                         if candidate_maximum > max_prob
@@ -148,7 +152,7 @@ function manual_run(
                     end
                     return nothing
                 end
-                print("\r", i, " - step")
+                # print("\r", i, " - step")
                 if t[save_counter] < solve_time_axis[i]
                     collection[:, save_counter] = psi
                     save_counter += 1
@@ -156,15 +160,12 @@ function manual_run(
                 time += dt
             end
             collection[:, Nt] = psi
-            sol = CustomSolution(
-                u = [collection[:, k] for k = 1:Nt],
-                t = t,
-                cnt = time_steps,
-            )
-
-            #######################
-            # D = 3 case
-            ######################
+            sol =
+                CustomSolution(u = [collection[:, k] for k = 1:Nt], t = t, cnt = time_steps)
+          
+        ######################
+        # D = 3 case
+        ######################
         elseif length(N) == 3
             collection = CuArray{ComplexF64,4}(undef, (N..., Nt))
             collection[:, :, :, 1] = psi
