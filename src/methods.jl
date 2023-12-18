@@ -22,16 +22,17 @@ function xvecs(L, N)
         x = xvec(λ, ν)
         push!(X, x)
     end
+    # @info typeof((X...,))
     return tuple(X...)
 end
 
 function kvecs(L, N)
-    K = []
+    K = AbstractFFTs.Frequencies{Float64}[]
     for (λ, ν) in zip(L, N)
         k = kvec(λ, ν)
         push!(K, k)
     end
-    return tuple(K...)
+    return (K...,)
 end
 
 function k2(K, A)
