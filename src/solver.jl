@@ -130,16 +130,18 @@ function manual_run(
             save_counter = 1
             solve_time_axis = LinRange(ti, tf, time_steps)
             #
-            if equation == NPSE_plus
-                ss_buffer = ones(N[1])
-            else
-                ss_buffer = nothing
-            end
+            # if equation == NPSE_plus
+            #     ss_buffer = ones(N[1])
+            # else
+            #     ss_buffer = nothing
+            # end
             debug && @warn "running with time_steps = " time_steps
+            ## buffer allocation
             tmp_psi = copy(psi)
             tmp_psi2 = (copy(psi))
             real_psi = abs2.(copy(psi))
-            @showprogress for i = 1:time_steps
+            ss_buffer = copy(psi)
+            @showprogress "Dynamics..." for i = 1:time_steps
                 try
                     propagate_manual!(psi, tmp_psi, tmp_psi2, real_psi, sim, time; ss_buffer = ss_buffer)
                     if return_maximum
