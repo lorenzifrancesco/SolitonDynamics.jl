@@ -12,6 +12,7 @@ using LinearAlgebra, RecursiveArrayTools, LazyArrays
 using IntervalRootFinding, IntervalArithmetic
 import JLD2
 using StaticArrays
+using ProgressMeter
 
 @reexport using Parameters
 import FileIO

@@ -32,16 +32,17 @@ unpack_selection(sim, fields...) = map(x -> getfield(sim, x), fields)
         # NPSE+
     elseif equation == NPSE_plus
         # load past solution
-        if isnothing(ss_buffer)
-            ss = ones(N)
-        else
-            ss = abs.(ss_buffer)
-        end
+        # if true || isnothing(ss_buffer)
+        #     ss .= ones(N)
+        # else
+        #     ss .= abs.(ss_buffer)
+        # end
         # ss0 = ones(N)
         sigma2_plus = zeros(length(x))
         M = N[1]
         dxx = 2 * dV
         psisq = abs2.(psi)
+        ss = 1-psisq/2
         try
             # Nonlinear Finite Difference routine
             # ===================================

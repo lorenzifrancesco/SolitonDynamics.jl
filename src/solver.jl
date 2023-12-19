@@ -53,11 +53,14 @@ function manual_run(
             #
             info && print("Interaction number")
             tmp_psi = copy(psi)
+            tmp_psi2 = copy(psi)
+            real_psi = abs2.(copy(psi))
+            pr = Progress(maxiters, 1)
             while cnt < maxiters &&
                 (cnt * sim.dt < minimum_evolution_time || abs(cp_diff) > abstol_diff)
                 tmp = chempotk_simple(psi, sim)
                 try
-                    cp_diff = propagate_manual!(psi, tmp_psi, sim, dt; info = info, ss_buffer = ss_buffer)
+                    cp_diff = propagate_manual!(psi, tmp_psi, tmp_psi2, real_psi, sim, dt; info = info, ss_buffer = ss_buffer)
                     sim.dt *= (1 - decay)
                     info && print("\r", cnt, " - chempot diff: ", cp_diff)
                     #@assert tmp * cp_diff > 0
@@ -73,6 +76,7 @@ function manual_run(
                     return nothing
                 end
                 cnt += 1
+                update!(pr, cnt)
             end
             print("\n")
             info && @info "Computation ended after iterations" cnt
@@ -135,9 +139,9 @@ function manual_run(
             tmp_psi = copy(psi)
             tmp_psi2 = (copy(psi))
             real_psi = abs2.(copy(psi))
-            for i = 1:time_steps
+            @showprogress for i = 1:time_steps
                 try
-                    @time propagate_manual!(psi, tmp_psi, tmp_psi2, real_psi, sim, time; ss_buffer = ss_buffer)
+                    propagate_manual!(psi, tmp_psi, tmp_psi2, real_psi, sim, time; ss_buffer = ss_buffer)
                     if return_maximum
                         candidate_maximum = maximum(abs2.(psi))
                         if candidate_maximum > max_prob
