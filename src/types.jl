@@ -47,27 +47,27 @@ Base.showerror(io::IO, e::NpseCollapse) =
     κ = 0.0 # a placeholder
 end
 
-@with_kw mutable struct Transforms{D,N,A} <: TransformLibrary{A}
+@with_kw mutable struct Transforms{A} <: TransformLibrary{A}
     Txk::AbstractFFTs.ScaledPlan{
         Complex{Float64},
-        FFTW.cFFTWPlan{Complex{Float64},-1,false,D,UnitRange{Int64}},
+        FFTW.cFFTWPlan{Complex{Float64},-1,false,1,UnitRange{Int64}},
         Float64,
-    } = 0.1 * plan_fft(crandn_array(N, A))
+    }
     Txk!::AbstractFFTs.ScaledPlan{
         Complex{Float64},
-        FFTW.cFFTWPlan{Complex{Float64},-1,true,D,UnitRange{Int64}},
+        FFTW.cFFTWPlan{Complex{Float64},-1,true,1,UnitRange{Int64}},
         Float64,
-    } = 0.1 * plan_fft!(crandn_array(N, A))
+    }
     Tkx::AbstractFFTs.ScaledPlan{
         Complex{Float64},
-        FFTW.cFFTWPlan{Complex{Float64},1,false,D,UnitRange{Int64}},
+        FFTW.cFFTWPlan{Complex{Float64},1,false,1,UnitRange{Int64}},
         Float64,
-    } = 0.1 * plan_ifft(crandn_array(N, A))
+    }
     Tkx!::AbstractFFTs.ScaledPlan{
         Complex{Float64},
-        FFTW.cFFTWPlan{Complex{Float64},1,true,D,UnitRange{Int64}},
+        FFTW.cFFTWPlan{Complex{Float64},1,true,1,UnitRange{Int64}},
         Float64,
-    } = 0.1 * plan_ifft!(crandn_array(N, A))
+    }
     #psi::ArrayPartition = crandnpartition(D,N,A)
 end
 
@@ -140,7 +140,7 @@ end
     filename::String = "save"
 
     # === arrays, transforms, spectral operators
-    X::Vector{ A} = xvecs(L, N)
+    X::Vector{A} = xvecs(L, N)
     K::Vector{A} = kvecs(L, N)
     T::TransformLibrary{A} = makeT(X, K, A, flags = flags)
     ksquared::A = k2(K, A)
