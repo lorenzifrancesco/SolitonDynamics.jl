@@ -84,9 +84,6 @@ function crandnpartition(N, A)
 end
 
 ## ==== Transforms
-
-
-# TODO 1
 # --> into transforms
 function dfft(x, k)
     dx = x[2] - x[1]
@@ -148,11 +145,10 @@ function definetransforms(funcs, args, meas; kwargs = nothing)
             push!(trans, fun(arg..., flags = kwargs))
         end
     end
-
     return meas .* trans
 end
 
-function makeT(X, K, T::Type{Vector{ComplexF64}}; flags = FFTW.MEASURE)
+function makeT(X, K, T::DataType; flags = FFTW.MEASURE)
     FFTW.set_num_threads(1)
     D = length(X)
     N = length.(X)
@@ -160,12 +156,13 @@ function makeT(X, K, T::Type{Vector{ComplexF64}}; flags = FFTW.MEASURE)
     dμx = prod(DX)
     dμk = prod(DK)
     psi_test = ones(N...) |> complex
-
     trans = (plan_fft, plan_fft!, plan_ifft, plan_ifft!)
     meas = (dμx, dμx, dμk, dμk)
+    psi_test = crandn_array(N, T)
     args = ((psi_test,), (psi_test,), (psi_test,), (psi_test,))
     Txk, Txk!, Tkx, Tkx! = definetransforms(trans, args, meas; kwargs = flags)
-    return Transforms{D,N,T}(Txk, Txk!, Tkx, Tkx!)
+    trans_library = Transforms{T}(Txk, Txk!, Tkx, Tkx!)
+    trans_library
 end
 
 
