@@ -5,9 +5,9 @@ V(x, t) = 0.0
 V(x, y, t) = 0.0
 V(x, y, z, t) = 0.0
 
-# array methods
-# generate arrays 
+
 xvec(L, N) = LinRange(-L / 2, L / 2, N + 1)[1:end-1]
+
 function kvec(L, N)
     # @assert iseven(N)
     # nk = 0:Int(N/2)
@@ -16,23 +16,22 @@ function kvec(L, N)
     return k
 end
 
-function xvecs(L, N)
-    X = LinRange{Float64,Int64}[]
-    for (λ, ν) in zip(L, N)
-        x = xvec(λ, ν)
-        push!(X, x)
-    end
-    # @info typeof((X...,))
-    return tuple(X...)
+function xvecs(L::Tuple{Float64}, N::Tuple{Int64})  
+  dims = length(N)
+  X = Vector{LinRange{Float64,Int64}}(undef, (dims)) 
+  @inbounds for idx in eachindex(X)
+      X[idx] = xvec(L[idx], N[idx])
+  end
+  X
 end
 
 function kvecs(L, N)
-    K = AbstractFFTs.Frequencies{Float64}[]
-    for (λ, ν) in zip(L, N)
-        k = kvec(λ, ν)
-        push!(K, k)
+    dims = length(N)
+    K = Vector{AbstractFFTs.Frequencies{Float64}}(undef, (dims))
+    for idx in eachindex(K)
+        K[idx] = kvec(L[idx], N[idx])
     end
-    return (K...,)
+    K
 end
 
 function k2(K, A)
@@ -68,20 +67,13 @@ function makearrays(L, N)
     return X, K, dX, dK
 end
 
-"""
-    A = crandn_array(M)
 
-Make placeholder `2x2x...` complex `randn()` array of `M` dimensions."""
 function crandn_array(N, T)
     a::T = rand(N...) |> complex
     return a
 end
 
-"""
-    A = crandnpartition(D,M)
 
-Make placeholder ArrayPartition vector of length `M`, containing `2x2x...` rank D complex matrices.
-"""
 function crandnpartition(N, A)
     a = crandn_array(N, A)
     args = []
@@ -93,12 +85,7 @@ end
 
 ## ==== Transforms
 
-"""
-    Dx,Dk = dfft(x,k)
 
-Measures that make `fft`, `ifft` 2-norm preserving.
-Correct measures for mapping between `x`- and `k`-space.
-"""
 # TODO 1
 # --> into transforms
 function dfft(x, k)
@@ -116,12 +103,7 @@ function measures(L, N)
     return prod(dX), prod(dK)
 end
 
-"""
-    DX,DK = dfftall(X,K)
 
-Evalutes tuple of measures that make `fft`, `ifft` 2-norm preserving for each
-`x` or `k` dimension.
-"""
 function dfftall(X, K)
     M = length(X)
     DX = zeros(M)
@@ -154,9 +136,7 @@ function kspace!(ψ, sim)
     return nothing
 end
 
-"""
-    definetransforms(funcs,args,meas,kwargs)
-"""
+
 function definetransforms(funcs, args, meas; kwargs = nothing)
     trans = []
     if kwargs === nothing
@@ -172,10 +152,7 @@ function definetransforms(funcs, args, meas; kwargs = nothing)
     return meas .* trans
 end
 
-"""
-    T = makeT(X,K,j)
-"""
-function makeT(X, K, T::Type{Array{ComplexF64}}; flags = FFTW.MEASURE)
+function makeT(X, K, T::Type{Vector{ComplexF64}}; flags = FFTW.MEASURE)
     FFTW.set_num_threads(1)
     D = length(X)
     N = length.(X)
@@ -191,9 +168,7 @@ function makeT(X, K, T::Type{Array{ComplexF64}}; flags = FFTW.MEASURE)
     return Transforms{D,N,T}(Txk, Txk!, Tkx, Tkx!)
 end
 
-"""
-    T = makeT(X,K,j) in CUDA
-"""
+
 function makeT(X, K, T::Type{CuArray{ComplexF64}}; flags = FFTW.MEASURE)
     D = length(X)
     N = length.(X)

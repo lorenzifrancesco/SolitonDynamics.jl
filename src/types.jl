@@ -33,20 +33,6 @@ const BackwardEuler = Solver(4, false)
 abstract type UserParams end
 abstract type Method end
 
-struct XSpace{D} <: Space
-    psiX::Array{Complex{Float64},D}
-    X::NTuple{D}
-    K::NTuple{D}
-    K2::Array{Float64,D}
-end
-
-struct KSpace{D} <: Space
-    psiK::Array{Complex{Float64},D}
-    X::NTuple{D}
-    K::NTuple{D}
-    K2::Array{Float64,D}
-end
-
 struct NpseCollapse <: Exception
     var::Float64
 end
@@ -154,8 +140,8 @@ end
     filename::String = "save"
 
     # === arrays, transforms, spectral operators
-    X::NTuple{D,A} = xvecs(L, N)
-    K::NTuple{D,A} = kvecs(L, N)
+    X::Vector{ A} = xvecs(L, N)
+    K::Vector{A} = kvecs(L, N)
     T::TransformLibrary{A} = makeT(X, K, A, flags = flags)
     ksquared::A = k2(K, A)
 end
