@@ -47,28 +47,11 @@ Base.showerror(io::IO, e::NpseCollapse) =
     κ = 0.0 # a placeholder
 end
 
-@with_kw mutable struct Transforms{A} <: TransformLibrary{A}
-    Txk::AbstractFFTs.ScaledPlan{
-        Complex{Float64},
-        FFTW.cFFTWPlan{Complex{Float64},-1,false,1,UnitRange{Int64}},
-        Float64,
-    }
-    Txk!::AbstractFFTs.ScaledPlan{
-        Complex{Float64},
-        FFTW.cFFTWPlan{Complex{Float64},-1,true,1,UnitRange{Int64}},
-        Float64,
-    }
-    Tkx::AbstractFFTs.ScaledPlan{
-        Complex{Float64},
-        FFTW.cFFTWPlan{Complex{Float64},1,false,1,UnitRange{Int64}},
-        Float64,
-    }
-    Tkx!::AbstractFFTs.ScaledPlan{
-        Complex{Float64},
-        FFTW.cFFTWPlan{Complex{Float64},1,true,1,UnitRange{Int64}},
-        Float64,
-    }
-    #psi::ArrayPartition = crandnpartition(D,N,A)
+struct Transforms{T} <: TransformLibrary{T}
+    Txk::AbstractFFTs.ScaledPlan{ComplexF64, FFTW.cFFTWPlan{ComplexF64, -1, false, 1, UnitRange{Int64}}, Float64}
+    Txk!::AbstractFFTs.ScaledPlan{ComplexF64, FFTW.cFFTWPlan{ComplexF64, -1, true, 1, UnitRange{Int64}}, Float64}
+    Tkx::AbstractFFTs.ScaledPlan{ComplexF64, FFTW.cFFTWPlan{ComplexF64, 1, false, 1, UnitRange{Int64}}, Float64}
+    Tkx!::AbstractFFTs.ScaledPlan{ComplexF64, FFTW.cFFTWPlan{ComplexF64, 1, true, 1, UnitRange{Int64}}, Float64}
 end
 
 @with_kw mutable struct GPUTransforms{D,N,A} <: TransformLibrary{A}
@@ -112,8 +95,8 @@ end
     # === dimensions and physics
     L::NTuple{D,Float64} # length scales
     N::NTuple{D,Int64}  # grid points in each dimensions
-    dV = volume_element(L, N)
-    Vol = prod(L)
+    dV::Float64 = volume_element(L, N)
+    Vol::Float64 = prod(L)
     ti::Float64 = 0.0    # initial time
     tf::Float64 = 1.0    # final time
     tspan = [ti, tf]

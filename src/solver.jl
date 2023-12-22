@@ -10,7 +10,7 @@ function manual_run(
     debug = false,
     throw_collapse = true,
     return_maximum = false,
-)
+ )
     @unpack psi_0,
     dV,
     dt,
@@ -56,11 +56,13 @@ function manual_run(
             tmp_psi2 = copy(psi)
             real_psi = abs2.(copy(psi))
             pr = Progress(maxiters, 1)
+            cp_diff = 1e300
+            tmp = cp_diff
             while cnt < maxiters &&
                 (cnt * sim.dt < minimum_evolution_time || abs(cp_diff) > abstol_diff)
-                tmp = chempotk_simple(psi, sim)
+                tmp .= chempotk_simple(psi, sim)
                 try
-                    cp_diff = propagate_manual!(psi, tmp_psi, tmp_psi2, real_psi, sim, dt; info = info, ss_buffer = ss_buffer)
+                    cp_diff .= propagate_manual!(psi, tmp_psi, tmp_psi2, real_psi, sim, dt; info = info, ss_buffer = ss_buffer)
                     sim.dt *= (1 - decay)
                     info && print("\r", cnt, " - chempot diff: ", cp_diff)
                     #@assert tmp * cp_diff > 0
@@ -324,23 +326,23 @@ function runsim(sim; info = false, return_maximum = false)
     time_steps,
     manual = sim
     @assert !(!manual && return_maximum) # formal implication
-    function savefunction(psi...)
-        isdir(path) || mkpath(path)
-        i = findfirst(x -> x == psi[2], sim.t)
-        padi = lpad(string(i), ndigits(length(sim.t)), "0")
-        info && println("⭆ Save $i at t = $(trunc(ψ[2];digits=3))")
-        # tofile = path*"/"*filename*padi*".jld2"
-        tofile = joinpath(path, filename * padi * ".jld2")
-        save(tofile, "ψ", psi[1], "t", psi[2])
-    end
+    # function savefunction(psi...)
+    #     isdir(path) || mkpath(path)
+    #     i = findfirst(x -> x == psi[2], sim.t)
+    #     padi = lpad(string(i), ndigits(length(sim.t)), "0")
+    #     info && println("⭆ Save $i at t = $(trunc(ψ[2];digits=3))")
+    #     # tofile = path*"/"*filename*padi*".jld2"
+    #     tofile = joinpath(path, filename * padi * ".jld2")
+    #     save(tofile, "ψ", psi[1], "t", psi[2])
+    # end
 
-    savecb = FunctionCallingCallback(
-        savefunction;
-        funcat = sim.t, # times to save at
-        func_everystep = false,
-        func_start = true,
-        tdir = 1,
-    )
+    # savecb = FunctionCallingCallback(
+    #     savefunction;
+    #     funcat = sim.t, # times to save at
+    #     func_everystep = false,
+    #     func_start = true,
+    #     tdir = 1,
+    # )
 
     @assert isapprox(nsk(psi_0, sim), 1.0, rtol = 1e-9)
     if manual == true
