@@ -136,6 +136,7 @@ end
         cp_diff =
             (chempotk_simple(psi, sim) - chempotk_simple(psi_i, sim)) /
             chempotk_simple(psi_i, sim) / dt
+        psi_i .= psi
         return cp_diff
     else
         return nothing
