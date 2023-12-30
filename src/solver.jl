@@ -55,7 +55,7 @@ function manual_run(
             tmp_psi = copy(psi)
             tmp_psi2 = copy(psi)
             real_psi = abs2.(copy(psi))
-            pr = Progress(maxiters; dt=1)
+            pr = Progress(minimum([maxiters, 5000]); dt=1)
             cp_diff = 1e300
             while cnt < maxiters &&
                 (cnt * sim.dt < minimum_evolution_time || abs(cp_diff) > abstol_diff)
@@ -76,7 +76,7 @@ function manual_run(
                 cnt += 1
                 update!(pr, cnt)
             end
-            print("\n")
+            info && print("\n")
             info && @info "Computation ended after iterations" cnt
             sol = CustomSolution(u = psi, t = t, cnt = cnt)
         else # nonspectral methods
@@ -139,7 +139,11 @@ function manual_run(
             tmp_psi2 = (copy(psi))
             real_psi = abs2.(copy(psi))
             ss_buffer = copy(psi)
-            @showprogress "Dynamics..." for i = 1:time_steps
+            if info 
+              pr = Progress(time_steps)
+              cnt = 0
+            end
+            for i = 1:time_steps
                 try
                     propagate_manual!(psi, tmp_psi, tmp_psi2, real_psi, sim, time; ss_buffer = ss_buffer)
                     if return_maximum
@@ -162,6 +166,10 @@ function manual_run(
                     save_counter += 1
                 end
                 time += dt
+                if info
+                  cnt += 1
+                  update!(pr, cnt)
+                end
             end
             collection[:, Nt] = psi
             sol =

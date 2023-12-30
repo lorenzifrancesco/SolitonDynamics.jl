@@ -36,9 +36,7 @@ numerical_gs = xspace(sol.u, sim)
 L = (40.0,)
 N = (512,)
 sim = Sim{length(L),Array{Complex{Float64}}}(L = L, N = N)
-
 g_param = 0.65
-
 @unpack_Sim sim
 iswitch = -im
 g = -2 * g_param
@@ -52,12 +50,30 @@ psi_0 = exp.(-x .^ 2 / 10)
 psi_0 = psi_0 / sqrt(ns(psi_0, sim))
 kspace!(psi_0, sim)
 @pack_Sim! sim
-
 # Analytical solution: soliton in 1D-GPE
 analytical_gs = zeros(N)
 @. analytical_gs = sqrt(g_param / 2) * 2 / (exp(g_param * x) + exp(-x * g_param))
-
-sol, err = testsim(sim)
+@info "=== Computing 1D-GPE"
+@time sol, err = testsim(sim)
 @test err == false
 numerical_gs = xspace(sol.u, sim)
 @test isapprox(ns((numerical_gs - analytical_gs), sim), 0.0, atol = 1e-6)
+
+## We need to have loose resembling also with NPSE and  NPSE+
+@unpack_Sim sim
+equation = NPSE
+@pack_Sim! sim
+@info "=== Computing NPSE"
+@time sol, err = testsim(sim)
+@test err == false
+numerical_gs = xspace(sol.u, sim)
+@test isapprox(ns((numerical_gs - analytical_gs), sim), 0.0, atol = 1e-2)
+
+@unpack_Sim sim
+equation = NPSE_plus
+@pack_Sim! sim
+@info "=== Computing NPSE+"
+@time sol, err = testsim(sim)
+@test err == false
+numerical_gs = xspace(sol.u, sim)
+@test isapprox(ns((numerical_gs - analytical_gs), sim), 0.0, atol = 1e-2)

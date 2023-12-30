@@ -27,11 +27,10 @@ function estimate_sigma2(psi, sim::Sim{1,Array{ComplexF64}})
     elseif equation == NPSE_plus
         # Nonlinear Finite Element routine
         psisq = abs2.(psi)
-        dxx = 2 * dV
         Nx = N[1]
         ss = ones(N[1])
         prob =
-            NonlinearSolve.NonlinearProblem(sigma_loop_external!, ss, [dxx, psisq, g, Nx])
+            NonlinearSolve.NonlinearProblem(sigma_loop_external!, ss, [psisq, dV, g])
         sol = NonlinearSolve.solve(prob, NonlinearSolve.NewtonRaphson(), reltol = 1e-6)
         s2 = (sol.u) .^ 2
     end
@@ -84,25 +83,33 @@ function sigma_eq(ret, sigma, params)
 end
 
 function sigma_loop_external!(ret, sigma, params)
-    # structure: NPSE + derivatives + boundary conditions
-    dxx = 2 * params[1]
-    psisq = params[2]
-    g = params[3]
-    M = params[4]
-    @inbounds for j = 2:M-1
-        ret[j] =
-            (-sigma[j] .^ 4 + (1 + g * psisq[j])) - ((sigma[j+1] - sigma[j-1]) / dxx)^2 +
-            sigma[j] * ((sigma[j-1] - 2 * sigma[j] + sigma[j+1]) / (dxx)) +
-            (sigma[j+1] - sigma[j-1]) / dxx * sigma[j] * (psisq[j+1] - psisq[j-1]) /
-            (dxx * psisq[j])
-        # ultimo termine pericoloso!!
-    end
-    ret[1] =
-        (-sigma[1] .^ 4 + (1 + g * psisq[1])) - ((sigma[2] - 1.0) / dxx)^2 +
-        ((1.0 - 2 * sigma[1] + sigma[2]) / (dxx)) * sigma[1]
-    ret[M] =
-        (-sigma[M] .^ 4 + (1 + g * psisq[M])) - ((1.0 - sigma[M-1]) / dxx)^2 +
-        ((sigma[M-1] - 2 * sigma[M] + 1.0) / (dxx)) * sigma[M]
+  psisq = params[1]
+  dV = params[2]
+  g = params[3]
+  dxx = 2*dV
+  M = length(psisq)
+  # structure: [NPSE] + [simple derivatives of sigma] + [derivatives involving psi^2]
+  @inbounds for j = 2:M-1
+      ret[j] =
+          (-sigma[j] .^ 4 + (1 + g * psisq[j])) -
+          ((sigma[j+1] - sigma[j-1]) / dxx)^2 +
+          sigma[j] * ((sigma[j-1] - 2 * sigma[j] + sigma[j+1]) / (dV^2)) +
+          sigma[j] * (sigma[j+1] - sigma[j-1]) / dxx *
+          (psisq[j+1] - psisq[j-1]) / (dxx * psisq[j]) +
+          (sigma[j+1] - sigma[j-1]) / dxx *
+          sigma[j] *
+          (psisq[j+1] - psisq[j-1]) / (dxx * psisq[j])
+  end
+  ret[1] =
+      (-sigma[1] .^ 4 + (1 + g * psisq[1])) +
+      ((sigma[2] - 1.0) / dxx)^2 +
+      ((1.0 - 2 * sigma[1] + sigma[2]) / (dV^2)) * sigma[1] +
+      (sigma[2] - 1.0) / dxx * sigma[1] * (psisq[2] - 0.0) / (dxx * psisq[1])
+  ret[M] =
+      (-sigma[M] .^ 4 + (1 + g * psisq[M])) - ((1.0 - sigma[M-1]) / dxx)^2 +
+      ((sigma[M-1] - 2 * sigma[M] + 1.0) / (dV^2)) * sigma[M] +
+      (1.0 - sigma[M-1]) / dxx * sigma[M] * (0.0 - psisq[M-1]) /
+      (dxx * psisq[M])
 end
 
 # sigma_eq_nf = NonlinearFunction(sigma_eq; jac=sigma_eq_jacobian)

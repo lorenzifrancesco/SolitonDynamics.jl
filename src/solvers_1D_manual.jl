@@ -62,12 +62,16 @@ unpack_selection(sim, fields...) = map(x -> getfield(sim, x), fields)
                     (1.0 - sigma[M-1]) / dxx * sigma[M] * (0.0 - psisq[M-1]) /
                     (dxx * psisq[M])
             end
-
+            @info "__________ beginning and end of buffer"
+            @info abs(ss_buffer[1])
+            @info abs(ss_buffer[end])
             prob = NonlinearSolve.NonlinearProblem(sigma_loop!, ss_buffer, 0.0)
-            sol = NonlinearSolve.solve(prob, NonlinearSolve.NewtonRaphson(linsolve = LinearSolve.KrylovJL_GMRES()), reltol = 1e-3)
+            sol = NonlinearSolve.solve(prob, NonlinearSolve.NewtonRaphson(), reltol = 1e-3)
             sigma2_plus = (sol.u) .^ 2
-            info && print("\n L2 err:", sum(abs2.(ss_buffer - sol.u)))
             ss_buffer .= sol.u
+            @info "beginning and end of psi"
+            @info abs2(ss_buffer[1])
+            @info abs2(ss_buffer[end])
         catch err
             if isa(err, DomainError)
                 sigma2_plus = NaN
@@ -132,7 +136,6 @@ end
         cp_diff =
             (chempotk_simple(psi, sim) - chempotk_simple(psi_i, sim)) /
             chempotk_simple(psi_i, sim) / dt
-        psi_i .= psi
         return cp_diff
     else
         return nothing
