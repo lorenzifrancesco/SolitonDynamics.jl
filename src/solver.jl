@@ -57,7 +57,6 @@ function manual_run(
             real_psi = abs2.(copy(psi))
             pr = Progress(maxiters; dt=1)
             cp_diff = 1e300
-            tmp = cp_diff
             while cnt < maxiters &&
                 (cnt * sim.dt < minimum_evolution_time || abs(cp_diff) > abstol_diff)
                 try

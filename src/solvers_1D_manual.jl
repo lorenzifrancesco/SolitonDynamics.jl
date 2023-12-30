@@ -129,10 +129,10 @@ end
     nlin_manual!(psi, tmp_psi2, real_psi, sim, t; ss_buffer = ss_buffer, info = info)
     if iswitch == -im
         psi .= psi / sqrt(nsk(psi, sim))
-        info && print(" - schempot: ", abs(chempotk_simple(psi, sim)))
         cp_diff =
             (chempotk_simple(psi, sim) - chempotk_simple(psi_i, sim)) /
             chempotk_simple(psi_i, sim) / dt
+        psi_i .= psi
         return cp_diff
     else
         return nothing

@@ -284,6 +284,9 @@ function chempot(psi, sim)
     return real(mu)
 end
 
+"""
+Simplified (and incorrect) version of chempot, used for convergence estimation
+"""
 function chempotk_simple(psi, sim)
     @unpack ksquared, dV, V0, Vol, g, equation = sim
     mu::Float64 = 1 / Vol * sum(1 / 2 * ksquared .* abs2.(psi))
