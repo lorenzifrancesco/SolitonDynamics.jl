@@ -60,7 +60,7 @@ function manual_run(
             while cnt < maxiters &&
                 (cnt * sim.dt < minimum_evolution_time || abs(cp_diff) > abstol_diff)
                 try
-                    cp_diff = propagate_manual!(psi, tmp_psi, tmp_psi2, real_psi, sim, dt; info = info, ss_buffer = ss_buffer)
+                    cp_diff = propagate_manual!(psi, tmp_psi, tmp_psi2, real_psi, sim, 0.0; info = info, ss_buffer = ss_buffer)
                     sim.dt *= (1 - decay)
                     info && print("\r", cnt, " - chempot diff: ", cp_diff)
                 catch err
@@ -114,7 +114,6 @@ function manual_run(
     else
         # in manual run mode the number of steps is specified by time_steps
         time = 0.0
-
         if return_maximum
             max_prob = -1.0
         end
@@ -128,24 +127,23 @@ function manual_run(
             save_counter = 1
             solve_time_axis = LinRange(ti, tf, time_steps)
             #
-            # if equation == NPSE_plus
-            #     ss_buffer = ones(N[1])
-            # else
-            #     ss_buffer = nothing
-            # end
+            if equation == NPSE_plus
+                ss_buffer = ones(N[1])
+            else
+                ss_buffer = nothing
+            end
             debug && @warn "running with time_steps = " time_steps
             ## buffer allocation
             tmp_psi = copy(psi)
             tmp_psi2 = (copy(psi))
             real_psi = abs2.(copy(psi))
-            ss_buffer = copy(psi)
             if info 
               pr = Progress(time_steps)
               cnt = 0
             end
             for i = 1:time_steps
                 try
-                    propagate_manual!(psi, tmp_psi, tmp_psi2, real_psi, sim, time; ss_buffer = ss_buffer)
+                    propagate_manual!(psi, tmp_psi, tmp_psi2, real_psi, sim, time; info=info, ss_buffer = ss_buffer)
                     if return_maximum
                         candidate_maximum = maximum(abs2.(psi))
                         if candidate_maximum > max_prob
