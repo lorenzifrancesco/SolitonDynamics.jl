@@ -55,18 +55,15 @@ function manual_run(
             tmp_psi = copy(psi)
             tmp_psi2 = copy(psi)
             real_psi = abs2.(copy(psi))
-            pr = Progress(maxiters, 1)
+            pr = Progress(maxiters; dt=1)
             cp_diff = 1e300
             tmp = cp_diff
             while cnt < maxiters &&
                 (cnt * sim.dt < minimum_evolution_time || abs(cp_diff) > abstol_diff)
-                tmp .= chempotk_simple(psi, sim)
                 try
-                    cp_diff .= propagate_manual!(psi, tmp_psi, tmp_psi2, real_psi, sim, dt; info = info, ss_buffer = ss_buffer)
+                    cp_diff = propagate_manual!(psi, tmp_psi, tmp_psi2, real_psi, sim, dt; info = info, ss_buffer = ss_buffer)
                     sim.dt *= (1 - decay)
                     info && print("\r", cnt, " - chempot diff: ", cp_diff)
-                    #@assert tmp * cp_diff > 0
-                    tmp = cp_diff
                 catch err
                     if isa(err, NpseCollapse) && !throw_collapse
                         showerror(stdout, err)
@@ -364,7 +361,7 @@ function testsim(sim)
     sol = try
         runsim(sim; info = true)
     catch e
-        err = true
+        err = e
     end
     return sol, err
 end

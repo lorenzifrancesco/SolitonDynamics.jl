@@ -142,7 +142,6 @@ function makeT(X, K, T::Type{Array{ComplexF64}}; flags = FFTW.MEASURE)
     Txk! = dμx * plan_fft!(psi_test, flags=flags) 
     Tkx  = dμk * plan_ifft(psi_test, flags=flags) 
     Tkx! = dμk * plan_ifft!(psi_test, flags=flags)
-    @warn typeof(Txk)
     trans_library = Transforms{T}(Txk, Txk!, Tkx, Tkx!)
     trans_library
 end

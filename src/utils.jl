@@ -287,7 +287,7 @@ end
 function chempotk_simple(psi, sim)
     @unpack ksquared, dV, V0, Vol, g, equation = sim
     mu::Float64 = 1 / Vol * sum(1 / 2 * ksquared .* abs2.(psi))
-    tmp::Float64 = xspace(psi, sim)
+    tmp::Vector{ComplexF64} = xspace(psi, sim)
     mu += dV * sum((V0 + g * abs2.(tmp)) .* abs2.(tmp))
     mu += 1 # add one transverse energy unit (1D-GPE case)
     return mu
@@ -295,8 +295,8 @@ end
 
 function chempot_simple(psi, sim)
     @unpack ksquared, dV, V0, Vol, g, equation = sim
-    mu = dV * sum((V0 + g * abs2.(psi)) .* abs2.(psi))
-    tmp = kspace(psi, sim)
+    mu::Float64 = dV * sum((V0 + g * abs2.(psi)) .* abs2.(psi))
+    tmp::Vector{ComplexF64} = kspace(psi, sim)
     mu += 1 / Vol * sum(1 / 2 * ksquared .* abs2.(tmp))
     mu += 1 # add one transverse energy unit (1D-GPE case)
     return mu
