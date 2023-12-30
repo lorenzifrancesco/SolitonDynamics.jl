@@ -138,10 +138,10 @@ function makeT(X, K, T::Type{Array{ComplexF64}}; flags = FFTW.MEASURE)
     psi_test::T = crandn_array(N, T)
     args = ((psi_test,), (psi_test,), (psi_test,), (psi_test,))
     # Txk, Txk!, Tkx, Tkx! = definetransforms(trans, args, meas; kwargs = flags)
-    Txk  = 1.0 * plan_fft(psi_test, flags=flags)
-    Txk! = 1.0 * plan_fft!(psi_test, flags=flags) 
-    Tkx  = 1.0 * plan_ifft(psi_test, flags=flags) 
-    Tkx! = 1.0 * plan_ifft!(psi_test, flags=flags)
+    Txk  = dμx * plan_fft(psi_test, flags=flags)
+    Txk! = dμx * plan_fft!(psi_test, flags=flags) 
+    Tkx  = dμk * plan_ifft(psi_test, flags=flags) 
+    Tkx! = dμk * plan_ifft!(psi_test, flags=flags)
     @warn typeof(Txk)
     trans_library = Transforms{T}(Txk, Txk!, Tkx, Tkx!)
     trans_library
@@ -165,4 +165,25 @@ function makeT(X, K, T::Type{CuArray{ComplexF64}}; flags = FFTW.MEASURE)
     args = ((psi_test,), (psi_test,), (psi_test,), (psi_test,))
     Txk, Txk!, Tkx, Tkx! = definetransforms(trans, args, meas)
     return GPUTransforms{D,N,T}(Txk, Txk!, Tkx, Tkx!)
+end
+
+function xspace(ϕ::AbstractArray, sim::Sim)
+    return sim.T.Tkx * ϕ
+end
+
+function xspace!(ψ, sim)
+    @unpack T = sim
+     T.Tkx! * ψ
+    return nothing
+end
+
+function kspace(ψ, sim)
+    @unpack T = sim
+    return T.Txk * ψ
+end
+
+function kspace!(ψ, sim)
+    @unpack T = sim
+    T.Txk! * ψ
+    return nothing
 end
