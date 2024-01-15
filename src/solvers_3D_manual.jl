@@ -11,7 +11,7 @@ function nlin_manual!(
     debug = false,
 )
 
-    @unpack ksquared, g, X, V0, dV, Vol, mu, equation, sigma2, dt, iswitch = sim
+    @unpack ksquared, g, X, V0, dV, Vol, mu, equation, sigma2, dt, iswitch, collapse_threshold = sim
     x = X[1]
     y = X[1]
     z = X[1]
@@ -20,7 +20,7 @@ function nlin_manual!(
     xspace!(psi, sim)
     @. psi *= exp(dt_order * -im * iswitch * (V0 + V(x, y, z, t)))
     @. psi *= exp(dt_order * -im * iswitch * (g * abs2(psi)))
-    if maximum(abs2.(psi) * dV) > 10
+    if maximum(abs2.(psi)) > collapse_threshold/dV
         throw(Gpe3DCollapse(maximum(abs2.(psi) * dV)))
     end
     debug && @warn "max prob" maximum(abs2.(psi) * dV)

@@ -108,6 +108,7 @@ end
     @assert gamma_damp >= 0.0 # damping parameter
     mu::Float64 = 0.0 # fixed chemical potential for ground state solution
     sigma2 = init_sigma2(g)
+    collapse_threshold::Float64 = 0.1
     # === potential
     params::UserParams = Params() # optional user parameterss
     V0::A = zeros(N)

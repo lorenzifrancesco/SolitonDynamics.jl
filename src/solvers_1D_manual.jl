@@ -12,7 +12,7 @@ unpack_selection(sim, fields...) = map(x -> getfield(sim, x), fields)
     ss_buffer = nothing,
     info = false,
 )
-    g, X, V0, dV, equation, sigma2, dt, iswitch, N =
+    g, X, V0, dV, equation, sigma2, dt, iswitch, N, collapse_threshold =
         unpack_selection(sim, :g, :X, :V0, :dV, :equation, :sigma2, :dt, :iswitch, :N)
     order = 2
     dt_order = dt / order
@@ -65,7 +65,7 @@ unpack_selection(sim, fields...) = map(x -> getfield(sim, x), fields)
             prob = NonlinearSolve.NonlinearProblem(sigma_loop!, ss_buffer, 0.0)
             sol = NonlinearSolve.solve(prob, NonlinearSolve.NewtonRaphson(), reltol = 1e-3)
             sigma2_plus = (sol.u) .^ 2
-            ss_buffer .= sol.u
+            # ss_buffer .= sol.u
         catch err
             if isa(err, DomainError)
                 sigma2_plus = NaN
@@ -77,8 +77,8 @@ unpack_selection(sim, fields...) = map(x -> getfield(sim, x), fields)
         temp = copy(sigma2_plus)
         temp_diff = sqrt.(temp)
         # generate symmetric difference 
-        temp_diff[1] = (temp[2] - temp[1]) / dV
-        temp_diff[M] = (temp[M] - temp[M-1]) / dV
+        temp_diff[1] = (temp[2] - 1.0) / dxx
+        temp_diff[M] = (1.0 - temp[M-1]) / dxx
         @inbounds for i = 2:M-1
             temp_diff[i] = (temp[i+1] - temp[i-1]) / dxx
         end
@@ -99,7 +99,7 @@ unpack_selection(sim, fields...) = map(x -> getfield(sim, x), fields)
 
     if equation != GPE_1D
       real_psi .= abs2.(psi)
-      if maximum(real_psi) > 0.8/dV
+      if maximum(real_psi) > collapse_threshold/dV
           throw(Gpe3DCollapse(maximum(abs2.(psi) * dV)))
       end
     end
