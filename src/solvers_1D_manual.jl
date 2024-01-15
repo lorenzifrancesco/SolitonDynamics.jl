@@ -13,7 +13,7 @@ unpack_selection(sim, fields...) = map(x -> getfield(sim, x), fields)
     info = false,
 )
     g, X, V0, dV, equation, sigma2, dt, iswitch, N, collapse_threshold =
-        unpack_selection(sim, :g, :X, :V0, :dV, :equation, :sigma2, :dt, :iswitch, :N)
+        unpack_selection(sim, :g, :X, :V0, :dV, :equation, :sigma2, :dt, :iswitch, :N, :collapse_threshold)
     order = 2
     dt_order = dt / order
     x = X[1]
