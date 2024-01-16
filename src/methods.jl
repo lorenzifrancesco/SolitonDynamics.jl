@@ -16,7 +16,7 @@ function kvec(L, N)
     return k
 end
 
-function xvecs(L::Tuple{Float64}, N::Tuple{Int64})  
+function xvecs(L::Tuple, N::Tuple)  
   dims = length(N)
   X = Vector{LinRange{Float64,Int64}}(undef, (dims)) 
   @inbounds for idx in eachindex(X)

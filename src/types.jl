@@ -7,15 +7,20 @@ abstract type Gaussian <: PotentialType end
 abstract type Elliptical <: PotentialType end
 
 struct EquationType
-    number::Int64
-    D::Int64
+  name::String
+  number::Int64
+  D::Int64
 end
 
-const GPE_1D = EquationType(1, 1)
-const NPSE = EquationType(2, 1)
-const NPSE_plus = EquationType(3, 1)
-const GPE_3D = EquationType(4, 3)
-const CQGPE = EquationType(5, 1)
+const GPE_1D =    EquationType("GPE-1D", 1, 1)
+const NPSE =      EquationType("NPSE", 2, 1)
+const NPSE_plus = EquationType("NPSE-plus", 3, 1)
+const GPE_3D =    EquationType("GPE-3D", 4, 3)
+const CQGPE =     EquationType("CQ-GPE", 5, 1)
+
+function isless(eq1::EquationType, eq2::EquationType)
+  return eq1.name < eq2.name
+end
 
 abstract type Simulation{D} end
 
