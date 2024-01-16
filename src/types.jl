@@ -10,13 +10,15 @@ struct EquationType
   name::String
   number::Int64
   D::Int64
+  color::Symbol
+  linestyle::Symbol
 end
 
-const GPE_1D =    EquationType("GPE-1D", 1, 1)
-const NPSE =      EquationType("NPSE", 2, 1)
-const NPSE_plus = EquationType("NPSE-plus", 3, 1)
-const GPE_3D =    EquationType("GPE-3D", 4, 3)
-const CQGPE =     EquationType("CQ-GPE", 5, 1)
+const GPE_1D =    EquationType("G1", 1, 1   , :grey, :dashdot)
+const NPSE =      EquationType("N", 2, 1     , :green, :dot)
+const NPSE_plus = EquationType("Np", 3, 1, :green, :dash)
+const GPE_3D =    EquationType("G3", 4, 3   , :red, :solid)
+const CQGPE =     EquationType("CQ", 5, 1   , :grey, :dot)
 
 function isless(eq1::EquationType, eq2::EquationType)
   return eq1.name < eq2.name
