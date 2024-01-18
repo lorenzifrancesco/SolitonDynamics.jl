@@ -136,6 +136,11 @@ end
     T::TransformLibrary{A} = makeT(X, K, A, flags = flags)
     ksquared::A = k2(K, A)
 end
+
+function isless(sim1::Sim, sim2::Sim)
+  return isless(sim1.equation, sim2.equation)  
+end
+
 @with_kw mutable struct CustomSolution
     u::Any
     t::Any
