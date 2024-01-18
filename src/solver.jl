@@ -114,9 +114,7 @@ function manual_run(
     else
         # in manual run mode the number of steps is specified by time_steps
         time = 0.0
-        if return_maximum
-            max_prob = -1.0
-        end
+        max_prob = -1.0
         #######################
         # D = 1 case
         ######################
@@ -141,11 +139,13 @@ function manual_run(
               pr = Progress(time_steps)
               cnt = 0
             end
+            maximum_buffer::Array{ComplexF64} = ones(N[1])
             for i = 1:time_steps
                 try
                     propagate_manual!(psi, tmp_psi, tmp_psi2, real_psi, sim, time; info=info, ss_buffer = ss_buffer)
                     if return_maximum
-                        candidate_maximum = maximum(abs2.(psi))
+                        maximum_buffer = xspace(psi, sim)
+                        candidate_maximum = maximum(abs2.(maximum_buffer))
                         if candidate_maximum > max_prob
                             max_prob = candidate_maximum
                         end
@@ -172,7 +172,6 @@ function manual_run(
             collection[:, Nt] = psi
             sol =
                 CustomSolution(u = [collection[:, k] for k = 1:Nt], t = t, cnt = time_steps)
-          
         ######################
         # D = 3 case
         ######################
@@ -212,13 +211,8 @@ function manual_run(
                 cnt = time_steps,
             )
         end
-
-        if return_maximum
-            return sol, max_prob
-        else
-            return sol
-        end
-    end
+    return sol, max_prob*dV
+  end
 end
 
 function auto_run(sim; info = false, throw_collapse = true)
