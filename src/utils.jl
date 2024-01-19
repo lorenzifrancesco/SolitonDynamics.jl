@@ -148,7 +148,7 @@ function npse_expr(mu)
 end
 
 """
-Compute the ground state energy normalized to the harmonic energy unit
+  Compute the ground state energy normalized to the harmonic energy unit
 """
 function npse_energy(n, as)
     steps = 500
@@ -176,7 +176,7 @@ function gpe_energy(n, as)
 end
 
 """
-Compute the chemical potential
+  Compute the chemical potential
 """
 function npse_mu(gamma)
     a = roots(x -> npse_expr(x) + gamma, 0.5 .. 1, Newton, 1e-4)
@@ -197,14 +197,14 @@ end
 
 
 """
-compute normalization
+  Compute normalization
 """
 function ns(psi, sim)
     return sum(abs2.(psi)) * sim.dV
 end
 
 """
-compute normalization in k-space
+  Compute normalization in k-space
 """
 function nsk(psi, sim)
     dV, dk = measures(sim.L, sim.N)
@@ -212,14 +212,14 @@ function nsk(psi, sim)
 end
 
 """
-compute norm squared of a region
+  Compute norm squared of a region
 """
 function ns(psi, sim, mask)
     return sum(abs2.(psi) .* mask) * sim.dV
 end
 
 """
-return σ^2(ψ) of the NPSE
+  Return σ^2(ψ) of the NPSE
 """
 function init_sigma2(g::Float64)
     function sigma2(psi::ComplexF64)
@@ -240,7 +240,7 @@ function init_sigma2(g::Float64)
 end
 
 """
-chemical potential of GPE in a given configuration
+  Chemical potential of GPE in a given configuration
 """
 function chempotk(psi, sim)
     @assert nsk(psi, sim) ≈ 1
@@ -249,7 +249,7 @@ function chempotk(psi, sim)
 end
 
 """
-chemical potential of GPE in a given configuration
+  Chemical potential of GPE in a given configuration
 """
 function chempot(psi, sim)
     @unpack ksquared, dV, V0, Vol, g, equation = sim
@@ -292,12 +292,14 @@ function chempot(psi, sim)
 end
 
 """
-Simplified (and incorrect) version of chempot, used for convergence estimation
+  Simplified (inaccurate) version of chempot,
+  used in the ground state iterative step 
+  Do not use for estimation of the physical chemical potential
 """
 function chempotk_simple(psi, sim)
     @unpack ksquared, dV, V0, Vol, g, equation = sim
     mu::Float64 = 1 / Vol * sum(1 / 2 * ksquared .* abs2.(psi))
-    tmp::Vector{ComplexF64} = xspace(psi, sim)
+    tmp::AbstractArray{ComplexF64} = xspace(psi, sim)
     mu += dV * sum((V0 + g * abs2.(tmp)) .* abs2.(tmp))
     mu += 1 # add one transverse energy unit (1D-GPE case)
     return mu
@@ -306,7 +308,7 @@ end
 function chempot_simple(psi, sim)
     @unpack ksquared, dV, V0, Vol, g, equation = sim
     mu::Float64 = dV * sum((V0 + g * abs2.(psi)) .* abs2.(psi))
-    tmp::Vector{ComplexF64} = kspace(psi, sim)
+    tmp::AbstractArray{ComplexF64} = kspace(psi, sim)
     mu += 1 / Vol * sum(1 / 2 * ksquared .* abs2.(tmp))
     mu += 1 # add one transverse energy unit (1D-GPE case)
     return mu
@@ -323,7 +325,7 @@ function gpe_analytical(x, gamma; x0::Float64 = 0.0)
 end
 
 """
-return the analytical (implicit) solution of the NPSE
+  Return the analytical (implicit) solution of the NPSE
 """
 function npse_implicit(gamma, N)
     mu = npse_mu_full(gamma)
@@ -339,7 +341,7 @@ function npse_implicit(gamma, N)
 end
 
 """
-in a given NPSE ground state, we expect to have a peak value of psi given by this
+  In a given NPSE ground state, we expect to have a peak value of psi given by this
 """
 function max_npse_psi2(gamma)
     mu = npse_mu_full(gamma)
