@@ -13,7 +13,7 @@ using IntervalRootFinding, IntervalArithmetic
 import JLD2
 using StaticArrays
 using ProgressMeter
-using Printf 
+using Printf
 
 @reexport using Parameters
 import FileIO

@@ -5,7 +5,7 @@
 
 L = (40.0,)
 N = (512,)
-sim = Sim{length(L),Array{ComplexF64}}(L = L, N = N)
+sim = Sim{length(L),Array{ComplexF64}}(L=L, N=N)
 
 @unpack_Sim sim
 iswitch = -im
@@ -28,14 +28,14 @@ analytical_gs = zeros(N)
 sol, err = testsim(sim)
 @test err == false
 numerical_gs = xspace(sol.u, sim)
-@test isapprox(ns((numerical_gs - analytical_gs), sim), 0.0, atol = 1e-5)
+@test isapprox(ns((numerical_gs - analytical_gs), sim), 0.0, atol=1e-5)
 
 
 ## Solving the SPR-like soliton ground state
 # problem with 1D-GPE 
 L = (40.0,)
 N = (256,)
-sim = Sim{length(L),Array{ComplexF64}}(L = L, N = N)
+sim = Sim{length(L),Array{ComplexF64}}(L=L, N=N)
 g_param = 0.65
 @unpack_Sim sim
 iswitch = -im
@@ -57,7 +57,7 @@ analytical_gs = zeros(N)
 @time sol, err = testsim(sim)
 @test err == false
 numerical_gs = xspace(sol.u, sim)
-@test isapprox(ns((numerical_gs - analytical_gs), sim), 0.0, atol = 1e-6)
+@test isapprox(ns((numerical_gs - analytical_gs), sim), 0.0, atol=1e-6)
 
 ## We need to have loose resembling also with NPSE and  NPSE+
 @unpack_Sim sim
@@ -67,7 +67,7 @@ equation = NPSE
 @time sol, err = testsim(sim)
 @test err == false
 numerical_gs = xspace(sol.u, sim)
-@test isapprox(ns((numerical_gs - analytical_gs), sim), 0.0, atol = 1e-2)
+@test isapprox(ns((numerical_gs - analytical_gs), sim), 0.0, atol=1e-2)
 
 @unpack_Sim sim
 equation = NPSE_plus
@@ -76,4 +76,4 @@ equation = NPSE_plus
 @time sol, err = testsim(sim)
 @test err == false
 numerical_gs = xspace(sol.u, sim)
-@test isapprox(ns((numerical_gs - analytical_gs), sim), 0.0, atol = 3e-2)
+@test isapprox(ns((numerical_gs - analytical_gs), sim), 0.0, atol=3e-2)
