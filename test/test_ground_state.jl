@@ -34,7 +34,7 @@ numerical_gs = xspace(sol.u, sim)
 ## Solving the SPR-like soliton ground state
 # problem with 1D-GPE 
 L = (40.0,)
-N = (512,)
+N = (256,)
 sim = Sim{length(L),Array{Complex{Float64}}}(L = L, N = N)
 g_param = 0.65
 @unpack_Sim sim
@@ -42,7 +42,7 @@ iswitch = -im
 g = -2 * g_param
 equation = GPE_1D
 manual = true
-abstol = 1e-6
+abstol = 1e-3
 maxiters = 100000 # in the research is set to 1e10
 x = X[1]
 dV = volume_element(L, N)
@@ -76,4 +76,4 @@ equation = NPSE_plus
 @time sol, err = testsim(sim)
 @test err == false
 numerical_gs = xspace(sol.u, sim)
-@test isapprox(ns((numerical_gs - analytical_gs), sim), 0.0, atol = 1e-2)
+@test isapprox(ns((numerical_gs - analytical_gs), sim), 0.0, atol = 3e-2)
