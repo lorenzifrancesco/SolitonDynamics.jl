@@ -40,7 +40,7 @@ unpack_selection(sim, fields...) = map(x -> getfield(sim, x), fields)
             # ===================================
             @inline function sigma_loop!(ret, sigma, params)
                 # structure: [NPSE] + [simple derivatives of sigma] + [derivatives involving psi^2]
-                @inbounds for j = 2:M-1
+                @inbounds @simd for j = 2:M-1
                     ret[j] =
                         (-sigma[j] .^ 4 + (1 + g * psisq[j])) -
                         ((sigma[j+1] - sigma[j-1]) / dxx)^2 +
