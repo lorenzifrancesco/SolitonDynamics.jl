@@ -119,6 +119,10 @@ end
     K::Vector{A} = kvecs(L, N)
     T::TransformLibrary{A} = makeT(X, K, A, flags = flags)
     ksquared::A = k2(K, A)
+
+    # === graphics
+    color::Symbol=get_color(equation)
+    linestyle::Symbol=get_linestyle(equation)
 end
 
 function isless(sim1::Sim, sim2::Sim)
@@ -155,4 +159,36 @@ function display(s::Sim)
   @printf("\n- dt = %4.3f, maxiters = %4i", s.dt, s.maxiters)
   @printf("\n- Number of saves = %3i", s.Nt)
     nothing
+end
+
+function get_color(eq::EquationType)
+  if eq == GPE_3D
+    return :red
+  elseif eq == GPE_1D
+      return :grey
+  elseif eq == NPSE
+      return :green
+  elseif eq == NPSE_plus
+      return :green
+  elseif eq == CQGPE
+      return :blue
+  else
+      return :black
+  end
+end
+
+function get_linestyle(eq::EquationType)
+  if eq == GPE_3D
+    return :solid
+  elseif eq == GPE_1D
+      return :solid
+  elseif eq == NPSE
+      return :dot
+  elseif eq == NPSE_plus
+      return :dash
+  elseif eq == CQGPE
+      return :dashdot
+  else
+      return :solid
+  end
 end
