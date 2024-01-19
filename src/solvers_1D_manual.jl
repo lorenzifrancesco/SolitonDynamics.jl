@@ -12,27 +12,26 @@ unpack_selection(sim, fields...) = map(x -> getfield(sim, x), fields)
     ss_buffer = nothing,
     info = false,
 )
-    g, X, V0, dV, equation, sigma2, dt, iswitch, N, collapse_threshold =
-        unpack_selection(sim, :g, :X, :V0, :dV, :equation, :sigma2, :dt, :iswitch, :N, :collapse_threshold)
+    g, V0, dV, equation, sigma2, dt, iswitch, N, collapse_threshold =
+        unpack_selection(sim, :g, :V0, :dV, :equation, :sigma2, :dt, :iswitch, :N, :collapse_threshold)
     order = 2
     dt_order = dt / order
-    x = X[1]
     N = N[1]
     xspace!(psi, sim)
     # 1D-GPE
     if equation == GPE_1D
-        @. psi *= exp(dt_order * -im * iswitch * (V0 + V(x, t) + g * abs2(psi)))
+        @. psi *= exp(dt_order * -im * iswitch * (V0 + g * abs2(psi)))
         # NPSE
     elseif equation == NPSE
         nonlinear =
             g * abs2.(psi) ./ sigma2.(psi) +
             (1 ./ (2 * sigma2.(psi)) + 1 / 2 * sigma2.(psi))
-        @. psi = exp(dt_order * -im * iswitch * (V0 + V(x, t) + nonlinear)) * psi
+        @. psi = exp(dt_order * -im * iswitch * (V0 + nonlinear)) * psi
 
         # NPSE+
     elseif equation == NPSE_plus
-        sigma2_plus = zeros(length(x))
-        M = N[1]
+        M = N[1] 
+        sigma2_plus = zeros(M)
         dxx = 2 * dV
         psisq = abs2.(psi)
         try
@@ -85,7 +84,7 @@ unpack_selection(sim, fields...) = map(x -> getfield(sim, x), fields)
         nonlinear =
             g * abs2.(psi) ./ sigma2_plus + (1 / 2 * sigma2_plus) .+
             (1 ./ (2 * sigma2_plus)) .* (1 .+ (temp_diff .^ 2))
-        @. psi = exp(dt_order * -im * iswitch * (V0 + V(x, t) + nonlinear)) * psi
+        @. psi = exp(dt_order * -im * iswitch * (V0 + nonlinear)) * psi
 
         # CQGPE
     elseif equation == CQGPE
@@ -93,7 +92,7 @@ unpack_selection(sim, fields...) = map(x -> getfield(sim, x), fields)
             dt_order *
             -im *
             iswitch *
-            (V0 + V(x, t) + g * abs2(psi) - 6 * log(4 / 3) * g^2 * abs2(abs2(psi))),
+            (V0 + g * abs2(psi) - 6 * log(4 / 3) * g^2 * abs2(abs2(psi))),
         )
     end
 
@@ -133,7 +132,7 @@ end
         psi_i .= psi
         return cp_diff
     else
-        return nothing
+        return 0.0
     end
 end
 

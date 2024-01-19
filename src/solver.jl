@@ -181,11 +181,17 @@ function manual_run(
             save_interval = Int(round(time_steps / Nt))
             save_counter = 1
             solve_time_axis = LinRange(ti, tf, time_steps)
+            
+            tmp_psi = copy(psi)
+            tmp_psi2 = (copy(psi))
+            real_psi = abs2.(copy(psi))
+            maximum_buffer::CuArray{ComplexF64} = zeros(N)
             for i = 1:time_steps
                 try
-                    propagate_manual!(psi, sim, time)
+                    propagate_manual!(psi, tmp_psi, tmp_psi2, real_psi, sim, time)
                     if return_maximum
-                        candidate_maximum = maximum(abs2.(psi))
+                        maximum_buffer = xspace(psi, sim)
+                        candidate_maximum = maximum(abs2.(maximum_buffer))
                         if candidate_maximum > max_prob
                             max_prob = candidate_maximum
                         end
