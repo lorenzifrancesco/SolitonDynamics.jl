@@ -142,3 +142,17 @@ function init_sim(L, N)
   sim
 end
 
+import Base.display
+function display(s::Sim)
+  @printf("Simulation in D = %i, equation = %s", length(s.N), s.equation.name)
+  if length(s.N) == 1
+    @printf("\n- Domain: \n\tL = %5.1f, \n\tN = %5i", s.L[1], s.N[1])
+  else
+    @printf("\n- Domain: \n\tL = (%5.1f, %5.1f, %5.1f), \n\tN = (%5i, %5i, %5i)", s.L[1], s.L[2], s.L[3], s.N[1], s.N[2], s.N[3])
+  end
+  @printf("\n- Nonlinearity: \n\t           g = %4.3f, \n\tcollapse_thr = %5.3f", g2gamma(s.g, s.equation), s.collapse_threshold)
+  @printf("\n- %s time", s.iswitch==1 ? "Real" : "Imag" )
+  @printf("\n- dt = %4.3f, maxiters = %4i", s.dt, s.maxiters)
+  @printf("\n- Number of saves = %3i", s.Nt)
+    nothing
+end

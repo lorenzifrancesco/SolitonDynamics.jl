@@ -11,14 +11,6 @@ const amu = 1.6605390666e-27
     N::NTuple{D,Int64} = (256, 256, 256)  # grid points in each dimensions
 end
 
-function printsim(sisim::SISim)
-    @unpack as, omega_perp, mass, N_particles, L, N = sisim
-    @info "Simulation in SI units:"
-    Base.print("\nas = ", as)
-    sim = normalize(sisim)
-    Base.print("\ng = ", sim.g)
-end
-
 """
     normalize(parameters)    
 conversion tool from SI units used in experiments to simulation Parameters
