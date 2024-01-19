@@ -61,27 +61,11 @@ struct Transforms{T} <: TransformLibrary{T}
     Tkx!::AbstractFFTs.ScaledPlan{ComplexF64, FFTW.cFFTWPlan{ComplexF64, 1, true, 1, UnitRange{Int64}}, Float64}
 end
 
-@with_kw mutable struct GPUTransforms{D,N,A} <: TransformLibrary{A}
-    Txk::AbstractFFTs.ScaledPlan{
-        Complex{Float64},
-        CUDA.CUFFT.cCuFFTPlan{ComplexF64,-1,false,3},
-        Float64,
-    } = 0.1 * CUDA.CUFFT.plan_fft(CuArray(crandn_array(N, A)))
-    Txk!::AbstractFFTs.ScaledPlan{
-        Complex{Float64},
-        CUDA.CUFFT.cCuFFTPlan{ComplexF64,-1,true,3},
-        Float64,
-    } = 0.1 * CUDA.CUFFT.plan_fft!(CuArray(crandn_array(N, A)))
-    Tkx::AbstractFFTs.ScaledPlan{
-        Complex{Float64},
-        CUDA.CUFFT.cCuFFTPlan{ComplexF64,1,false,3},
-        Float64,
-    } = 0.1 * CUDA.CUFFT.plan_ifft(CuArray(crandn_array(N, A)))
-    Tkx!::AbstractFFTs.ScaledPlan{
-        Complex{Float64},
-        CUDA.CUFFT.cCuFFTPlan{ComplexF64,1,true,3},
-        Float64,
-    } = 0.1 * CUDA.CUFFT.plan_ifft!(CuArray(crandn_array(N, A)))
+@with_kw mutable struct GPUTransforms{A} <: TransformLibrary{A}
+    Txk::AbstractFFTs.ScaledPlan{ComplexF64,CUDA.CUFFT.cCuFFTPlan{ComplexF64,-1,false,3},Float64}
+    Txk!::AbstractFFTs.ScaledPlan{ComplexF64,CUDA.CUFFT.cCuFFTPlan{ComplexF64,-1,true,3},Float64}
+    Tkx::AbstractFFTs.ScaledPlan{ComplexF64,CUDA.CUFFT.cCuFFTPlan{ComplexF64,1,false,3},Float64}
+    Tkx!::AbstractFFTs.ScaledPlan{ComplexF64,CUDA.CUFFT.cCuFFTPlan{ComplexF64,1,true,3},Float64}
     #psi::ArrayPartition = crandnpartition(D,N,A)
 end
 
@@ -147,5 +131,14 @@ end
     cnt::Int64 = 0
 end
 
-InitSim(L, N, A, par) = Sim{length(L),A}(L = L, N = N, params = par)
-InitSim(L, N, A) = Sim{length(L),A}(L = L, N = N, params = Params())
+function init_sim(L, N)
+  if length(L) == 1
+    sim = Sim{1,Array{ComplexF64}}(L = L, N = N)
+  elseif length(L) == 3
+    sim = Sim{3,CuArray{ComplexF64}}(L = L, N = N)
+  else
+    throw(MethodError)
+  end
+  sim
+end
+

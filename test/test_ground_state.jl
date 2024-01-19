@@ -5,7 +5,7 @@
 
 L = (40.0,)
 N = (512,)
-sim = Sim{length(L),Array{Complex{Float64}}}(L = L, N = N)
+sim = Sim{length(L),Array{ComplexF64}}(L = L, N = N)
 
 @unpack_Sim sim
 iswitch = -im
@@ -35,7 +35,7 @@ numerical_gs = xspace(sol.u, sim)
 # problem with 1D-GPE 
 L = (40.0,)
 N = (256,)
-sim = Sim{length(L),Array{Complex{Float64}}}(L = L, N = N)
+sim = Sim{length(L),Array{ComplexF64}}(L = L, N = N)
 g_param = 0.65
 @unpack_Sim sim
 iswitch = -im

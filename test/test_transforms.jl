@@ -5,7 +5,7 @@ using OrdinaryDiffEq
 function test_transforms()
     L = (40.0,)
     N = (1024,)
-    sim = Sim{length(L),Array{Complex{Float64}}}(L = L, N = N)
+    sim = Sim{length(L),Array{ComplexF64}}(L = L, N = N)
 
 
     @unpack_Sim sim
@@ -83,7 +83,7 @@ test_transforms()
 function pretest()
     L = (40.0,)
     N = (1024,)
-    sim = Sim{length(L),Array{Complex{Float64}}}(L = L, N = N)
+    sim = Sim{length(L),Array{ComplexF64}}(L = L, N = N)
 
     # (gaussian wavepacket)
     psi_constant = ones(sim.N) |> complex

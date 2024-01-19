@@ -163,7 +163,7 @@ function makeT(X, K, T::Type{CuArray{ComplexF64}}; flags=FFTW.MEASURE)
   meas = (dμx, dμx, dμk, dμk)
   args = ((psi_test,), (psi_test,), (psi_test,), (psi_test,))
   Txk, Txk!, Tkx, Tkx! = definetransforms(trans, args, meas)
-  return GPUTransforms{D,N,T}(Txk, Txk!, Tkx, Tkx!)
+  return GPUTransforms{T}(Txk, Txk!, Tkx, Tkx!)
 end
 
 function xspace(ϕ::AbstractArray, sim::Sim)
