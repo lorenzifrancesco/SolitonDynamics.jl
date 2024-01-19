@@ -31,7 +31,7 @@ function manual_run(
 
     #######################
     # Imaginary time 
-    ######################
+    #######################
     if iswitch == -im # select solver and run manual convergence routine 
         # in manual GS mode the maximum number of steps is specified by maxiters
         if solver == SplitStep
@@ -59,20 +59,20 @@ function manual_run(
             cp_diff = 1e300
             while cnt < maxiters &&
                 (cnt * sim.dt < minimum_evolution_time || abs(cp_diff) > abstol_diff)
-                try
+                # try
                     cp_diff = propagate_manual!(psi, tmp_psi, tmp_psi2, real_psi, sim, 0.0; info = info, ss_buffer = ss_buffer)
                     sim.dt *= (1 - decay)
                     info && print("\r", cnt, " - chempot diff: ", cp_diff)
-                catch err
-                    if isa(err, NpseCollapse) && !throw_collapse
-                        showerror(stdout, err)
-                    elseif isa(err, Gpe3DCollapse) && !throw_collapse
-                        showerror(stdout, err)
-                    else
-                        throw(err)
-                    end
-                    return nothing
-                end
+                # catch err
+                #     if isa(err, NpseCollapse) && !throw_collapse
+                #         showerror(stdout, err)
+                #     elseif isa(err, Gpe3DCollapse) && !throw_collapse
+                #         showerror(stdout, err)
+                #     else
+                #         throw(err)
+                #     end
+                #     return nothing
+                # end
                 cnt += 1
                 update!(pr, cnt)
             end
@@ -181,17 +181,16 @@ function manual_run(
             save_interval = Int(round(time_steps / Nt))
             save_counter = 1
             solve_time_axis = LinRange(ti, tf, time_steps)
-            
             tmp_psi = copy(psi)
             tmp_psi2 = (copy(psi))
             real_psi = abs2.(copy(psi))
-            maximum_buffer::CuArray{ComplexF64} = zeros(N)
+            maximum_buffer3::CuArray{ComplexF64} = zeros(N)
             for i = 1:time_steps
                 try
                     propagate_manual!(psi, tmp_psi, tmp_psi2, real_psi, sim, time)
                     if return_maximum
-                        maximum_buffer = xspace(psi, sim)
-                        candidate_maximum = maximum(abs2.(maximum_buffer))
+                        maximum_buffer3 .= xspace(psi, sim)
+                        candidate_maximum = maximum(abs2.(maximum_buffer3))
                         if candidate_maximum > max_prob
                             max_prob = candidate_maximum
                         end

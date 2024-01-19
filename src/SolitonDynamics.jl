@@ -13,13 +13,14 @@ using IntervalRootFinding, IntervalArithmetic
 import JLD2
 using StaticArrays
 using ProgressMeter
+using Printf 
 
 @reexport using Parameters
 import FileIO
 
 export runsim, testsim
 export Sim, SISim
-export normalize, printsim
+export normalize, display
 
 include("types.jl")
 include("methods.jl")
