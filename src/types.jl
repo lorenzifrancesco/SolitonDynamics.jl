@@ -193,7 +193,7 @@ function get_linestyle(eq::EquationType)
   end
 end
 
-function nameof(eq::EquationType)
+function paper_name(eq::EquationType)
   if eq == GPE_3D
     return "3D-GPE"
   elseif eq == GPE_1D
