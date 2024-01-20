@@ -58,7 +58,7 @@ unpack_selection(sim, fields...) = map(x -> getfield(sim, x), fields)
           (dxx * psisq[M])
       end
       prob = NonlinearSolve.NonlinearProblem(sigma_loop!, ss_buffer, 0.0)
-      sol = NonlinearSolve.solve(prob, NonlinearSolve.NewtonRaphson(), reltol=1e-3)
+      sol = NonlinearSolve.solve(prob, NonlinearSolve.NewtonRaphson(), reltol=1e-6)
       sigma2_plus = (sol.u) .^ 2
       # ss_buffer .= sol.u
     catch err
