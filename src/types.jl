@@ -181,7 +181,7 @@ function get_linestyle(eq::EquationType)
   if eq == GPE_3D
     return :solid
   elseif eq == GPE_1D
-    return :solid
+    return :dashdot
   elseif eq == NPSE
     return :dot
   elseif eq == NPSE_plus
@@ -190,5 +190,21 @@ function get_linestyle(eq::EquationType)
     return :dashdot
   else
     return :solid
+  end
+end
+
+function nameof(eq::EquationType)
+  if eq == GPE_3D
+    return "3D-GPE"
+  elseif eq == GPE_1D
+    return "1D-GPE"
+  elseif eq == NPSE
+    return "NPSE"
+  elseif eq == NPSE_plus
+    return "NPSE+"
+  elseif eq == CQGPE
+    return "CQ-GPE"
+  else
+    throw("equation not found")
   end
 end
