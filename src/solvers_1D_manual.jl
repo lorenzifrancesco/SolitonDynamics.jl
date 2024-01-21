@@ -26,15 +26,18 @@ unpack_selection(sim, fields...) = map(x -> getfield(sim, x), fields)
       (1 ./ (2 * sigma2.(psi)) + 1 / 2 * sigma2.(psi))
     @. psi = exp(dt_order * -im * iswitch * (V0 + nonlinear)) * psi
   elseif equation == NPSE_plus
+    sigma2_plus = ones(N[1])
     M = N[1]
-    sigma2_plus = zeros(M)
-    temp = zeros(M)
+    temp = ones(M)
     dxx = 2 * dV
     psisq = abs2.(psi)
     try
       # Nonlinear Finite Difference routine
       # ===================================
-      @inline function sigma_loop!(ret, sigma, params)
+
+      ### check the variables
+      # @info ns(psi, sim)
+      function sigma_loop!(ret, sigma, params)
         # structure: [NPSE] + [simple derivatives of sigma] + [derivatives involving psi^2]
         @inbounds @simd for j = 2:M-1
           ret[j] =
@@ -58,21 +61,30 @@ unpack_selection(sim, fields...) = map(x -> getfield(sim, x), fields)
           (1.0 - sigma[M-1]) / dxx * sigma[M] * (0.0 - psisq[M-1]) /
           (dxx * psisq[M])
       end
-
+      # jac_sparsity = Symbolics.jacobian_sparsity((du, u) -> sigma_loop!(du, u, 0.0), ones(N[1]), ones(N[1]))
+      # ff = NonlinearFunction(sigma_loop!; sparsity = jac_sparsity)
+      # prob = NonlinearSolve.NonlinearProblem(ff, ss_buffer, 0.0)
       prob = NonlinearSolve.NonlinearProblem(sigma_loop!, ss_buffer, 0.0)
       sol = NonlinearSolve.solve(prob, NonlinearSolve.NewtonRaphson(), reltol=1e-6, maxiters=1000)
       
+      @. ss_buffer = sol.u
       
-      sigma2_plus = (sol.u) .^ 2
-      # sigma2_plus = ones(N[1])
-      # save solution for next iteration
-      ss_buffer .= sol.u
-      
-      temp = copy(sigma2_plus)
-      # debug info
-      @info @sprintf("L2 residue= %2.1e" , sum(abs2.(sol.resid)))
-      display(sol.stats)
+      ## filtering 
+      sigma_freq = fft(ss_buffer)
+      filter::Array{Float64} = ones(M)
+      window = 15 # over 256
+      for i in window:M-window
+        filter[i] = 0.0
+      end
+      ss_buffer .= real(ifft(sigma_freq .* filter))
 
+      if !all(ss_buffer.>=0)
+        @warn "NEGATIVE sigma values "
+      end 
+      # save solution for next iteration      
+      # debug info
+      # @info @sprintf("L2 residue= %2.1e" , sum(abs2.(sol.resid)))
+      # display(sol.stats)
     catch err
       if isa(err, DomainError)
         sigma2_plus = NaN
@@ -81,8 +93,8 @@ unpack_selection(sim, fields...) = map(x -> getfield(sim, x), fields)
         throw(err)
       end
     end
-    temp_diff = sqrt.(temp)
-    @assert all(temp_diff.>=0) 
+    temp_diff = copy(ss_buffer)
+    sigma2_plus = ss_buffer .^ 2
     # generate symmetric difference 
     temp_diff[1] = (temp[2] - 1.0) / dxx
     temp_diff[M] = (1.0 - temp[M-1]) / dxx
@@ -93,7 +105,7 @@ unpack_selection(sim, fields...) = map(x -> getfield(sim, x), fields)
       g * abs2.(psi) ./ sigma2_plus + (1 / 2 * sigma2_plus) .+
       (1 ./ (2 * sigma2_plus)) .* (1 .+ (temp_diff .^ 2))
     @. psi = exp(dt_order * -im * iswitch * (V0 + nonlinear)) * psi
-
+    # @warn "normalization" ns(psi, sim)
     # CQGPE
   elseif equation == CQGPE
     @. psi *= exp(

@@ -6,7 +6,7 @@ using ExportAll
 using FFTW, CUDA, Adapt
 using Reexport
 using OrdinaryDiffEq, DiffEqCallbacks, SteadyStateDiffEq, DiffEqGPU
-import NonlinearSolve, LinearSolve
+import NonlinearSolve, LinearSolve, Symbolics
 using LoopVectorization
 using LinearAlgebra, RecursiveArrayTools, LazyArrays
 using IntervalRootFinding, IntervalArithmetic
