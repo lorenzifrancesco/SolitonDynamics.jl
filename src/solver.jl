@@ -122,6 +122,9 @@ function manual_run(
       collection = Array{ComplexF64,2}(undef, (length(psi), Nt))
       collection = zeros((length(psi), Nt)) |> complex
       collection[:, 1] = psi
+      sigma::Array{Float64} = ones(N[1])
+      collection_sigma = Array{Float64,2}(undef, (length(psi), Nt))
+      collection_sigma[:, 1] = sigma
       save_counter = 1
       solve_time_axis = LinRange(ti, tf, time_steps)
       #
@@ -141,11 +144,8 @@ function manual_run(
       end
       maximum_buffer::Array{ComplexF64} = ones(N[1])
       for i = 1:time_steps
-        if equation == NPSE_plus
-          ss_buffer = ones(N[1])
-        end
         try
-          propagate_manual!(psi, tmp_psi, tmp_psi2, real_psi, sim, time; info=info, ss_buffer=ss_buffer)
+          propagate_manual!(psi, tmp_psi, tmp_psi2, real_psi, sim, time; info=info, ss_buffer=sigma)
           if return_maximum
             maximum_buffer = xspace(psi, sim)
             candidate_maximum = maximum(abs2.(maximum_buffer))
@@ -164,6 +164,7 @@ function manual_run(
         # print("\r", i, " - step")
         if t[save_counter] < solve_time_axis[i]
           collection[:, save_counter] = psi
+          collection_sigma[:, save_counter] = sigma
           save_counter += 1
         end
         time += dt
@@ -173,8 +174,13 @@ function manual_run(
         end
       end
       collection[:, Nt] = psi
+      collection_sigma[:, Nt] = sigma
       sol =
-        CustomSolution(u=[collection[:, k] for k = 1:Nt], t=t, cnt=time_steps)
+        CustomSolution(
+          u=[collection[:, k] for k = 1:Nt],
+          sigma=[collection_sigma[:, k] for k = 1:Nt],
+          t=t,
+          cnt=time_steps)
       ######################
       # D = 3 case
       ######################

@@ -28,6 +28,7 @@ unpack_selection(sim, fields...) = map(x -> getfield(sim, x), fields)
   elseif equation == NPSE_plus
     M = N[1]
     sigma2_plus = zeros(M)
+    temp = zeros(M)
     dxx = 2 * dV
     psisq = abs2.(psi)
     try
@@ -58,15 +59,16 @@ unpack_selection(sim, fields...) = map(x -> getfield(sim, x), fields)
           (dxx * psisq[M])
       end
 
-      @inline function sigma_loop_jacobian!()
-        returnc
-      end
       prob = NonlinearSolve.NonlinearProblem(sigma_loop!, ss_buffer, 0.0)
-      sol = NonlinearSolve.solve(prob, NonlinearSolve.NewtonRaphson(), reltol=1e-6, maxiters=100)
+      sol = NonlinearSolve.solve(prob, NonlinearSolve.NewtonRaphson(), reltol=1e-6, maxiters=1000)
+      
+      
       sigma2_plus = (sol.u) .^ 2
+      # sigma2_plus = ones(N[1])
       # save solution for next iteration
       ss_buffer .= sol.u
       
+      temp = copy(sigma2_plus)
       # debug info
       @info @sprintf("L2 residue= %2.1e" , sum(abs2.(sol.resid)))
       display(sol.stats)
@@ -79,8 +81,8 @@ unpack_selection(sim, fields...) = map(x -> getfield(sim, x), fields)
         throw(err)
       end
     end
-    temp = copy(sigma2_plus)
     temp_diff = sqrt.(temp)
+    @assert all(temp_diff.>=0) 
     # generate symmetric difference 
     temp_diff[1] = (temp[2] - 1.0) / dxx
     temp_diff[M] = (1.0 - temp[M-1]) / dxx

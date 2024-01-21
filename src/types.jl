@@ -130,7 +130,8 @@ function isless(sim1::Sim, sim2::Sim)
 end
 
 @with_kw mutable struct CustomSolution
-  u::Any
+  u::AbstractArray
+  sigma::AbstractArray
   t::Any
   cnt::Int64 = 0
 end
