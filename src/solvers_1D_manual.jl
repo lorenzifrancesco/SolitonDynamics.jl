@@ -57,10 +57,20 @@ unpack_selection(sim, fields...) = map(x -> getfield(sim, x), fields)
           (1.0 - sigma[M-1]) / dxx * sigma[M] * (0.0 - psisq[M-1]) /
           (dxx * psisq[M])
       end
+
+      @inline function sigma_loop_jacobian!()
+        returnc
+      end
       prob = NonlinearSolve.NonlinearProblem(sigma_loop!, ss_buffer, 0.0)
-      sol = NonlinearSolve.solve(prob, NonlinearSolve.NewtonRaphson(), reltol=1e-6)
+      sol = NonlinearSolve.solve(prob, NonlinearSolve.NewtonRaphson(), reltol=1e-6, maxiters=100)
       sigma2_plus = (sol.u) .^ 2
-      # ss_buffer .= sol.u
+      # save solution for next iteration
+      ss_buffer .= sol.u
+      
+      # debug info
+      @info @sprintf("L2 residue= %2.1e" , sum(abs2.(sol.resid)))
+      display(sol.stats)
+
     catch err
       if isa(err, DomainError)
         sigma2_plus = NaN

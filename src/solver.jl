@@ -141,6 +141,9 @@ function manual_run(
       end
       maximum_buffer::Array{ComplexF64} = ones(N[1])
       for i = 1:time_steps
+        if equation == NPSE_plus
+          ss_buffer = ones(N[1])
+        end
         try
           propagate_manual!(psi, tmp_psi, tmp_psi2, real_psi, sim, time; info=info, ss_buffer=ss_buffer)
           if return_maximum
