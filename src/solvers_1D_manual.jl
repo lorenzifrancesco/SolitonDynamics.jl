@@ -8,13 +8,14 @@ unpack_selection(sim, fields...) = map(x -> getfield(sim, x), fields)
   ss,
   real_psi,
   sim::Sim{1,Array{ComplexF64}},
-  t;
+  t,
+  auxiliary;
   ss_buffer=nothing,
   info=false,
 )
-  g, V0, dV, equation, sigma2, dt, iswitch, N, collapse_threshold =
-    unpack_selection(sim, :g, :V0, :dV, :equation, :sigma2, :dt, :iswitch, :N, :collapse_threshold)
-  order = 2
+  g, V0, dV, equation, sigma2, dt, iswitch, N, collapse_threshold, X =
+    unpack_selection(sim, :g, :V0, :dV, :equation, :sigma2, :dt, :iswitch, :N, :collapse_threshold, :X)
+  order = 1
   dt_order = dt / order
   N = N[1]
   xspace!(psi, sim)
@@ -31,60 +32,102 @@ unpack_selection(sim, fields...) = map(x -> getfield(sim, x), fields)
     temp = ones(M)
     dxx = 2 * dV
     psisq = abs2.(psi)
+    left_border = 1
+    right_border = M
     try
       # Nonlinear Finite Difference routine
       # ===================================
+      ## interpolation for the psi2 function
+      # psisq_interp = Interpolations.interpolate(X[1], psisq)
+      # function sigma_bvp!(du, u, p)
+      #   du[1] =  -simga
+      #   du[2] = u[1]
+      # end
 
-      ### check the variables
-      # @info ns(psi, sim)
+
+      #################### OLD METHOD
+      ## check the variables
+
+      #### restrict the domain
+      cnt = 1
+      @info psisq[1]
+      @info maximum(psisq)
+      if iswitch == 1
+        while psisq[cnt] < 2e-4
+          cnt += 1
+        end
+        left_border = cnt
+        cnt = M
+        while psisq[cnt] < 2e-4
+          cnt -= 1
+        end
+        right_border = cnt
+      end
+      @info @sprintf("borders: %4i, %4i", left_border, right_border)
+      psisq_restr = psisq[left_border:right_border]
+      ## define function inside the restriction
+      M_restr = length(psisq_restr)
       function sigma_loop!(ret, sigma, params)
         # structure: [NPSE] + [simple derivatives of sigma] + [derivatives involving psi^2]
-        @inbounds @simd for j = 2:M-1
+        @inbounds @simd for j = 2:M_restr-1
           ret[j] =
-            (-sigma[j] .^ 4 + (1 + g * psisq[j])) -
-            ((sigma[j+1] - sigma[j-1]) / dxx)^2 +
-            sigma[j] * ((sigma[j-1] - 2 * sigma[j] + sigma[j+1]) / (dV^2)) +
-            sigma[j] * (sigma[j+1] - sigma[j-1]) / dxx *
-            (psisq[j+1] - psisq[j-1]) / (dxx * psisq[j]) +
-            (sigma[j+1] - sigma[j-1]) / dxx *
-            sigma[j] *
-            (psisq[j+1] - psisq[j-1]) / (dxx * psisq[j])
+            (-sigma[j] .^ 4 + (1 + g * psisq_restr[j])) * psisq_restr[j] -
+            ((sigma[j+1] - sigma[j-1]) / dxx)^2 * psisq_restr[j]+
+            sigma[j] * ((sigma[j-1] - 2 * sigma[j] + sigma[j+1]) / (dV^2)) * psisq_restr[j]+
+            sigma[j] * (sigma[j+1] - sigma[j-1]) / dxx * (psisq_restr[j+1] - psisq_restr[j-1]) / (dxx)
         end
         ret[1] =
-          (-sigma[1] .^ 4 + (1 + g * psisq[1])) +
-          ((sigma[2] - 1.0) / dxx)^2 +
-          ((1.0 - 2 * sigma[1] + sigma[2]) / (dV^2)) * sigma[1] +
-          (sigma[2] - 1.0) / dxx * sigma[1] * (psisq[2] - 0.0) / (dxx * psisq[1])
-        ret[M] =
-          (-sigma[M] .^ 4 + (1 + g * psisq[M])) - ((1.0 - sigma[M-1]) / dxx)^2 +
-          ((sigma[M-1] - 2 * sigma[M] + 1.0) / (dV^2)) * sigma[M] +
-          (1.0 - sigma[M-1]) / dxx * sigma[M] * (0.0 - psisq[M-1]) /
-          (dxx * psisq[M])
+          (-sigma[1] .^ 4 + (1 + g * psisq_restr[1]))*psisq_restr[1] +
+          ((sigma[2] - 1.0) / dxx)^2*psisq_restr[1] +
+          ((1.0 - 2 * sigma[1] + sigma[2]) / (dV^2)) * sigma[1]*psisq_restr[1] +
+          (sigma[2] - 1.0) / dxx * sigma[1] * (psisq_restr[2] - 0.0) / (dxx)
+        ret[M_restr] =
+          (-sigma[M_restr] .^ 4 + (1 + g * psisq_restr[M_restr]))*psisq_restr[M_restr] -
+          ((1.0 - sigma[M_restr-1]) / dxx)^2 *psisq_restr[M_restr]+
+          ((sigma[M_restr-1] - 2 * sigma[M_restr] + 1.0) / (dV^2)) * sigma[M_restr] *psisq_restr[M_restr]+
+          (1.0 - sigma[M_restr-1]) / dxx * sigma[M_restr] * (0.0 - psisq_restr[M_restr-1]) / (dxx)
       end
       # jac_sparsity = Symbolics.jacobian_sparsity((du, u) -> sigma_loop!(du, u, 0.0), ones(N[1]), ones(N[1]))
       # ff = NonlinearFunction(sigma_loop!; sparsity = jac_sparsity)
       # prob = NonlinearSolve.NonlinearProblem(ff, ss_buffer, 0.0)
-      prob = NonlinearSolve.NonlinearProblem(sigma_loop!, ss_buffer, 0.0)
+      prob = NonlinearSolve.NonlinearProblem(sigma_loop!, ss_buffer[left_border:right_border], 0.0)
       sol = NonlinearSolve.solve(prob, NonlinearSolve.NewtonRaphson(), reltol=1e-6, maxiters=1000)
-      
-      @. ss_buffer = sol.u
-      
-      ## filtering 
-      sigma_freq = fft(ss_buffer)
-      filter::Array{Float64} = ones(M)
-      window = 15 # over 256
-      for i in window:M-window
-        filter[i] = 0.0
-      end
-      ss_buffer .= real(ifft(sigma_freq .* filter))
 
-      if !all(ss_buffer.>=0)
-        @warn "NEGATIVE sigma values "
-      end 
+      # prob = NonlinearSolve.NonlinearLeastSquaresProblem(sigma_loop!, ss_buffer[left_border:right_border], 0.0)
+      # sol = NonlinearSolve.solve(prob, Tsit5(), abstol=1e-12, maxiters=1000)
+      
+      ######################### END OLD METHOD
+      @. ss_buffer[left_border:right_border] = sol.u
+
+      # ## filtering 
+      # sigma_freq = fft(ss_buffer)
+      # filter::Array{Float64} = ones(M)
+      # window = 15 # over 256
+      # for i in window:M-window
+      #   filter[i] = 0.0
+      # end
+      # ss_buffer .= real(ifft(sigma_freq .* filter))
+
+      if !all(ss_buffer .>= 0)
+        info && @warn "NEGATIVE sigma values "
+      end
+      if !all(ss_buffer .<= 1.01)
+        info && @warn "sigma > 1.0"
+      end
+      for i in 1:M-1
+        if (ss_buffer[i+1] - ss_buffer[i]) > 0.05
+          info && @warn "discontinuity found"
+        end
+      end
+      # clamp!(ss_buffer, 0.0, 1.0)
       # save solution for next iteration      
       # debug info
-      # @info @sprintf("L2 residue= %2.1e" , sum(abs2.(sol.resid)))
+      auxiliary[] = maximum(sol.resid)
+
+      # @info @sprintf("Linf residue= %2.1e" , aux)
       # display(sol.stats)
+      info && @info sol.retcode
+
     catch err
       if isa(err, DomainError)
         sigma2_plus = NaN
@@ -95,6 +138,10 @@ unpack_selection(sim, fields...) = map(x -> getfield(sim, x), fields)
     end
     temp_diff = copy(ss_buffer)
     sigma2_plus = ss_buffer .^ 2
+
+    #### debug
+    # temp_diff = zeros(N[1])
+    # sigma2_plus = ones(N[1])
     # generate symmetric difference 
     temp_diff[1] = (temp[2] - 1.0) / dxx
     temp_diff[M] = (1.0 - temp[M-1]) / dxx
@@ -105,15 +152,14 @@ unpack_selection(sim, fields...) = map(x -> getfield(sim, x), fields)
       g * abs2.(psi) ./ sigma2_plus + (1 / 2 * sigma2_plus) .+
       (1 ./ (2 * sigma2_plus)) .* (1 .+ (temp_diff .^ 2))
     @. psi = exp(dt_order * -im * iswitch * (V0 + nonlinear)) * psi
-    # @warn "normalization" ns(psi, sim)
-    # CQGPE
-  elseif equation == CQGPE
-    @. psi *= exp(
-      dt_order *
-      -im *
-      iswitch *
-      (V0 + g * abs2(psi) - 6 * log(4 / 3) * g^2 * abs2(abs2(psi))),
-    )
+
+    # for i in 1:left_border
+    #   ss_buffer[i] *= 0.0
+    # end
+    # for i in right_border:M
+    #   ss_buffer[i] *= 0.0
+    # end
+
   end
 
   if equation != GPE_1D
@@ -123,6 +169,7 @@ unpack_selection(sim, fields...) = map(x -> getfield(sim, x), fields)
     end
   end
   kspace!(psi, sim)
+
   return nothing
 end
 
@@ -133,7 +180,8 @@ end
   tmp_psi2,
   real_psi,
   sim::Sim{1,Array{ComplexF64}},
-  t;
+  t,
+  aux;
   ss_buffer=nothing,
   info=false,
 )
@@ -142,8 +190,8 @@ end
   # splitting: N/2, N/2, L
   @. psi =
     exp(dt * iswitch * (1.0 - im * gamma_damp) * (-im * (1 / 2 * ksquared - mu))) * psi
-  nlin_manual!(psi, tmp_psi2, real_psi, sim, t; ss_buffer=ss_buffer, info=info)
-  nlin_manual!(psi, tmp_psi2, real_psi, sim, t; ss_buffer=ss_buffer, info=info)
+  nlin_manual!(psi, tmp_psi2, real_psi, sim, t, aux; ss_buffer=ss_buffer, info=info)
+  # nlin_manual!(psi, tmp_psi2, real_psi, sim, t, aux; ss_buffer=ss_buffer, info=info)
   if iswitch == -im
     psi .= psi / sqrt(nsk(psi, sim))
     cp_diff =

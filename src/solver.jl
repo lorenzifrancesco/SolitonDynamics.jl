@@ -57,10 +57,11 @@ function manual_run(
       real_psi = abs2.(copy(psi))
       pr = Progress(minimum([maxiters, 5000]); dt=1)
       cp_diff = 1e300
+      dump = Ref{Float64}(0.0)
       while cnt < maxiters &&
         (cnt * sim.dt < minimum_evolution_time || abs(cp_diff) > abstol_diff)
         # try
-        cp_diff = propagate_manual!(psi, tmp_psi, tmp_psi2, real_psi, sim, 0.0; info=info, ss_buffer=ss_buffer)
+        cp_diff = propagate_manual!(psi, tmp_psi, tmp_psi2, real_psi, sim, 0.0, dump; info=info, ss_buffer=ss_buffer)
         sim.dt *= (1 - decay)
         info && print("\r", cnt, " - chempot diff: ", cp_diff)
         # catch err
@@ -142,15 +143,23 @@ function manual_run(
         pr = Progress(time_steps)
         cnt = 0
       end
-      maximum_buffer::Array{ComplexF64} = ones(N[1])
+      auxiliary = 0.0
+      auxiliary2 = Ref{Float64}(0.0)
+      maximum_buffier::Array{ComplexF64} = ones(N[1])
       for i = 1:time_steps
         try
-          propagate_manual!(psi, tmp_psi, tmp_psi2, real_psi, sim, time; info=info, ss_buffer=sigma)
+          ## debug : feed ones after each repetition
+          sigma .= ones(N[1])
+          propagate_manual!(psi, tmp_psi, tmp_psi2, real_psi, sim, time, auxiliary2; info=info, ss_buffer=sigma)
           if return_maximum
             maximum_buffer = xspace(psi, sim)
             candidate_maximum = maximum(abs2.(maximum_buffer))
             if candidate_maximum > max_prob
               max_prob = candidate_maximum
+            end
+            if auxiliary<auxiliary2[]
+              auxiliary = auxiliary2[]
+              info && @info @sprintf("Maximum Linf error = %5.4e", auxiliary)
             end
           end
         catch err
