@@ -79,7 +79,7 @@ function manual_run(
       end
       info && print("\n")
       info && @info "Computation ended after iterations" cnt
-      sol = CustomSolution(u=psi, t=t, cnt=cnt)
+      sol = CustomSolution(u=[psi], t=t, cnt=cnt)
     else # nonspectral methods
       xspace!(psi, sim)
       solvers =
@@ -105,9 +105,9 @@ function manual_run(
         cnt += 1
       end
       kspace!(psi, sim)
-      sol = CustomSolution(u=psi, t=t, cnt=cnt)
+      sol = CustomSolution(u=[psi], t=t, cnt=cnt)
     end
-    return sol
+    return sol, -1.0
 
     #######################
     # Real time 
@@ -122,66 +122,75 @@ function manual_run(
     if length(N) == 1
       collection = Array{ComplexF64,2}(undef, (length(psi), Nt))
       collection = zeros((length(psi), Nt)) |> complex
+      collection_sigma = Array{ComplexF64,2}(undef, (length(psi), Nt))
       collection[:, 1] = psi
-      sigma::Array{Float64} = ones(N[1])
-      collection_sigma = Array{Float64,2}(undef, (length(psi), Nt))
-      collection_sigma[:, 1] = sigma
-      save_counter = 1
-      solve_time_axis = LinRange(ti, tf, time_steps)
-      #
-      if equation == NPSE_plus
-        ss_buffer = ones(N[1])
-      else
-        ss_buffer = nothing
-      end
-      debug && @warn "running with time_steps = " time_steps
-      ## buffer allocation
-      tmp_psi = copy(psi)
-      tmp_psi2 = (copy(psi))
-      real_psi = abs2.(copy(psi))
-      if info
-        pr = Progress(time_steps)
-        cnt = 0
-      end
-      auxiliary = 0.0
-      auxiliary2 = Ref{Float64}(0.0)
-      maximum_buffier::Array{ComplexF64} = ones(N[1])
-      for i = 1:time_steps
-        try
-          ## debug : feed ones after each repetition
-          sigma .= ones(N[1])
-          propagate_manual!(psi, tmp_psi, tmp_psi2, real_psi, sim, time, auxiliary2; info=info, ss_buffer=sigma)
-          if return_maximum
-            maximum_buffer = xspace(psi, sim)
-            candidate_maximum = maximum(abs2.(maximum_buffer))
-            if candidate_maximum > max_prob
-              max_prob = candidate_maximum
-            end
-            if auxiliary<auxiliary2[]
-              auxiliary = auxiliary2[]
-              info && @info @sprintf("Maximum Linf error = %5.4e", auxiliary)
-            end
+    else
+      collection = CuArray{ComplexF64,4}(undef, (N..., Nt))
+      collection[:, :, :, 1] = psi
+    end
+
+    sigma::Array{Float64} = ones(N[1])
+    save_counter = 1
+    solve_time_axis = LinRange(ti, tf, time_steps)
+    #
+    if equation == NPSE_plus
+      ss_buffer = ones(N[1])
+    else
+      ss_buffer = nothing
+    end
+    debug && @warn "running with time_steps = " time_steps
+    ## buffer allocation
+    tmp_psi = copy(psi)
+    tmp_psi2 = (copy(psi))
+    real_psi = abs2.(copy(psi))
+    if info
+      pr = Progress(time_steps)
+      cnt = 0
+    end
+    auxiliary = 0.0
+    auxiliary2 = Ref{Float64}(0.0)
+    maximum_buffer = ones(N)
+    for i = 1:time_steps
+      try
+        ## debug : feed ones after each repetition
+        sigma .= ones(N[1])
+        propagate_manual!(psi, tmp_psi, tmp_psi2, real_psi, sim, time, auxiliary2; info=info, ss_buffer=sigma)
+        if return_maximum
+          maximum_buffer = xspace(psi, sim)
+          candidate_maximum = maximum(abs2.(maximum_buffer))
+          if candidate_maximum > max_prob
+            max_prob = candidate_maximum
           end
-        catch err
-          if isa(err, NpseCollapse) && !throw_collapse
-            showerror(stdout, err)
-          else
-            throw(err)
+          if auxiliary < auxiliary2[]
+            auxiliary = auxiliary2[]
+            info && @info @sprintf("Maximum Linf error = %5.4e", auxiliary)
           end
-          return nothing
         end
-        # print("\r", i, " - step")
-        if t[save_counter] < solve_time_axis[i]
+      catch err
+        if isa(err, NpseCollapse) && !throw_collapse
+          showerror(stdout, err)
+        else
+          throw(err)
+        end
+        return nothing
+      end
+      # print("\r", i, " - step")
+      if t[save_counter] < solve_time_axis[i]
+        if length(N) == 1
           collection[:, save_counter] = psi
           collection_sigma[:, save_counter] = sigma
-          save_counter += 1
+        else
+          collection[:, :, :, save_counter] = psi
         end
-        time += dt
-        if info
-          cnt += 1
-          update!(pr, cnt)
-        end
+        save_counter += 1
       end
+      time += dt
+      if info
+        cnt += 1
+        update!(pr, cnt)
+      end
+    end
+    if length(N) == 1
       collection[:, Nt] = psi
       collection_sigma[:, Nt] = sigma
       sol =
@@ -190,49 +199,13 @@ function manual_run(
           sigma=[collection_sigma[:, k] for k = 1:Nt],
           t=t,
           cnt=time_steps)
-      ######################
-      # D = 3 case
-      ######################
-    elseif length(N) == 3
-      collection = CuArray{ComplexF64,4}(undef, (N..., Nt))
-      collection[:, :, :, 1] = psi
-      save_interval = Int(round(time_steps / Nt))
-      save_counter = 1
-      solve_time_axis = LinRange(ti, tf, time_steps)
-      tmp_psi = copy(psi)
-      tmp_psi2 = (copy(psi))
-      real_psi = abs2.(copy(psi))
-      maximum_buffer3::CuArray{ComplexF64} = zeros(N)
-      for i = 1:time_steps
-        try
-          propagate_manual!(psi, tmp_psi, tmp_psi2, real_psi, sim, time)
-          if return_maximum
-            maximum_buffer3 .= xspace(psi, sim)
-            candidate_maximum = maximum(abs2.(maximum_buffer3))
-            if candidate_maximum > max_prob
-              max_prob = candidate_maximum
-            end
-          end
-        catch err
-          if isa(err, NpseCollapse) && !throw_collapse
-            showerror(stdout, err)
-          else
-            throw(err)
-          end
-          return nothing
-        end
-        if t[save_counter] < solve_time_axis[i]
-          collection[:, :, :, save_counter] = psi
-          save_counter += 1
-        end
-        time += dt
-      end
+    else
       collection[:, :, :, Nt] = psi
-      sol = CustomSolution(
-        u=[collection[:, :, :, k] for k = 1:Nt],
-        t=t,
-        cnt=time_steps,
-      )
+      sol =
+        CustomSolution(
+          u=[collection[:, :, :, k] for k = 1:Nt],
+          t=t,
+          cnt=time_steps)
     end
     return sol, max_prob * dV
   end

@@ -4,9 +4,11 @@
 
 function nlin_manual!(
   psi,
+  ss,
   real_psi,
   sim::Sim{3,CuArray{ComplexF64}},
-  t;
+  t, 
+  auxiliary;
   ss_buffer=nothing,
   info=false,
 )
@@ -31,14 +33,15 @@ function propagate_manual!(
   tmp_psi2,
   real_psi,
   sim::Sim{3,CuArray{ComplexF64}},
-  t;
+  t,
+  aux;
   ss_buffer=nothing,
   info=false,
 )
   @unpack ksquared, iswitch, dV, Vol, mu, gamma_damp, dt = sim
   @. psi =
     exp(dt * iswitch * (1.0 - im * gamma_damp) * (-im * (1 / 2 * ksquared - mu))) * psi
-  nlin_manual!(psi, real_psi, sim, t; info=info)
+  nlin_manual!(psi, tmp_psi2, real_psi, sim, t, aux; info=info)
   if iswitch == -im
     psi .= psi / sqrt(nsk(psi, sim))
     cp_diff =
