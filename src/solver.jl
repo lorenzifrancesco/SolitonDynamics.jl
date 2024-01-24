@@ -29,6 +29,14 @@ function manual_run(
   equation = sim
   psi = deepcopy(psi_0)
 
+  tmp_psi = complex(zeros(N))
+  tmp_real1 = zeros(N)
+  if length(N)==3
+    tmp_psi = CuArray(tmp_psi)
+    tmp_real1 = CuArray(tmp_real1)
+  end
+  tmp_real2::Array{Float64} = zeros(N[1])
+  sigma::Array{Float64} = ones(N[1])
   #######################
   # Imaginary time 
   #######################
@@ -52,16 +60,21 @@ function manual_run(
       minimum_evolution_time = 40.0
       #
       info && print("Interaction number")
-      tmp_psi = copy(psi)
-      tmp_psi2 = copy(psi)
-      real_psi = abs2.(copy(psi))
       pr = Progress(minimum([maxiters, 5000]); dt=1)
       cp_diff = 1e300
       dump = Ref{Float64}(0.0)
       while cnt < maxiters &&
         (cnt * sim.dt < minimum_evolution_time || abs(cp_diff) > abstol_diff)
         # try
-        cp_diff = propagate_manual!(psi, tmp_psi, tmp_psi2, real_psi, sim, 0.0, dump; info=info, ss_buffer=ss_buffer)
+        cp_diff = propagate_manual!(psi, 
+                                    tmp_psi, 
+                                    tmp_real1,
+                                    tmp_real2, 
+                                    sim, 
+                                    0.0, 
+                                    dump; 
+                                    info=info, 
+                                    ss_buffer=sigma)
         sim.dt *= (1 - decay)
         info && print("\r", cnt, " - chempot diff: ", cp_diff)
         # catch err
@@ -109,27 +122,24 @@ function manual_run(
     end
     return sol, -1.0
 
-    #######################
-    # Real time 
-    ######################
+  #######################
+  # Real time 
+  ######################
   else
     # in manual run mode the number of steps is specified by time_steps
     time = 0.0
     max_prob = -1.0
-    #######################
-    # D = 1 case
-    ######################
     if length(N) == 1
       collection = Array{ComplexF64,2}(undef, (length(psi), Nt))
       collection = zeros((length(psi), Nt)) |> complex
       collection_sigma = Array{ComplexF64,2}(undef, (length(psi), Nt))
       collection[:, 1] = psi
+      tmp_real1 = Array(zeros(N))
     else
       collection = CuArray{ComplexF64,4}(undef, (N..., Nt))
       collection[:, :, :, 1] = psi
+      tmp_real1 = CuArray(zeros(N))
     end
-
-    sigma::Array{Float64} = ones(N[1])
     save_counter = 1
     solve_time_axis = LinRange(ti, tf, time_steps)
     #
@@ -139,10 +149,6 @@ function manual_run(
       ss_buffer = nothing
     end
     debug && @warn "running with time_steps = " time_steps
-    ## buffer allocation
-    tmp_psi = copy(psi)
-    tmp_psi2 = (copy(psi))
-    real_psi = abs2.(copy(psi))
     if info
       pr = Progress(time_steps)
       cnt = 0
@@ -154,7 +160,15 @@ function manual_run(
       try
         ## debug : feed ones after each repetition
         sigma .= ones(N[1])
-        propagate_manual!(psi, tmp_psi, tmp_psi2, real_psi, sim, time, auxiliary2; info=info, ss_buffer=sigma)
+        propagate_manual!(psi, 
+                          tmp_psi, 
+                          tmp_real1,
+                          tmp_real2, 
+                          sim, 
+                          time, 
+                          auxiliary2; 
+                          info=info, 
+                          ss_buffer=sigma)
         if return_maximum
           maximum_buffer = xspace(psi, sim)
           candidate_maximum = maximum(abs2.(maximum_buffer))

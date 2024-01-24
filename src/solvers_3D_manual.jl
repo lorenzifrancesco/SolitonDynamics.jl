@@ -3,9 +3,9 @@
 # ============== Manual SplitStep methods, improved with exp
 
 function nlin_manual!(
-  psi,
-  ss,
-  real_psi,
+  psi::CuArray{ComplexF64},
+  tmp_real1::CuArray{Float64},
+  tmp_real2,
   sim::Sim{3,CuArray{ComplexF64}},
   t, 
   auxiliary;
@@ -19,8 +19,9 @@ function nlin_manual!(
   xspace!(psi, sim)
   @. psi *= exp(dt_order * -im * iswitch * (V0 + g * abs2(psi)))
 
-  real_psi .= abs2.(psi)
-  if maximum(real_psi) > collapse_threshold / dV
+  dydz = (X[2][2]-X[2][1])*(X[3][2]-X[3][1])
+  tmp_real1 .= sum(abs2.(psi))*dydz
+  if maximum(tmp_real1) > collapse_threshold / dV
     throw(Gpe3DCollapse(maximum(abs2.(psi) * dV)))
   end
   kspace!(psi, sim)
@@ -28,10 +29,10 @@ function nlin_manual!(
 end
 
 function propagate_manual!(
-  psi,
-  psi_i,
-  tmp_psi2,
-  real_psi,
+  psi::CuArray{ComplexF64},
+  psi_i::CuArray{ComplexF64},
+  tmp_real1::CuArray{Float64},
+  tmp_real2::Array{Float64},
   sim::Sim{3,CuArray{ComplexF64}},
   t,
   aux;
@@ -41,10 +42,10 @@ function propagate_manual!(
   @unpack ksquared, iswitch, dV, Vol, mu, gamma_damp, dt = sim
   @. psi =
     exp(dt * iswitch * (1.0 - im * gamma_damp) * (-im * (1 / 2 * ksquared - mu))) * psi
-  nlin_manual!(psi, tmp_psi2, real_psi, sim, t, aux; info=info)
+  nlin_manual!(psi, tmp_real1, tmp_real2, sim, t, aux; info=info)
   if iswitch == -im
     psi .= psi / sqrt(nsk(psi, sim))
-    cp_diff =
+    cp_diff =tmp_real1
       (chempotk_simple(psi, sim) - chempotk_simple(psi_i, sim)) /
       (chempotk_simple(psi_i, sim)) / dt
     psi_i .= psi

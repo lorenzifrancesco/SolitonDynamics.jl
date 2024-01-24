@@ -5,8 +5,8 @@ unpack_selection(sim, fields...) = map(x -> getfield(sim, x), fields)
 
 @inline function nlin_manual!(
   psi,
-  ss,
-  real_psi,
+  tmp_real1,
+  tmp_real2,
   sim::Sim{1,Array{ComplexF64}},
   t,
   auxiliary;
@@ -27,43 +27,41 @@ unpack_selection(sim, fields...) = map(x -> getfield(sim, x), fields)
       (1 ./ (2 * sigma2.(psi)) + 1 / 2 * sigma2.(psi))
     @. psi = exp(dt_order * -im * iswitch * (V0 + nonlinear)) * psi
   elseif equation == NPSE_plus
-    sigma2_plus = ones(N[1])
     M = N[1]
-    temp = ones(M)
     dxx = 2 * dV
-    psisq = abs2.(psi)
+    # tmp_real1 <--- psi^2
+    # tmp_real2 <--- derivative of psi^2
+    tmp_real1 .= abs2.(psi)
     left_border = 1
     right_border = M
-    try
-      #### restrict the domain
-      cnt = 1
-      if iswitch == 1
-        while psisq[cnt] < 5e-4
-          cnt += 1
-        end
-        left_border = cnt
-        cnt = M
-        while psisq[cnt] < 5e-4
-          cnt -= 1
-        end
-        right_border = cnt
+    cnt = 1
+    if iswitch == 1
+      while tmp_real1[cnt] < 5e-4
+        cnt += 1
       end
-      # info && @info @sprintf("borders: %4i, %4i", left_border, right_border)
-      # # Nonlinear Finite Difference routine
-      # # ===================================
+      left_border = cnt
+      cnt = M
+      while tmp_real1[cnt] < 5e-4
+        cnt -= 1
+      end
+      right_border = cnt
+    end
+    # info && @info @sprintf("borders: %4i, %4i", left_border, right_border)
 
+    # # Nonlinear Finite Difference routine
+    # # ===================================
+    try
       ######################### BVProblem METHOD
-      # interpolation for the psi2 function
-      psisq_diff = copy(psisq)
-      psisq_diff[1] = (psisq[2]) / dxx
-      psisq_diff[M] = (- psisq[M-1]) / dxx
+      # interpolation
+      tmp_real2[1] = (tmp_real1[2]) / dxx
+      tmp_real2[M] = (- tmp_real1[M-1]) / dxx
       @inbounds for i = 2:M-1
-        psisq_diff[i] = (psisq[i+1] - psisq[i-1]) / dxx
+        tmp_real2[i] = (tmp_real1[i+1] - tmp_real1[i-1]) / dxx
       end
       Xr = real.(X[1])
       # info && @info Xr[1], Xr[end]
-      psisq_interp = Interpolations.linear_interpolation(Xr, psisq)
-      psisq_derivative = Interpolations.linear_interpolation(Xr, psisq_diff)
+      psisq_interp = Interpolations.linear_interpolation(Xr, tmp_real1)
+      psisq_derivative = Interpolations.linear_interpolation(Xr, tmp_real2)
       function sigma_bvp!(du, u, p, x)
         # @info x
         du[1] = u[2]
@@ -153,41 +151,30 @@ unpack_selection(sim, fields...) = map(x -> getfield(sim, x), fields)
 
     catch err
       if isa(err, DomainError)
-        sigma2_plus = NaN
+        tmp_real1 = NaN
         throw(NpseCollapse(-666))
       else
         throw(err)
       end
     end
-    temp_diff = copy(ss_buffer)
-    sigma2_plus = ss_buffer .^ 2
 
-    #### debug
-    # temp_diff = zeros(N[1])
-    # sigma2_plus = ones(N[1])
-    # generate symmetric difference 
-    temp_diff[1] = (temp[2] - 1.0) / dxx
-    temp_diff[M] = (1.0 - temp[M-1]) / dxx
+    ## tmp_real1 <--- sigma^2 from the solution
+    ## tmp_real2 <--- derivative of sigma
+    tmp_real1 .= ss_buffer .^ 2
+    tmp_real2[1] = (ss_buffer[2] - 1.0) / dxx
+    tmp_real2[M] = (1.0 - ss_buffer[M-1]) / dxx
     @inbounds for i = 2:M-1
-      temp_diff[i] = (temp[i+1] - temp[i-1]) / dxx
+      tmp_real2[i] = (ss_buffer[i+1] - ss_buffer[i-1]) / dxx
     end
     nonlinear =
-      g * abs2.(psi) ./ sigma2_plus + (1 / 2 * sigma2_plus) .+
-      (1 ./ (2 * sigma2_plus)) .* (1 .+ (temp_diff .^ 2))
+      g * abs2.(psi) ./ tmp_real1 + (1 / 2 * tmp_real1) .+
+      (1 ./ (2 * tmp_real1)) .* (1 .+ (tmp_real2 .^ 2))
     @. psi = exp(dt_order * -im * iswitch * (V0 + nonlinear)) * psi
-
-    # for i in 1:left_border
-    #   ss_buffer[i] *= 0.0
-    # end
-    # for i in right_border:M
-    #   ss_buffer[i] *= 0.0
-    # end
-
   end
 
   if equation != GPE_1D
-    real_psi .= abs2.(psi)
-    if maximum(real_psi) > collapse_threshold / dV
+    tmp_real1 .= abs2.(psi)
+    if maximum(tmp_real1) > collapse_threshold / dV
       throw(Gpe3DCollapse(maximum(abs2.(psi) * dV)))
     end
   end
@@ -198,14 +185,14 @@ end
 
 
 @inline function propagate_manual!(
-  psi,
-  psi_i,
-  tmp_psi2,
-  real_psi,
+  psi::Array{ComplexF64},
+  psi_i::Array{ComplexF64},
+  tmp_real1::Array{Float64},
+  tmp_real2::Array{Float64},
   sim::Sim{1,Array{ComplexF64}},
   t,
   aux;
-  ss_buffer=nothing,
+  ss_buffer::Array{Float64}=nothing,
   info=false,
 )
   (ksquared, iswitch, mu, gamma_damp, dt) =
@@ -213,7 +200,7 @@ end
   # splitting: N/2, N/2, L
   @. psi =
     exp(dt * iswitch * (1.0 - im * gamma_damp) * (-im * (1 / 2 * ksquared - mu))) * psi
-  nlin_manual!(psi, tmp_psi2, real_psi, sim, t, aux; ss_buffer=ss_buffer, info=info)
+  nlin_manual!(psi, tmp_real1, tmp_real2, sim, t, aux; ss_buffer=ss_buffer, info=info)
   # nlin_manual!(psi, tmp_psi2, real_psi, sim, t, aux; ss_buffer=ss_buffer, info=info)
   if iswitch == -im
     psi .= psi / sqrt(nsk(psi, sim))
