@@ -41,26 +41,37 @@ function estimate_sigma2k(psi_k, sim::Sim{3,CuArray{ComplexF64}})
   s2 = Array{Float64,1}(undef, sim.N[1])
   # MSE estimator
   psi = xspace(psi_k, sim)
-  dx = sim.X[1][2] - sim.X[1][1]
-  dy = sim.X[2][2] - sim.X[2][1]
-  dz = sim.X[3][2] - sim.X[3][1]
+  dx = real(sim.X[1][2] - sim.X[1][1])
+  dy = real(sim.X[2][2] - sim.X[2][1])
+  dz = real(sim.X[3][2] - sim.X[3][1])
   aa = abs2.(psi)
   xax = 1:sim.N[1]
-  yax = 1:sim.N[2]
-  zax = 1:sim.N[3]
-  tmp = zeros(sim.N[1])
-  axial_density = sum(aa, dims=(2, 3))[:, 1, 1]
+  yaxis = real(sim.X[2])
+  zaxis = real(sim.X[3])
+  tmp::Array{Float64} = zeros(sim.N[1])
+  axial_density = sum(aa, dims=(2, 3))[:, 1, 1]*dy*dz
   ymask = (CuArray(sim.X[2]) .^ 2) * CuArray(ones(sim.N[2]))'
   zmask = CuArray(ones(sim.N[3])) * (CuArray(sim.X[3]) .^ 2)'
   r2mask = ymask + zmask
   for x in xax
-    if axial_density[x] < 1e-300
+    if axial_density[x] < 1e-5
       tmp[x] = 1.0
       # @warn "found small prob"
     else
-      tmp[x] = sum(aa[x, :, :] .* r2mask) / sum(aa[x, :, :])  # FIXME
+      tmp[x] = sum(aa[x, :, :] .* r2mask) / sum(aa[x, :, :])
     end
   end
+  # for ix in xax  
+  #   for (iy, y) in enumerate(yaxis)
+  #     for (iz, z) in enumerate(zaxis)
+  #         if axial_density[ix] < 1e-30
+  #           tmp[ix] = 1.0
+  #           # @warn "found small prob"
+  #         end
+  #       tmp[ix] += (y^2+z^2)*abs2(psi[ix, iy, iz])
+  #     end
+  #   end
+  # end
   s2 = tmp
   return s2
 end
