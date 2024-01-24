@@ -51,73 +51,73 @@ unpack_selection(sim, fields...) = map(x -> getfield(sim, x), fields)
     # # Nonlinear Finite Difference routine
     # # ===================================
     try
-      # ######################### BVProblem METHOD
-      # # interpolation
-      # tmp_real2[1] = (tmp_real1[2]) / dxx
-      # tmp_real2[M] = (- tmp_real1[M-1]) / dxx
-      # @inbounds for i = 2:M-1
-      #   tmp_real2[i] = (tmp_real1[i+1] - tmp_real1[i-1]) / dxx
-      # end
-      # Xr = real.(X[1])
-      # # info && @info Xr[1], Xr[end]
-      # psisq_interp = Interpolations.linear_interpolation(Xr, tmp_real1)
-      # psisq_derivative = Interpolations.linear_interpolation(Xr, tmp_real2)
-      # function sigma_bvp!(du, u, p, x)
-      #   # @info x
-      #   du[1] = u[2]
-      #   du[2] = u[1]^3 -
-      #           (1+g*psisq_interp(x))/u[1] +
-      #           u[2]^2/u[1] -
-      #           u[2] * psisq_derivative(x)/psisq_interp(x)
-      # end
-      # function bc1!(residual, u, p, t)
-      #     residual[1] = u[1][1] - 1.0
-      #     residual[2] = u[end][1] - 1.0
-      # end
-      # bvp1 = BVProblem(sigma_bvp!, bc1!, [1.0, 0.0], [Xr[left_border], Xr[right_border]])
-      # sol = solve(bvp1, BoundaryValueDiffEq.MIRK4(), dt=dV, adaptive=false, reltol=1e-1)
-      # @info sol.retcode
-      # ### check the correctness
-      # for i in left_border:right_border
-      #   ss_buffer[i] = sol.u[i+1-left_border][1]
-      # end
-      # # ################### END METHOD
-
-      #################### Newton-Raphson METHOD
-      ## check the variables
-      tmp_real1 = tmp_real1[left_border:right_border]
-      ## define function inside the restriction
-      M_restr = length(tmp_real1)
-      function sigma_loop!(ret, sigma, params)
-        # structure: [NPSE] + [simple derivatives of sigma] + [derivatives involving psi^2]
-        @inbounds @simd for j = 2:M_restr-1
-          ret[j] =
-            (-sigma[j] .^ 4 + (1 + g * tmp_real1[j])) * tmp_real1[j] -
-            ((sigma[j+1] - sigma[j-1]) / dxx)^2 * tmp_real1[j]+
-            sigma[j] * ((sigma[j-1] - 2 * sigma[j] + sigma[j+1]) / (dV^2)) * tmp_real1[j]+
-            sigma[j] * (sigma[j+1] - sigma[j-1]) / dxx * (tmp_real1[j+1] - tmp_real1[j-1]) / (dxx)
-        end
-        ret[1] =
-          (-sigma[1] .^ 4 + (1 + g * tmp_real1[1]))*tmp_real1[1] +
-          ((sigma[2] - 1.0) / dxx)^2*tmp_real1[1] +
-          ((1.0 - 2 * sigma[1] + sigma[2]) / (dV^2)) * sigma[1]*tmp_real1[1] +
-          (sigma[2] - 1.0) / dxx * sigma[1] * (tmp_real1[2] - 0.0) / (dxx)
-        ret[M_restr] =
-          (-sigma[M_restr] .^ 4 + (1 + g * tmp_real1[M_restr]))*tmp_real1[M_restr] -
-          ((1.0 - sigma[M_restr-1]) / dxx)^2 *tmp_real1[M_restr]+
-          ((sigma[M_restr-1] - 2 * sigma[M_restr] + 1.0) / (dV^2)) * sigma[M_restr] *tmp_real1[M_restr]+
-          (1.0 - sigma[M_restr-1]) / dxx * sigma[M_restr] * (0.0 - tmp_real1[M_restr-1]) / (dxx)
+      ######################### BVProblem METHOD
+      # interpolation
+      tmp_real2[1] = (tmp_real1[2]) / dxx
+      tmp_real2[M] = (- tmp_real1[M-1]) / dxx
+      @inbounds for i = 2:M-1
+        tmp_real2[i] = (tmp_real1[i+1] - tmp_real1[i-1]) / dxx
       end
-      # jac_sparsity = Symbolics.jacobian_sparsity((du, u) -> sigma_loop!(du, u, 0.0), ones(N[1]), ones(N[1]))
-      # ff = NonlinearFunction(sigma_loop!; sparsity = jac_sparsity)
-      # prob = NonlinearSolve.NonlinearProblem(ff, ss_buffer, 0.0)
-      prob = NonlinearSolve.NonlinearProblem(sigma_loop!, ss_buffer[left_border:right_border], 0.0)
-      sol = NonlinearSolve.solve(prob, NonlinearSolve.NewtonRaphson(), reltol=1e-6, maxiters=1000)
+      Xr = real.(X[1])
+      # info && @info Xr[1], Xr[end]
+      psisq_interp = Interpolations.linear_interpolation(Xr, tmp_real1)
+      psisq_derivative = Interpolations.linear_interpolation(Xr, tmp_real2)
+      function sigma_bvp!(du, u, p, x)
+        # @info x
+        du[1] = u[2]
+        du[2] = u[1]^3 -
+                (1+g*psisq_interp(x))/u[1] +
+                u[2]^2/u[1] -
+                u[2] * psisq_derivative(x)/psisq_interp(x)
+      end
+      function bc1!(residual, u, p, t)
+          residual[1] = u[1][1] - 1.0
+          residual[2] = u[end][1] - 1.0
+      end
+      bvp1 = BVProblem(sigma_bvp!, bc1!, [1.0, 0.0], [Xr[left_border], Xr[right_border]])
+      sol = solve(bvp1, BoundaryValueDiffEq.MIRK2(), dt=dV, adaptive=false, reltol=1e-3, abstol=1e-3)
+      # @info sol.retcode
+      ### check the correctness
+      for i in left_border:right_border
+        ss_buffer[i] = sol.u[i+1-left_border][1]
+      end
+      # ################### END METHOD
 
-      # prob = NonlinearSolve.NonlinearLeastSquaresProblem(sigma_loop!, ss_buffer[left_border:right_border], 0.0)
-      # sol = NonlinearSolve.solve(prob, Tsit5(), abstol=1e-12, maxiters=1000)
-      @. ss_buffer[left_border:right_border] = sol.u
-      ######################### END METHOD
+      # #################### Newton-Raphson METHOD
+      # ## check the variables
+      # psisq = tmp_real1[left_border:right_border]
+      # ## define function inside the restriction
+      # M_restr = length(psisq)
+      # function sigma_loop!(ret, sigma, params)
+      #   # structure: [NPSE] + [simple derivatives of sigma] + [derivatives involving psi^2]
+      #   @inbounds @simd for j = 2:M_restr-1
+      #     ret[j] =
+      #       (-sigma[j] .^ 4 + (1 + g * psisq[j])) * psisq[j] -
+      #       ((sigma[j+1] - sigma[j-1]) / dxx)^2 * psisq[j]+
+      #       sigma[j] * ((sigma[j-1] - 2 * sigma[j] + sigma[j+1]) / (dV^2)) * psisq[j]+
+      #       sigma[j] * (sigma[j+1] - sigma[j-1]) / dxx * (psisq[j+1] - psisq[j-1]) / (dxx)
+      #   end
+      #   ret[1] =
+      #     (-sigma[1] .^ 4 + (1 + g * psisq[1]))*psisq[1] +
+      #     ((sigma[2] - 1.0) / dxx)^2*psisq[1] +
+      #     ((1.0 - 2 * sigma[1] + sigma[2]) / (dV^2)) * sigma[1]*psisq[1] +
+      #     (sigma[2] - 1.0) / dxx * sigma[1] * (psisq[2] - 0.0) / (dxx)
+      #   ret[M_restr] =
+      #     (-sigma[M_restr] .^ 4 + (1 + g * psisq[M_restr]))*psisq[M_restr] -
+      #     ((1.0 - sigma[M_restr-1]) / dxx)^2 *psisq[M_restr]+
+      #     ((sigma[M_restr-1] - 2 * sigma[M_restr] + 1.0) / (dV^2)) * sigma[M_restr] *psisq[M_restr]+
+      #     (1.0 - sigma[M_restr-1]) / dxx * sigma[M_restr] * (0.0 - psisq[M_restr-1]) / (dxx)
+      # end
+      # # jac_sparsity = Symbolics.jacobian_sparsity((du, u) -> sigma_loop!(du, u, 0.0), ones(N[1]), ones(N[1]))
+      # # ff = NonlinearFunction(sigma_loop!; sparsity = jac_sparsity)
+      # # prob = NonlinearSolve.NonlinearProblem(ff, ss_buffer, 0.0)
+      # prob = NonlinearSolve.NonlinearProblem(sigma_loop!, ss_buffer[left_border:right_border], 0.0)
+      # sol = NonlinearSolve.solve(prob, NonlinearSolve.NewtonRaphson(), reltol=1e-6, maxiters=1000)
+
+      # # prob = NonlinearSolve.NonlinearLeastSquaresProblem(sigma_loop!, ss_buffer[left_border:right_border], 0.0)
+      # # sol = NonlinearSolve.solve(prob, Tsit5(), abstol=1e-12, maxiters=1000)
+      # @. ss_buffer[left_border:right_border] = sol.u
+      # ######################### END METHOD
 
 
       # ## filtering 
@@ -179,7 +179,6 @@ unpack_selection(sim, fields...) = map(x -> getfield(sim, x), fields)
     end
   end
   kspace!(psi, sim)
-
   return nothing
 end
 

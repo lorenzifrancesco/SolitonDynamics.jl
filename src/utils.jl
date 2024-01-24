@@ -54,7 +54,16 @@ function estimate_sigma2k(psi_k, sim::Sim{3,CuArray{ComplexF64}})
   zmask = CuArray(ones(sim.N[3])) * (CuArray(sim.X[3]) .^ 2)'
   r2mask = ymask + zmask
   
-  ## original
+  # for (iy, y) in enumerate(yaxis)
+  #   for (iz, z) in enumerate(zaxis)
+  #     if abs(y)<1.0 && abs(z)<1.0
+  #       @info "__________"
+  #       @info (real(r2mask[iy, iz]))
+  #       @info (y^2*z^2)
+  #     end
+  #   end
+  # end
+  # original
   # for x in xax
   #   if axial_density[x] < 1e-5
   #     tmp[x] = 1.0
@@ -73,7 +82,7 @@ function estimate_sigma2k(psi_k, sim::Sim{3,CuArray{ComplexF64}})
             tmp[ix] = 1.0
             # @warn "found small prob"
           end
-        tmp[ix] += (y^2+z^2) * abs2(psi[ix, iy, iz]) / sum(aa[ix, :, :])
+        tmp[ix] += (y^2+z^2) * abs2(psi[ix, iy, iz]) / axial_density[ix]
       end
     end
   end
