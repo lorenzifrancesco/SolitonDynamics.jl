@@ -25,9 +25,10 @@ kspace!(psi_0, sim)
 analytical_gs = zeros(N)
 @. analytical_gs = exp(-(x^2) / 2) / (pi^(1 / 4))
 
-sol, err = testsim(sim)
+res, err = testsim(sim)
+sol = res[1]
 @test err == false
-numerical_gs = xspace(sol.u, sim)
+numerical_gs = xspace(sol.u[end], sim)
 @test isapprox(ns((numerical_gs - analytical_gs), sim), 0.0, atol=1e-5)
 
 
@@ -54,9 +55,10 @@ kspace!(psi_0, sim)
 analytical_gs = zeros(N)
 @. analytical_gs = sqrt(g_param / 2) * 2 / (exp(g_param * x) + exp(-x * g_param))
 @info "=== Computing 1D-GPE"
-@time sol, err = testsim(sim)
+@time res, err = testsim(sim)
+sol = res[1]
 @test err == false
-numerical_gs = xspace(sol.u, sim)
+numerical_gs = xspace(sol.u[end], sim)
 @test isapprox(ns((numerical_gs - analytical_gs), sim), 0.0, atol=1e-6)
 
 ## We need to have loose resembling also with NPSE and  NPSE+
@@ -64,16 +66,18 @@ numerical_gs = xspace(sol.u, sim)
 equation = NPSE
 @pack_Sim! sim
 @info "=== Computing NPSE"
-@time sol, err = testsim(sim)
+@time res, err = testsim(sim)
+sol = res[1]
 @test err == false
-numerical_gs = xspace(sol.u, sim)
+numerical_gs = xspace(sol.u[end], sim)
 @test isapprox(ns((numerical_gs - analytical_gs), sim), 0.0, atol=1e-2)
 
 @unpack_Sim sim
 equation = NPSE_plus
 @pack_Sim! sim
 @info "=== Computing NPSE+"
-@time sol, err = testsim(sim)
+@time res, err = testsim(sim)
+sol=res[1]
 @test err == false
-numerical_gs = xspace(sol.u, sim)
+numerical_gs = xspace(sol.u[end], sim)
 @test isapprox(ns((numerical_gs - analytical_gs), sim), 0.0, atol=3e-2)
