@@ -131,7 +131,7 @@ end
 
 @with_kw mutable struct CustomSolution
   u::AbstractArray
-  sigma::AbstractArray{Array{Float64}}=[0.0]
+  sigma::AbstractArray=[0.0]
   t::Any
   cnt::Int64 = 0
 end

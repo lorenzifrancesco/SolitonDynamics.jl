@@ -48,8 +48,8 @@ unpack_selection(sim, fields...) = map(x -> getfield(sim, x), fields)
     end
     # info && @info @sprintf("borders: %4i, %4i", left_border, right_border)
 
-    # # Nonlinear Finite Difference routine
-    # # ===================================
+    ## Nonlinear Finite Difference routine
+    ## ===================================
     try
       ######################### BVProblem METHOD
       # interpolation
