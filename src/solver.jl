@@ -76,7 +76,7 @@ function manual_run(
                                     info=info, 
                                     ss_buffer=sigma)
         sim.dt *= (1 - decay)
-        info && print("\r", cnt, " - chempot diff: ", cp_diff)
+        info && @printf("\riter = %5i - chempot_diff = %3.2e", cnt, cp_diff)
         # catch err
         #     if isa(err, NpseCollapse) && !throw_collapse
         #         showerror(stdout, err)

@@ -91,25 +91,21 @@ function sigma_loop_external!(ret, sigma, params)
   # structure: [NPSE] + [simple derivatives of sigma] + [derivatives involving psi^2]
   @inbounds for j = 2:M-1
     ret[j] =
-      (-sigma[j] .^ 4 + (1 + g * psisq[j])) -
-      ((sigma[j+1] - sigma[j-1]) / dxx)^2 +
-      sigma[j] * ((sigma[j-1] - 2 * sigma[j] + sigma[j+1]) / (dV^2)) +
-      sigma[j] * (sigma[j+1] - sigma[j-1]) / dxx *
-      (psisq[j+1] - psisq[j-1]) / (dxx * psisq[j]) +
-      (sigma[j+1] - sigma[j-1]) / dxx *
-      sigma[j] *
-      (psisq[j+1] - psisq[j-1]) / (dxx * psisq[j])
+      (-sigma[j] .^ 4 + (1 + g * psisq[j])) * psisq[j] -
+      ((sigma[j+1] - sigma[j-1]) / dxx)^2 * psisq[j] +
+      sigma[j] * ((sigma[j-1] - 2 * sigma[j] + sigma[j+1]) / (dV^2)) * psisq[j] +
+      sigma[j] * (sigma[j+1] - sigma[j-1]) / dxx * (psisq[j+1] - psisq[j-1]) / (dxx)
   end
   ret[1] =
-    (-sigma[1] .^ 4 + (1 + g * psisq[1])) +
-    ((sigma[2] - 1.0) / dxx)^2 +
-    ((1.0 - 2 * sigma[1] + sigma[2]) / (dV^2)) * sigma[1] +
-    (sigma[2] - 1.0) / dxx * sigma[1] * (psisq[2] - 0.0) / (dxx * psisq[1])
+    (-sigma[1] .^ 4 + (1 + g * psisq[1])) * psisq[1]+
+    ((sigma[2] - 1.0) / dxx)^2 * psisq[1] +
+    ((1.0 - 2 * sigma[1] + sigma[2]) / (dV^2)) * sigma[1]*psisq[1] +
+    (sigma[2] - 1.0) / dxx * sigma[1] * (psisq[2] - 0.0) / (dxx)
   ret[M] =
-    (-sigma[M] .^ 4 + (1 + g * psisq[M])) - ((1.0 - sigma[M-1]) / dxx)^2 +
-    ((sigma[M-1] - 2 * sigma[M] + 1.0) / (dV^2)) * sigma[M] +
-    (1.0 - sigma[M-1]) / dxx * sigma[M] * (0.0 - psisq[M-1]) /
-    (dxx * psisq[M])
+    (-sigma[M] .^ 4 + (1 + g * psisq[M])) * psisq[M]-
+    ((1.0 - sigma[M-1]) / dxx)^2 * psisq[M] +
+    ((sigma[M-1] - 2 * sigma[M] + 1.0) / (dV^2)) * sigma[M] * psisq[M] +
+    (1.0 - sigma[M-1]) / dxx * sigma[M] * (0.0 - psisq[M-1]) / (dxx)
 end
 
 # sigma_eq_nf = NonlinearFunction(sigma_eq; jac=sigma_eq_jacobian)
