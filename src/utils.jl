@@ -53,26 +53,31 @@ function estimate_sigma2k(psi_k, sim::Sim{3,CuArray{ComplexF64}})
   ymask = (CuArray(sim.X[2]) .^ 2) * CuArray(ones(sim.N[2]))'
   zmask = CuArray(ones(sim.N[3])) * (CuArray(sim.X[3]) .^ 2)'
   r2mask = ymask + zmask
-  for x in xax
-    if axial_density[x] < 1e-5
-      tmp[x] = 1.0
-      # @warn "found small prob"
-    else
-      tmp[x] = sum(aa[x, :, :] .* r2mask) / sum(aa[x, :, :])
-    end
-  end
-  # for ix in xax  
-  #   for (iy, y) in enumerate(yaxis)
-  #     for (iz, z) in enumerate(zaxis)
-  #         if axial_density[ix] < 1e-30
-  #           tmp[ix] = 1.0
-  #           # @warn "found small prob"
-  #         end
-  #       tmp[ix] += (y^2+z^2)*abs2(psi[ix, iy, iz])
-  #     end
+  
+  ## original
+  # for x in xax
+  #   if axial_density[x] < 1e-5
+  #     tmp[x] = 1.0
+  #     # @warn "found small prob"
+  #   else
+  #     tmp[x] = sum(aa[x, :, :] .* r2mask) / sum(aa[x, :, :])
   #   end
   # end
-  s2 = tmp
+  # s2 = tmp
+
+  # alternative
+  for ix in xax  
+    for (iy, y) in enumerate(yaxis)
+      for (iz, z) in enumerate(zaxis)
+          if axial_density[ix] < 1e-30
+            tmp[ix] = 1.0
+            # @warn "found small prob"
+          end
+        tmp[ix] += (y^2+z^2) * abs2(psi[ix, iy, iz]) / sum(aa[ix, :, :])
+      end
+    end
+  end
+  s2 = tmp *dy*dz
   return s2
 end
 
