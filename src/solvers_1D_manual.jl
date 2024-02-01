@@ -35,13 +35,13 @@ unpack_selection(sim, fields...) = map(x -> getfield(sim, x), fields)
     left_border = 1
     right_border = M
     cnt = 1
-    if iswitch == 1
-      while tmp_real1[cnt] < 5e-4
+    if iswitch == 1 && false
+      while tmp_real1[cnt] < 4e-5
         cnt += 1
       end
       left_border = cnt
       cnt = M
-      while tmp_real1[cnt] < 5e-4
+      while tmp_real1[cnt] < 4e-5
         cnt -= 1
       end
       right_border = cnt
@@ -51,73 +51,76 @@ unpack_selection(sim, fields...) = map(x -> getfield(sim, x), fields)
     ## Nonlinear Finite Difference routine
     ## ===================================
     try
-      ######################### BVProblem METHOD
-      # interpolation
-      tmp_real2[1] = (tmp_real1[2]) / dxx
-      tmp_real2[M] = (- tmp_real1[M-1]) / dxx
-      @inbounds for i = 2:M-1
-        tmp_real2[i] = (tmp_real1[i+1] - tmp_real1[i-1]) / dxx
-      end
-      Xr = real.(X[1])
-      # info && @info Xr[1], Xr[end]
-      psisq_interp = Interpolations.linear_interpolation(Xr, tmp_real1)
-      psisq_derivative = Interpolations.linear_interpolation(Xr, tmp_real2)
-      function sigma_bvp!(du, u, p, x)
-        # @info x
-        du[1] = u[2]
-        du[2] = u[1]^3 -
-                (1+g*psisq_interp(x))/u[1] +
-                u[2]^2/u[1] -
-                u[2] * psisq_derivative(x)/psisq_interp(x)
-      end
-      function bc1!(residual, u, p, t)
-          residual[1] = u[1][1] - 1.0
-          residual[2] = u[end][1] - 1.0
-      end
-      bvp1 = BVProblem(sigma_bvp!, bc1!, [1.0, 0.0], [Xr[left_border], Xr[right_border]])
-      sol = solve(bvp1, BoundaryValueDiffEq.MIRK2(), dt=dV, adaptive=false, reltol=1e-3, abstol=1e-3)
-      # @info sol.retcode
-      ### check the correctness
-      for i in left_border:right_border
-        ss_buffer[i] = sol.u[i+1-left_border][1]
-      end
-      # ################### END METHOD
-
-      # #################### Newton-Raphson METHOD
-      # ## check the variables
-      # psisq = tmp_real1[left_border:right_border]
-      # ## define function inside the restriction
-      # M_restr = length(psisq)
-      # function sigma_loop!(ret, sigma, params)
-      #   # structure: [NPSE] + [simple derivatives of sigma] + [derivatives involving psi^2]
-      #   @inbounds @simd for j = 2:M_restr-1
-      #     ret[j] =
-      #       (-sigma[j] .^ 4 + (1 + g * psisq[j])) * psisq[j] -
-      #       ((sigma[j+1] - sigma[j-1]) / dxx)^2 * psisq[j]+
-      #       sigma[j] * ((sigma[j-1] - 2 * sigma[j] + sigma[j+1]) / (dV^2)) * psisq[j]+
-      #       sigma[j] * (sigma[j+1] - sigma[j-1]) / dxx * (psisq[j+1] - psisq[j-1]) / (dxx)
-      #   end
-      #   ret[1] =
-      #     (-sigma[1] .^ 4 + (1 + g * psisq[1]))*psisq[1] +
-      #     ((sigma[2] - 1.0) / dxx)^2*psisq[1] +
-      #     ((1.0 - 2 * sigma[1] + sigma[2]) / (dV^2)) * sigma[1]*psisq[1] +
-      #     (sigma[2] - 1.0) / dxx * sigma[1] * (psisq[2] - 0.0) / (dxx)
-      #   ret[M_restr] =
-      #     (-sigma[M_restr] .^ 4 + (1 + g * psisq[M_restr]))*psisq[M_restr] -
-      #     ((1.0 - sigma[M_restr-1]) / dxx)^2 *psisq[M_restr]+
-      #     ((sigma[M_restr-1] - 2 * sigma[M_restr] + 1.0) / (dV^2)) * sigma[M_restr] *psisq[M_restr]+
-      #     (1.0 - sigma[M_restr-1]) / dxx * sigma[M_restr] * (0.0 - psisq[M_restr-1]) / (dxx)
+      # ######################### BVProblem METHOD
+      # # interpolation
+      # tmp_real2[1] = (tmp_real1[2]) / dxx
+      # tmp_real2[M] = (- tmp_real1[M-1]) / dxx
+      # @inbounds for i = 2:M-1
+      #   tmp_real2[i] = (tmp_real1[i+1] - tmp_real1[i-1]) / dxx
       # end
-      # # jac_sparsity = Symbolics.jacobian_sparsity((du, u) -> sigma_loop!(du, u, 0.0), ones(N[1]), ones(N[1]))
-      # # ff = NonlinearFunction(sigma_loop!; sparsity = jac_sparsity)
-      # # prob = NonlinearSolve.NonlinearProblem(ff, ss_buffer, 0.0)
-      # prob = NonlinearSolve.NonlinearProblem(sigma_loop!, ss_buffer[left_border:right_border], 0.0)
-      # sol = NonlinearSolve.solve(prob, NonlinearSolve.NewtonRaphson(), reltol=1e-6, maxiters=1000)
+      # Xr = real.(X[1])
+      # # info && @info Xr[1], Xr[end]
+      # psisq_interp = Interpolations.linear_interpolation(Xr, tmp_real1)
+      # psisq_derivative = Interpolations.linear_interpolation(Xr, tmp_real2)
+      # function sigma_bvp!(du, u, p, x)
+      #   # @info x
+      #   du[1] = u[2]
+      #   du[2] = u[1]^3 -
+      #           (1+g*psisq_interp(x))/u[1] +
+      #           u[2]^2/u[1] -
+      #           u[2] * psisq_derivative(x)/psisq_interp(x)
+      # end
+      # function bc1!(residual, u, p, t)
+      #     residual[1] = u[1][1] - 1.0
+      #     residual[2] = u[end][1] - 1.0
+      # end
+      # bvp1 = BVProblem(sigma_bvp!, bc1!, [1.0, 0.0], [Xr[left_border], Xr[right_border]])
+      # sol = solve(bvp1, BoundaryValueDiffEq.MIRK2(), dt=dV, adaptive=false, reltol=1e-3, abstol=1e-3)
+      # # @info sol.retcode
+      # ### check the correctness
+      # for i in left_border:right_border
+      #   ss_buffer[i] = sol.u[i+1-left_border][1]
+      # end
+      # # ################### END METHOD
 
-      # # prob = NonlinearSolve.NonlinearLeastSquaresProblem(sigma_loop!, ss_buffer[left_border:right_border], 0.0)
-      # # sol = NonlinearSolve.solve(prob, Tsit5(), abstol=1e-12, maxiters=1000)
-      # @. ss_buffer[left_border:right_border] = sol.u
-      # ######################### END METHOD
+      #################### Newton-Raphson METHOD
+      ## check the variables
+      psisq = tmp_real1[left_border:right_border]
+      ## define function inside the restriction
+      M_restr = length(psisq)
+      function sigma_loop!(ret, sigma, params)
+        # structure: [NPSE] + [simple derivatives of sigma] + [derivatives involving psi^2]
+        @inbounds @simd for j = 2:M_restr-1
+          ret[j] =
+            (-sigma[j] .^ 4 + (1 + g * psisq[j])) + ((sigma[j+1]-sigma[j-1])/dxx)^2
+            #* psisq[j] -
+            # ((sigma[j+1] - sigma[j-1]) / dxx)^2 * psisq[j]+
+            # sigma[j] * ((sigma[j-1] - 2 * sigma[j] + sigma[j+1]) / (dV^2)) * psisq[j]+
+            # sigma[j] * (sigma[j+1] - sigma[j-1]) / dxx * (psisq[j+1] - psisq[j-1]) / (dxx)
+        end
+        ret[1] =
+          (-sigma[1] .^ 4 + (1 + g * psisq[1])) + ((sigma[2]-1.0)/dxx)^2
+          #* psisq[1] +
+          # ((sigma[2] - 1.0) / dxx)^2*psisq[1] +
+          # ((1.0 - 2 * sigma[1] + sigma[2]) / (dV^2)) * sigma[1]*psisq[1] +
+          # (sigma[2] - 1.0) / dxx * sigma[1] * (psisq[2] - 0.0) / (dxx)
+        ret[M_restr] =
+          (-sigma[M_restr] .^ 4 + (1 + g * psisq[M_restr])) + ((1-0-sigma[M_restr-1])/dxx)^2
+          #* psisq[M_restr] -
+          # ((1.0 - sigma[M_restr-1]) / dxx)^2 *psisq[M_restr]+
+          # ((sigma[M_restr-1] - 2 * sigma[M_restr] + 1.0) / (dV^2)) * sigma[M_restr] *psisq[M_restr]+
+          # (1.0 - sigma[M_restr-1]) / dxx * sigma[M_restr] * (0.0 - psisq[M_restr-1]) / (dxx)
+      end
+      # jac_sparsity = Symbolics.jacobian_sparsity((du, u) -> sigma_loop!(du, u, 0.0), ones(N[1]), ones(N[1]))
+      # ff = NonlinearFunction(sigma_loop!; sparsity = jac_sparsity)
+      # prob = NonlinearSolve.NonlinearProblem(ff, ss_buffer, 0.0)
+      prob = NonlinearSolve.NonlinearProblem(sigma_loop!, ss_buffer[left_border:right_border], 0.0)
+      sol = NonlinearSolve.solve(prob, NonlinearSolve.NewtonRaphson(), reltol=1e-6, maxiters=1000)
+
+      # prob = NonlinearSolve.NonlinearLeastSquaresProblem(sigma_loop!, ss_buffer[left_border:right_border], 0.0)
+      # sol = NonlinearSolve.solve(prob, Tsit5(), abstol=1e-12, maxiters=1000)
+      @. ss_buffer[left_border:right_border] = sol.u
+      ######################### END METHOD
 
 
       # ## filtering 
@@ -130,7 +133,8 @@ unpack_selection(sim, fields...) = map(x -> getfield(sim, x), fields)
       # ss_buffer .= real(ifft(sigma_freq .* filter))
 
       if !all(ss_buffer .>= 0)
-        info && @warn "NEGATIVE sigma values "
+        @warn "NEGATIVE sigma values "
+        throw(DomainError(-999))
       end
       if !all(ss_buffer .<= 1.01)
         info && @warn "sigma > 1.0"
@@ -152,7 +156,7 @@ unpack_selection(sim, fields...) = map(x -> getfield(sim, x), fields)
     catch err
       if isa(err, DomainError)
         tmp_real1 = NaN
-        throw(NpseCollapse(-666))
+        throw(NpseCollapse(-999))
       else
         throw(err)
       end
@@ -213,97 +217,3 @@ end
   end
 end
 
-# ============== Manual CN GS
-
-"""
-Imaginary time evolution in xspace, 
-using Crank Nicholson standard scheme
-"""
-function cn_ground_state!(
-  psi,
-  sim::Sim{1,Array{ComplexF64}},
-  dt,
-  tri_fwd,
-  tri_bkw;
-  info=false,
-)
-  @unpack dt, g, X, V0, iswitch, dV, Vol = sim
-  x = X[1]
-  psi_i = copy(psi)
-  nonlin = (dt / 2) * g * abs2.(psi)
-  tri_fwd += Diagonal(nonlin) # TODO check nonlinearity here
-  tri_bkw += Diagonal(-nonlin)
-  psi .= tri_fwd * psi
-  psi .= transpose(\(psi, tri_bkw))
-  psi .= psi / sqrt(ns(psi, sim))
-  cp_diff =
-    (chempot_simple(psi, sim) - chempot_simple(psi_i, sim)) /
-    chempot_simple(psi_i, sim) / dt
-  return cp_diff
-end
-
-# ============== Manual PC GS
-
-"""
-Imaginary time evolution in xspace, 
-using predictor-corrector scheme (i FWD Euler + 1 fix point iterate)
-"""
-function pc_ground_state!(
-  psi,
-  sim::Sim{1,Array{ComplexF64}},
-  dt,
-  tri_fwd,
-  tri_bkw;
-  info=false,
-)
-  @unpack dt, g, X, V0, iswitch, dV, Vol, N = sim
-  x = X[1]
-  psi_i = copy(psi)
-  nonlin = -(dt / 2) * g * abs2.(psi)
-  tri_fwd += -Diagonal(ones(N[1])) + Diagonal(nonlin)
-  for i = 1:3
-    mapslices(x -> \(x, tri_fwd[i]), psi, dims=(i)) # FIXME am I a 3d method?
-  end
-  psi_star = tri_fwd * psi + psi
-  psi .= 1 / 2 * (tri_fwd * psi) + psi
-
-  nonlin_1 = -(dt / 2) * g * abs2.(psi_star)
-  tri_fwd .= Diagonal(nonlin_1 - nonlin)
-  psi .+= 1 / 2 * (tri_fwd * psi_star)
-  tri_fwd = -Diagonal(ones(N[1])) + Diagonal(nonlin)
-  psi .= 1 / 2 * (tri_fwd * psi_i + tri_fwd * psi) + psi
-  info && @info display(sum(psi))
-
-  psi .= psi / sqrt(ns(psi, sim))
-  cp_diff =
-    (chempot_simple(psi, sim) - chempot_simple(psi_i, sim)) /
-    chempot_simple(psi_i, sim) / dt
-  return cp_diff
-end
-
-# ============== Manual BE GS
-
-"""
-Imaginary time evolution in xspace, 
-using BKW Euler
-"""
-function be_ground_state!(
-  psi,
-  sim::Sim{1,Array{ComplexF64}},
-  dt,
-  tri_fwd,
-  tri_bkw;
-  info=false,
-)
-  @unpack dt, g, X, V0, iswitch, dV, Vol, N = sim
-  x = X[1]
-  psi_i = copy(psi)
-  nonlin = -dt * (g * abs2.(psi) + V0)
-  tri_bkw_complete = tri_bkw - Diagonal(nonlin)
-  psi .= transpose(\(psi, tri_bkw_complete))
-  psi .= psi / sqrt(ns(psi, sim))
-  cp_diff =
-    (chempot_simple(psi, sim) - chempot_simple(psi_i, sim)) /
-    chempot_simple(psi_i, sim) / dt
-  return cp_diff
-end

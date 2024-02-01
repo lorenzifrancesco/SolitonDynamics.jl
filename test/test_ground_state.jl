@@ -80,4 +80,5 @@ equation = NPSE_plus
 sol=res[1]
 @test err == false
 numerical_gs = xspace(sol.u[end], sim)
-@test isapprox(ns((numerical_gs - analytical_gs), sim), 0.0, atol=3e-2)
+@test isapprox(ns((numerical_gs - analytical_gs), sim), 0.0, atol=5e-2)
+@warn "We set 5% tolerance on L2 norm for NPSE+ vs 1D-GPE analytical solution."

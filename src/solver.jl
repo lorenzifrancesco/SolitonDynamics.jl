@@ -1,7 +1,5 @@
 
-include("solvers_1D_auto.jl")
 include("solvers_1D_manual.jl")
-include("solvers_3D_auto.jl")
 include("solvers_3D_manual.jl")
 
 function manual_run(
@@ -42,84 +40,57 @@ function manual_run(
   #######################
   if iswitch == -im # select solver and run manual convergence routine 
     # in manual GS mode the maximum number of steps is specified by maxiters
-    if solver == SplitStep
-      cp_diff = 1
-      abstol_diff = abstol
-      cnt = 0
-      info && print("\n")
-      #
-      debug && @info maxiters
-      decay = 0 * 1e-5
-      debug && @info "setting exp decay rate to" decay
-      if equation == NPSE_plus
-        ss_buffer = ones(N[1])
-      else
-        ss_buffer = nothing
-      end
-      #
-      minimum_evolution_time = 40.0
-      #
-      info && print("Interaction number")
-      pr = Progress(minimum([maxiters, 5000]); dt=1)
-      cp_diff = 1e300
-      dump = Ref{Float64}(0.0)
-      while cnt < maxiters &&
-        (cnt * sim.dt < minimum_evolution_time || abs(cp_diff) > abstol_diff)
-        # try
-        cp_diff = propagate_manual!(psi, 
-                                    tmp_psi, 
-                                    tmp_real1,
-                                    tmp_real2, 
-                                    sim, 
-                                    0.0, 
-                                    dump; 
-                                    info=info, 
-                                    ss_buffer=sigma)
-        sim.dt *= (1 - decay)
-        info && @printf("\riter = %5i - chempot_diff = %3.2e", cnt, cp_diff)
-        # catch err
-        #     if isa(err, NpseCollapse) && !throw_collapse
-        #         showerror(stdout, err)
-        #     elseif isa(err, Gpe3DCollapse) && !throw_collapse
-        #         showerror(stdout, err)
-        #     else
-        #         throw(err)
-        #     end
-        #     return nothing
-        # end
-        cnt += 1
-        update!(pr, cnt)
-      end
-      info && print("\n")
-      info && @info "Computation ended after iterations" cnt
-      sol = CustomSolution(u=[psi], t=t, cnt=cnt)
-    else # nonspectral methods
-      xspace!(psi, sim)
-      solvers =
-        [propagate_manual!, cn_ground_state!, pc_ground_state!, be_ground_state!]
-      func = solvers[solver.number]
-      info && @info "Solving using solver" func
-      cp_diff = 1
-      abstol_diff = abstol
-      taglia = N[1]
-      #for i in  1:10000
-      d_central = -(dt / 2) * (1 / (dV^2) * ones(taglia)) |> complex
-      d_lu = (dt / 4) * 1 / (dV^2) * ones(taglia - 1) |> complex
-      tri_fwd = -SymTridiagonal(d_central, d_lu) + Diagonal(ones(taglia)) # Dx
-      tri_bkw = SymTridiagonal(d_central, d_lu) + Diagonal(ones(taglia)) # Sx FIXME ??? sbagliato
-      cnt = 0
-      tmp = chempot_simple(psi, sim)
-      while abs(cp_diff) > abstol_diff && cnt < maxiters
-        cp_diff = func(psi, sim, dt, tri_fwd, tri_bkw)
-        info && print("\n Interaction number")
-        info && print("\r", cnt, " - chempot diff: ", cp_diff)
-        # @assert tmp * cp_diff > 0
-        tmp = cp_diff
-        cnt += 1
-      end
-      kspace!(psi, sim)
-      sol = CustomSolution(u=[psi], t=t, cnt=cnt)
+    @assert solver == SplitStep
+    cp_diff = 1
+    abstol_diff = abstol
+    cnt = 0
+    info && print("\n")
+    #
+    debug && @info maxiters
+    decay = 0 * 1e-5
+    debug && @info "setting exp decay rate to" decay
+    if equation == NPSE_plus
+      ss_buffer = ones(N[1])
+    else
+      ss_buffer = nothing
     end
+    #
+    minimum_evolution_time = 40.0
+    #
+    info && print("Interaction number")
+    pr = Progress(minimum([maxiters, 5000]); dt=1)
+    cp_diff = 1e300
+    dump = Ref{Float64}(0.0)
+    while cnt < maxiters &&
+      (cnt * sim.dt < minimum_evolution_time || abs(cp_diff) > abstol_diff)
+      # try
+      cp_diff = propagate_manual!(psi, 
+                                  tmp_psi, 
+                                  tmp_real1,
+                                  tmp_real2, 
+                                  sim, 
+                                  0.0, 
+                                  dump; 
+                                  info=info, 
+                                  ss_buffer=sigma)
+      sim.dt *= (1 - decay)
+      info && @printf("\riter = %5i - chempot_diff = %3.2e", cnt, cp_diff)
+      # catch err
+      #     if isa(err, NpseCollapse) && !throw_collapse
+      #         showerror(stdout, err)
+      #     elseif isa(err, Gpe3DCollapse) && !throw_collapse
+      #         showerror(stdout, err)
+      #     else
+      #         throw(err)
+      #     end
+      #     return nothing
+      # end
+      cnt += 1
+      update!(pr, cnt)
+    end
+    info && print("\n")
+    info && @info "Computation ended after iterations" cnt
+    sol = CustomSolution(u=[psi], t=t, cnt=cnt)
     return sol, -1.0
 
   #######################
@@ -225,91 +196,6 @@ function manual_run(
   end
 end
 
-function auto_run(sim; info=false, throw_collapse=true)
-  @unpack psi_0,
-  dV,
-  dt,
-  ti,
-  tf,
-  t,
-  solver,
-  iswitch,
-  abstol,
-  reltol,
-  N,
-  Nt,
-  V0,
-  maxiters,
-  time_steps = sim
-  psi = deepcopy(psi_0)
-  @assert solver == SplitStep
-  if iswitch == -im # solve a steady state problem
-    #sim.iswitch = 1.0 # we should catch NPSE collapse in ground state?
-    ssalg = DynamicSS(BS3(); reltol=sim.reltol, tspan=Inf)
-    problem = ODEProblem(propagate!, psi, (ti, tf), sim)
-    ss_problem = SteadyStateProblem(propagate!, psi, sim)
-    sim.nfiles ?
-    (
-      sol = solve(
-        ss_problem,
-        alg=ssalg,
-        callback=savecb,
-        dense=false,
-        maxiters=maxiters,
-        progress=true,
-        #dt = 0.001
-      )
-    ) :
-    (
-      sol = solve(
-        ss_problem,
-        alg=ssalg,
-        dense=false,
-        maxiters=maxiters,
-        progress=true,
-        #dt = 0.001
-      )
-    )
-  else # propagate in real time
-    problem = ODEProblem(propagate!, psi, (ti, tf), sim)
-    try
-      sim.nfiles ?
-      (
-        sol = solve(
-          problem,
-          alg=sim.alg,
-          reltol=sim.reltol,
-          saveat=sim.t[end],
-          dt=dt,
-          callback=savecb,
-          dense=false,
-          maxiters=maxiters,
-          progress=true,
-        )
-      ) :
-      (
-        sol = solve(
-          problem,
-          alg=sim.alg,
-          reltol=sim.reltol,
-          saveat=sim.t,
-          dt=dt,
-          dense=false,
-          maxiters=maxiters,
-          progress=true,
-        )
-      )
-    catch err
-      if isa(err, NpseCollapse) && !throw_collapse
-        showerror(stdout, err)
-      else
-        throw(err)
-      end
-      return nothing
-    end
-  end
-  return sol
-end
 
 """
 Main solution routine
@@ -351,15 +237,12 @@ function runsim(sim; info=false, return_maximum=false)
   # )
 
   @assert isapprox(nsk(psi_0, sim), 1.0, rtol=1e-9)
-  if manual == true
-    if return_maximum
-      sol, max_prob = manual_run(sim; info=info, return_maximum=true)
-      return sol, max_prob
-    else
-      sol = manual_run(sim; info=info, return_maximum=false)
-    end
+  @assert manual == true
+  if return_maximum
+    sol, max_prob = manual_run(sim; info=info, return_maximum=true)
+    return sol, max_prob
   else
-    sol = auto_run(sim; info=info)
+    sol = manual_run(sim; info=info, return_maximum=false)
   end
   return sol
 end
