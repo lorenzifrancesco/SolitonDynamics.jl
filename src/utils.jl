@@ -1,5 +1,5 @@
 """
-estimate the Gaussian sigma2 parameter from 3D data
+  Extract sigma^2 from a kspace wave function
 """
 
 function estimate_sigma2k(psi_k, sim::Sim{1,Array{ComplexF64}})
@@ -8,6 +8,9 @@ function estimate_sigma2k(psi_k, sim::Sim{1,Array{ComplexF64}})
   return estimate_sigma2(tmp, sim)
 end
 
+"""
+  Extract sigma^2 from a xspace wave function 
+"""
 function estimate_sigma2(psi, sim::Sim{1,Array{ComplexF64}})
   @unpack equation, N, g, dV = sim
   @assert ns(psi, sim) ≈ 1
@@ -51,30 +54,6 @@ function estimate_sigma2k(psi_k, sim::Sim{3,CuArray{ComplexF64}})
   tmp::Array{Float64} = zeros(sim.N[1])
   axial_density = sum(aa, dims=(2, 3))[:, 1, 1]*dy*dz
   @assert sum(axial_density*dx) ≈ 1
-  # ymask = (CuArray(sim.X[2]) .^ 2) * CuArray(ones(sim.N[2]))'
-  # zmask = CuArray(ones(sim.N[3])) * (CuArray(sim.X[3]) .^ 2)'
-  # r2mask = ymask + zmask
-  
-  # for (iy, y) in enumerate(yaxis)
-  #   for (iz, z) in enumerate(zaxis)
-  #     if abs(y)<1.0 && abs(z)<1.0
-  #       @info "__________"
-  #       @info (real(r2mask[iy, iz]))
-  #       @info (y^2*z^2)
-  #     end
-  #   end
-  # end
-  # #### original
-  # for x in xax
-  #   if axial_density[x] < 1e-300
-  #     tmp[x] = 1.0
-  #     # @warn "found small prob"
-  #   else
-  #     tmp[x] = sum(aa[x, :, :] .* r2mask) / sum(aa[x, :, :])
-  #   end
-  # end
-  # s2 = tmp
-
   # alternative
   for ix in xax  
     # @info "------------"
@@ -112,6 +91,10 @@ function sigma_eq(ret, sigma, params)
     (bc2 - 2 * bc3 .* sigma + bc2 .* sigma + sigma .* fterm .* bc1)
 end
 
+
+"""
+  Nonlinear problem corresponding to the NPSE+ second equation
+"""
 function sigma_loop_external!(ret, sigma, params)
   psisq = params[1]
   dV = params[2]
@@ -266,7 +249,7 @@ function init_sigma2(g::Float64)
 end
 
 """
-  Chemical potential of GPE in a given configuration
+  Chemical potential in kspace
 """
 function chempotk(psi, sim)
   @assert nsk(psi, sim) ≈ 1
@@ -275,7 +258,7 @@ function chempotk(psi, sim)
 end
 
 """
-  Chemical potential of GPE in a given configuration
+  Chemical potential in xspace
 """
 function chempot(psi, sim)
   @unpack ksquared, dV, V0, Vol, g, equation = sim
@@ -284,7 +267,6 @@ function chempot(psi, sim)
     mu = dV * sum((V0 + g * abs2.(psi)) .* abs2.(psi))
     tmp = kspace(psi, sim)
     mu += 1 / Vol * sum(1 / 2 * ksquared .* abs2.(tmp))
-    # mu *= 1 / nsk(tmp, sim)
     if equation == GPE_1D
       mu += 1 # add one transverse energy unit (1D-GPE case)
     end
@@ -296,15 +278,20 @@ function chempot(psi, sim)
     # mu *= 1 / nsk(tmp, sim)
   elseif equation == NPSE_plus
     s2 = estimate_sigma2(psi, sim)
-    mat = Tridiagonal(-ones(length(s2) - 1), zeros(length(s2)), ones(length(s2) - 1))
-    s2d = 1 / (2 * dV) * mat * s2
-    s2d[1] -= 1 / (2 * dV) * s2[end]
-    s2d[end] += 1 / (2 * dV) * s2[1]
-    mu =
-      dV * sum(
-        (V0 + g * abs2.(psi) ./ s2 + 1 / 2 * (1 ./ s2 .* (1 .+ s2d .^ 2) + s2)) .*
-        abs2.(psi),
-      )
+    M = length(psi)
+    dxx = 2*dV
+    tmp_real1 = copy(s2)
+    s1 = sqrt.(s2) 
+    tmp_real2 = copy(s1)
+    tmp_real2[1] = (s1[2] - 1.0) / dxx
+    tmp_real2[M] = (1.0 - s1[M-1]) / dxx
+    @inbounds for i = 2:M-1
+      tmp_real2[i] = (s1[i+1] - s1[i-1]) / dxx
+    end
+    nonlinear =
+      g * abs2.(psi) ./ tmp_real1 + (1 / 2 * tmp_real1) .+
+      (1 ./ (2 * tmp_real1)) .* (1 .+ (tmp_real2 .^ 2))
+    mu = dV * sum((V0 + nonlinear) .* abs2.(psi))
     tmp = kspace(psi, sim)
     mu += 1 / Vol * sum(1 / 2 * ksquared .* abs2.(tmp))
   elseif equation == CQGPE
@@ -316,6 +303,7 @@ function chempot(psi, sim)
   end
   return real(mu)
 end
+
 
 """
   Simplified (inaccurate) version of chempot,

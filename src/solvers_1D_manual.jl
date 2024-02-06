@@ -92,24 +92,21 @@ unpack_selection(sim, fields...) = map(x -> getfield(sim, x), fields)
         # structure: [NPSE] + [simple derivatives of sigma] + [derivatives involving psi^2]
         @inbounds @simd for j = 2:M_restr-1
           ret[j] =
-            (-sigma[j] .^ 4 + (1 + g * psisq[j])) + ((sigma[j+1]-sigma[j-1])/dxx)^2
-            #* psisq[j] -
-            # ((sigma[j+1] - sigma[j-1]) / dxx)^2 * psisq[j]+
-            # sigma[j] * ((sigma[j-1] - 2 * sigma[j] + sigma[j+1]) / (dV^2)) * psisq[j]+
-            # sigma[j] * (sigma[j+1] - sigma[j-1]) / dxx * (psisq[j+1] - psisq[j-1]) / (dxx)
+            (-sigma[j] .^ 4 + (1 + g * psisq[j])) * psisq[j] -
+            ((sigma[j+1] - sigma[j-1]) / dxx)^2 * psisq[j]+
+            sigma[j] * ((sigma[j-1] - 2 * sigma[j] + sigma[j+1]) / (dV^2)) * psisq[j]+
+            sigma[j] * (sigma[j+1] - sigma[j-1]) / dxx * (psisq[j+1] - psisq[j-1]) / (dxx)
         end
         ret[1] =
-          (-sigma[1] .^ 4 + (1 + g * psisq[1])) + ((sigma[2]-1.0)/dxx)^2
-          #* psisq[1] +
-          # ((sigma[2] - 1.0) / dxx)^2*psisq[1] +
-          # ((1.0 - 2 * sigma[1] + sigma[2]) / (dV^2)) * sigma[1]*psisq[1] +
-          # (sigma[2] - 1.0) / dxx * sigma[1] * (psisq[2] - 0.0) / (dxx)
+          (-sigma[1] .^ 4 + (1 + g * psisq[1])) * psisq[1] +
+          ((sigma[2] - 1.0) / dxx)^2*psisq[1] +
+          ((1.0 - 2 * sigma[1] + sigma[2]) / (dV^2)) * sigma[1]*psisq[1] +
+          (sigma[2] - 1.0) / dxx * sigma[1] * (psisq[2] - 0.0) / (dxx)
         ret[M_restr] =
-          (-sigma[M_restr] .^ 4 + (1 + g * psisq[M_restr])) + ((1-0-sigma[M_restr-1])/dxx)^2
-          #* psisq[M_restr] -
-          # ((1.0 - sigma[M_restr-1]) / dxx)^2 *psisq[M_restr]+
-          # ((sigma[M_restr-1] - 2 * sigma[M_restr] + 1.0) / (dV^2)) * sigma[M_restr] *psisq[M_restr]+
-          # (1.0 - sigma[M_restr-1]) / dxx * sigma[M_restr] * (0.0 - psisq[M_restr-1]) / (dxx)
+          (-sigma[M_restr] .^ 4 + (1 + g * psisq[M_restr])) * psisq[M_restr] -
+          ((1.0 - sigma[M_restr-1]) / dxx)^2 *psisq[M_restr]+
+          ((sigma[M_restr-1] - 2 * sigma[M_restr] + 1.0) / (dV^2)) * sigma[M_restr] *psisq[M_restr]+
+          (1.0 - sigma[M_restr-1]) / dxx * sigma[M_restr] * (0.0 - psisq[M_restr-1]) / (dxx)
       end
       # jac_sparsity = Symbolics.jacobian_sparsity((du, u) -> sigma_loop!(du, u, 0.0), ones(N[1]), ones(N[1]))
       # ff = NonlinearFunction(sigma_loop!; sparsity = jac_sparsity)
