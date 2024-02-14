@@ -54,23 +54,44 @@ function estimate_sigma2k(psi_k, sim::Sim{3,CuArray{ComplexF64}})
   tmp::Array{Float64} = zeros(sim.N[1])
   axial_density = sum(aa, dims=(2, 3))[:, 1, 1]*dy*dz
   @assert sum(axial_density*dx) ≈ 1
-  # alternative
-  for ix in xax  
-    # @info "------------"
-    for (iy, y) in enumerate(yaxis)
-      # @info @sprintf("y, central val: %8.3f, %8.5f", y, aa[ix, iy, 20])
-      for (iz, z) in enumerate(zaxis)
-          if axial_density[ix] < 1e-300
-            tmp[ix] = 1.0
-            # @warn "found small prob"
-          end
-        tmp[ix] += (y^2+z^2) * aa[ix, iy, iz]
-      end
+
+
+  ymask = (Array(sim.X[2]) .^ 2) * Array(ones(sim.N[2]))'
+  zmask = Array(ones(sim.N[3])) * (Array(sim.X[3]) .^ 2)'
+  r2mask = ymask + zmask
+  
+
+  #### original
+  for x in xax
+    if axial_density[x] < 1e-300
+      tmp[x] = 1.0
+      # @warn "found small prob"
+    else
+      tmp[x] = sum(aa[x, :, :] .* r2mask)*dy*dz / axial_density[x]
     end
-    tmp[ix] = tmp[ix]/axial_density[ix]
   end
-  s2 = tmp *dy*dz
-  # @warn minimum(s2)
+  s2 = tmp
+
+  #### alternative
+  # for ix in xax  
+  #   # @info "------------"
+  #   for (iy, y) in enumerate(yaxis)
+  #     # @info @sprintf("y, central val: %8.3f, %8.5f", y, aa[ix, iy, 20])
+  #     for (iz, z) in enumerate(zaxis)
+  #         if axial_density[ix] < 1e-300
+  #           tmp[ix] = 1.0
+  #           # @warn "found small prob"
+  #         end
+  #       tmp[ix] += (y^2+z^2) * aa[ix, iy, iz]
+  #       # tmp[ix] += aa[ix, iy, iz]
+  #     end
+  #   end
+  #   tmp[ix] = tmp[ix]/axial_density[ix]
+  # end
+  # s2 = tmp *dy*dz
+  # # @warn minimum(s2)
+
+
   return s2
 end
 
