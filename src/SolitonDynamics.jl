@@ -1,21 +1,21 @@
 module SolitonDynamics
 
-# dev settings
-using ExportAll
+# library and dev utils  
+using ExportAll, Reexport
 
+# Numerics
 using FFTW, CUDA
-using Reexport
 using OrdinaryDiffEq
 import NonlinearSolve, LinearSolve, Interpolations
 using LinearAlgebra
 using IntervalRootFinding, IntervalArithmetic
-import JLD2
 using StaticArrays
+
+# IO
+import JLD2, FileIO
 using ProgressMeter
 using Printf
-
 @reexport using Parameters
-import FileIO
 
 export runsim, testsim
 export Sim, SISim

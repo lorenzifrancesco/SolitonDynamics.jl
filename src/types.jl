@@ -1,6 +1,6 @@
 abstract type TransformLibrary{A<:AbstractArray} end
+
 abstract type Space end
-# abstract parameter type: can also be a function of simulation time
 
 abstract type PotentialType end
 abstract type Gaussian <: PotentialType end
@@ -36,24 +36,27 @@ const CrankNicholson = Solver(2, false)
 const PredictorCorrector = Solver(3, false)
 const BackwardEuler = Solver(4, false)
 
-
-abstract type UserParams end
-abstract type Method end
-
+# New exception to be triggered by special numeric phenomena
+"""
+  var : value of the max probability per site 
+"""
 struct NpseCollapse <: Exception
   var::Float64
 end
+Base.showerror(io::IO, e::NpseCollapse) =
+  print(io, "NPSE collapse detected, g * max(|f|^2) = ", e.var, "!")
+  
+"""
+  var : value of the maximum probability per site
+"""
 struct Gpe3DCollapse <: Exception
   var::Float64
 end
 
-Base.showerror(io::IO, e::NpseCollapse) =
-  print(io, "NPSE collapse detected, g * max(|f|^2) = ", e.var, "!")
-
-@with_kw mutable struct Params <: UserParams
-  κ = 0.0 # a placeholder
-end
-
+"""
+  Storage of the precomputed direct and inverse FFT matrices (CPU)
+  Beware: these are implemented as C pointers, threading might fail 
+"""
 struct Transforms{T} <: TransformLibrary{T}
   Txk::AbstractFFTs.ScaledPlan{ComplexF64,FFTW.cFFTWPlan{ComplexF64,-1,false,1,UnitRange{Int64}},Float64}
   Txk!::AbstractFFTs.ScaledPlan{ComplexF64,FFTW.cFFTWPlan{ComplexF64,-1,true,1,UnitRange{Int64}},Float64}
@@ -61,6 +64,9 @@ struct Transforms{T} <: TransformLibrary{T}
   Tkx!::AbstractFFTs.ScaledPlan{ComplexF64,FFTW.cFFTWPlan{ComplexF64,1,true,1,UnitRange{Int64}},Float64}
 end
 
+"""
+  Storage of the precomputed direct and inverse FFT transforms in GPU 
+"""
 @with_kw mutable struct GPUTransforms{A} <: TransformLibrary{A}
   Txk::AbstractFFTs.ScaledPlan{ComplexF64,CUDA.CUFFT.cCuFFTPlan{ComplexF64,-1,false,3},Float64}
   Txk!::AbstractFFTs.ScaledPlan{ComplexF64,CUDA.CUFFT.cCuFFTPlan{ComplexF64,-1,true,3},Float64}
@@ -69,21 +75,20 @@ end
   #psi::ArrayPartition = crandnpartition(D,N,A)
 end
 
+"""
+  Simulation type, provides:
+  - parameters
+  - numerical setting
+  - initial condition 
+  - abstract simulation naming, saving info
+  to be feeded into solver routines
+"""
 @with_kw mutable struct Sim{D,A<:AbstractArray}
+  # === naming
   name::String = "default"
-  # === solver and algorithm
-  equation::EquationType = GPE_1D
-  manual::Bool = false
-  solver::Solver = SplitStep
-  graphics::Bool = false
-  alg = Tsit5() # default solver
-  reltol::Float64 = 1e-3  # default tolerance; may need to use 1e-7 for corner cases
-  abstol::Float64 = 1e-3
-  maxiters::Int64 = 5000
-  flags::UInt32 = FFTW.MEASURE # choose a plan. PATIENT, NO_TIMELIMIT, EXHAUSTIVE
-  iswitch::ComplexF64 = 1.0 # 1.0 for real time, -im for imaginary time
-
-  # === dimensions and physics
+  
+  # === numerical domain and algorithm
+  # --- domain
   L::NTuple{D,Float64} # length scales
   N::NTuple{D,Int64}  # grid points in each dimensions
   dV::Float64 = volume_element(L, N)
@@ -93,20 +98,35 @@ end
   tspan = [ti, tf]
   dt::Float64 = 1e-3  # used in manual solvers
   time_steps = 5000   # used in manual solvers
-  # === nonlinearity
+  # --- algorithms and numerical parameters
+  alg = Tsit5() # default solver
+  iswitch::ComplexF64 = 1.0 # 1.0 for real time, -im for imaginary time
+  flags::UInt32 = FFTW.MEASURE # choose a plan. PATIENT, NO_TIMELIMIT, EXHAUSTIVE
+  reltol::Float64 = 1e-3  # default tolerance; may need to use 1e-7 for corner cases
+  abstol::Float64 = 1e-3
+  maxiters::Int64 = 5000
+  equation::EquationType = GPE_1D
+  manual::Bool = false
+  solver::Solver = SplitStep
+  graphics::Bool = false
+  
+  # === physical parameters
   g::Float64 = 0.0
   gamma_damp::Float64 = 0.0
-  @assert gamma_damp >= 0.0 # damping parameter
   mu::Float64 = 0.0 # fixed chemical potential for ground state solution
   sigma2 = init_sigma2(g)
   collapse_threshold::Float64 = 0.1
-  # === potential
-  params::UserParams = Params() # optional user parameterss
   V0::A = zeros(N)
 
-  # === initial value
+  # === initial condition
   psi_0::A = ones(N) |> complex # initial condition
-
+  
+  # === arrays, transforms, spectral operators
+  X::Vector{A} = xvecs(L, N)
+  K::Vector{A} = kvecs(L, N)
+  T::TransformLibrary{A} = makeT(X, K, A, flags=flags)
+  ksquared::A = k2(K, A)
+  
   # === saving
   nfiles::Bool = false
   Nt::Int64 = 5    # number of saves over (ti,tf)
@@ -114,21 +134,26 @@ end
   path::String = nfiles ? joinpath(@__DIR__, "data") : @__DIR__
   filename::String = "save"
 
-  # === arrays, transforms, spectral operators
-  X::Vector{A} = xvecs(L, N)
-  K::Vector{A} = kvecs(L, N)
-  T::TransformLibrary{A} = makeT(X, K, A, flags=flags)
-  ksquared::A = k2(K, A)
-
   # === graphics
   color::Symbol = get_color(equation)
   linestyle::Symbol = get_linestyle(equation)
 end
 
+"""
+  Ordering of simulations
+"""
 function isless(sim1::Sim, sim2::Sim)
   return isless(sim1.equation, sim2.equation)
 end
 
+"""
+  CustomSolution
+  u : solution field Vector
+  sigma : solution sigma field
+  t : time of simulation (can be also made of two points)
+  cnt : auxiliary counter variable 
+
+"""
 @with_kw mutable struct CustomSolution
   u::AbstractArray
   sigma::AbstractArray=[0.0]
