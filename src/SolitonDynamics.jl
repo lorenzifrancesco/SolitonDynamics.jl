@@ -3,12 +3,11 @@ module SolitonDynamics
 # dev settings
 using ExportAll
 
-using FFTW, CUDA, Adapt
+using FFTW, CUDA
 using Reexport
-using OrdinaryDiffEq, DiffEqCallbacks, SteadyStateDiffEq, DiffEqGPU, BoundaryValueDiffEq
+using OrdinaryDiffEq
 import NonlinearSolve, LinearSolve, Interpolations
-using LoopVectorization
-using LinearAlgebra, RecursiveArrayTools, LazyArrays
+using LinearAlgebra
 using IntervalRootFinding, IntervalArithmetic
 import JLD2
 using StaticArrays
