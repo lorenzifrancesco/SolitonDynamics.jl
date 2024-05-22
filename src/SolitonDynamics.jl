@@ -23,9 +23,7 @@ export normalize, display
 
 include("types.jl")
 include("methods.jl")
-include("arrays.jl")
 include("utils.jl")
-include("arrays.jl")
 include("solver.jl")
 include("normalization.jl")
 

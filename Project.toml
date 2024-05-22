@@ -4,7 +4,6 @@ authors = ["lorenzifrancesco <francesco.lorenzi.2@studenti.unipd.it>"]
 version = "0.2.0"
 
 [deps]
-BoundaryValueDiffEq = "764a87c0-6b3e-53db-9096-fe964310641d"
 CUDA = "052768ef-5323-5732-b1bb-66c8b64840ba"
 Distributed = "8ba89e20-285c-5b6f-9357-94700520ee1b"
 ExportAll = "ad2082ca-a69e-11e9-38fa-e96309a31fe4"

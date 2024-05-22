@@ -1,10 +1,8 @@
 ## ==== Arrays
 
-
 V(x, t) = 0.0
 V(x, y, t) = 0.0
 V(x, y, z, t) = 0.0
-
 
 xvec(L, N) = LinRange(-L / 2, L / 2, N + 1)[1:end-1]
 

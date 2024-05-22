@@ -51,38 +51,6 @@ unpack_selection(sim, fields...) = map(x -> getfield(sim, x), fields)
     ## Nonlinear Finite Difference routine
     ## ===================================
     try
-      # ######################### BVProblem METHOD
-      # # interpolation
-      # tmp_real2[1] = (tmp_real1[2]) / dxx
-      # tmp_real2[M] = (- tmp_real1[M-1]) / dxx
-      # @inbounds for i = 2:M-1
-      #   tmp_real2[i] = (tmp_real1[i+1] - tmp_real1[i-1]) / dxx
-      # end
-      # Xr = real.(X[1])
-      # # info && @info Xr[1], Xr[end]
-      # psisq_interp = Interpolations.linear_interpolation(Xr, tmp_real1)
-      # psisq_derivative = Interpolations.linear_interpolation(Xr, tmp_real2)
-      # function sigma_bvp!(du, u, p, x)
-      #   # @info x
-      #   du[1] = u[2]
-      #   du[2] = u[1]^3 -
-      #           (1+g*psisq_interp(x))/u[1] +
-      #           u[2]^2/u[1] -
-      #           u[2] * psisq_derivative(x)/psisq_interp(x)
-      # end
-      # function bc1!(residual, u, p, t)
-      #     residual[1] = u[1][1] - 1.0
-      #     residual[2] = u[end][1] - 1.0
-      # end
-      # bvp1 = BVProblem(sigma_bvp!, bc1!, [1.0, 0.0], [Xr[left_border], Xr[right_border]])
-      # sol = solve(bvp1, BoundaryValueDiffEq.MIRK2(), dt=dV, adaptive=false, reltol=1e-3, abstol=1e-3)
-      # # @info sol.retcode
-      # ### check the correctness
-      # for i in left_border:right_border
-      #   ss_buffer[i] = sol.u[i+1-left_border][1]
-      # end
-      # # ################### END METHOD
-
       #################### Newton-Raphson METHOD
       ## check the variables
       psisq = tmp_real1[left_border:right_border]
