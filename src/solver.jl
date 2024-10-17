@@ -7,8 +7,7 @@ function manual_run(
   info=false,
   debug=false,
   throw_collapse=true,
-  return_maximum=false,
-)
+  return_maximum=false)
   @unpack psi_0,
   dV,
   dt,

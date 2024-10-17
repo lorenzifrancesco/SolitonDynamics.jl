@@ -1,4 +1,6 @@
 ## ==== Arrays
+# This structure is inspired by github.com/AshtonSBradley/FourierGPE.jl
+# it contains substantial modifications due to needs of parallelization and consistency  
 
 V(x, t) = 0.0
 V(x, y, t) = 0.0
@@ -7,11 +9,8 @@ V(x, y, z, t) = 0.0
 xvec(L, N) = LinRange(-L / 2, L / 2, N + 1)[1:end-1]
 
 function kvec(L, N)
-  # @assert iseven(N)
-  # nk = 0:Int(N/2)
-  # k = [nk[1:end-1];-reverse(nk[2:end])]*2*π/λ
   k::AbstractFFTs.Frequencies{Float64} = fftfreq(N) * N * 2 * π / L
-  return k
+  k
 end
 
 function xvecs(L::Tuple, N::Tuple)
@@ -35,7 +34,7 @@ end
 function k2(K, A)
   kind = Iterators.product(K...)
   tmp::A = map(k -> sum(abs2.(k)), kind)
-  return tmp
+  tmp
 end
 
 function volume_element(L, N)

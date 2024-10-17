@@ -18,12 +18,13 @@ function nlin_manual!(
   dt_order = dt / order
   xspace!(psi, sim)
   @. psi *= exp(dt_order * -im * iswitch * (V0 + g * abs2(psi)))
-
-  dydz = (X[2][2] - X[2][1]) * (X[3][2] - X[3][1])
-  tmp_real1 .= sum(abs2.(psi)) * dydz
-  if maximum(tmp_real1) > collapse_threshold / dV
-    throw(Gpe3DCollapse(maximum(abs2.(psi) * dV)))
-  end
+  # TODO remove scalar indexing. Adapt the collapse 
+  # dydz = (X[2][2] - X[2][1]) * (X[3][2] - X[3][1])
+  tmp_real1 .= abs2.(psi) 
+  # print(size(tmp_real1))
+  # if maximum(tmp_real1) > collapse_threshold / dV
+  #   throw(Gpe3DCollapse(maximum(abs2.(psi) * dV)))
+  # end
   kspace!(psi, sim)
   return nothing
 end
