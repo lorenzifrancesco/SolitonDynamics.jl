@@ -54,4 +54,3 @@ function propagate_manual!(
     return 0.0
   end
 end
-

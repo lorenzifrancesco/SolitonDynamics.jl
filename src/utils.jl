@@ -71,27 +71,6 @@ function estimate_sigma2k(psi_k, sim::Sim{3,CuArray{ComplexF64}})
     end
   end
   s2 = tmp
-
-  #### alternative
-  # for ix in xax  
-  #   # @info "------------"
-  #   for (iy, y) in enumerate(yaxis)
-  #     # @info @sprintf("y, central val: %8.3f, %8.5f", y, aa[ix, iy, 20])
-  #     for (iz, z) in enumerate(zaxis)
-  #         if axial_density[ix] < 1e-300
-  #           tmp[ix] = 1.0
-  #           # @warn "found small prob"
-  #         end
-  #       tmp[ix] += (y^2+z^2) * aa[ix, iy, iz]
-  #       # tmp[ix] += aa[ix, iy, iz]
-  #     end
-  #   end
-  #   tmp[ix] = tmp[ix]/axial_density[ix]
-  # end
-  # s2 = tmp *dy*dz
-  # # @warn minimum(s2)
-
-
   return s2
 end
 
@@ -141,9 +120,6 @@ function sigma_loop_external!(ret, sigma, params)
     ((sigma[M-1] - 2 * sigma[M] + 1.0) / (dV^2)) * sigma[M] * psisq[M] +
     (1.0 - sigma[M-1]) / dxx * sigma[M] * (0.0 - psisq[M-1]) / (dxx)
 end
-
-# sigma_eq_nf = NonlinearFunction(sigma_eq; jac=sigma_eq_jacobian)
-# sigma_eq_fast = NonlinearFunction(sigma_eq; sparsity = )
 
 function project_radial(psi_k, sim::Sim{3,CuArray{ComplexF64}})
   # MSE estimator
