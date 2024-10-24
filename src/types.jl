@@ -64,14 +64,14 @@ struct Transforms{T} <: TransformLibrary{T}
   Tkx!::AbstractFFTs.ScaledPlan{ComplexF64,FFTW.cFFTWPlan{ComplexF64,1,true,1,UnitRange{Int64}},Float64}
 end
 
-"""
+"""q
   Storage of the precomputed direct and inverse FFT transforms in GPU 
 """
 @with_kw mutable struct GPUTransforms{A} <: TransformLibrary{A}
-  Txk::AbstractFFTs.ScaledPlan{ComplexF64,CUDA.CUFFT.cCuFFTPlan{ComplexF64,-1,false,3},Float64}
-  Txk!::AbstractFFTs.ScaledPlan{ComplexF64,CUDA.CUFFT.cCuFFTPlan{ComplexF64,-1,true,3},Float64}
-  Tkx::AbstractFFTs.ScaledPlan{ComplexF64,CUDA.CUFFT.cCuFFTPlan{ComplexF64,1,false,3},Float64}
-  Tkx!::AbstractFFTs.ScaledPlan{ComplexF64,CUDA.CUFFT.cCuFFTPlan{ComplexF64,1,true,3},Float64}
+  Txk::AbstractFFTs.ScaledPlan{ComplexF64,CUDA.CUFFT.CuFFTPlan{ComplexF64,-1,false,3},Float64}
+  Txk!::AbstractFFTs.ScaledPlan{ComplexF64,CUDA.CUFFT.CuFFTPlan{ComplexF64,-1,true,3},Float64}
+  Tkx::AbstractFFTs.ScaledPlan{ComplexF64,CUDA.CUFFT.CuFFTPlan{ComplexF64,1,false,3},Float64}
+  Tkx!::AbstractFFTs.ScaledPlan{ComplexF64,CUDA.CUFFT.CuFFTPlan{ComplexF64,1,true,3},Float64}
   #psi::ArrayPartition = crandnpartition(D,N,A)
 end
 

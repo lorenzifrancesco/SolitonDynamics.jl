@@ -358,3 +358,10 @@ function max_npse_psi2(gamma)
   mu = npse_mu_full(gamma)
   return (1 - mu^2) / (2 * gamma)
 end
+
+"""
+Integration check
+"""
+function check_module()
+  print("Module is calling correclty")
+end
