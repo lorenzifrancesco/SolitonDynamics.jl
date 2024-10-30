@@ -12,7 +12,7 @@ using IntervalRootFinding, IntervalArithmetic
 using StaticArrays
 
 # IO
-import JLD2, FileIO
+import JLD2, FileIO, CSV
 using ProgressMeter
 using Printf
 @reexport using Parameters
@@ -21,11 +21,12 @@ export runsim, testsim
 export Sim, SISim
 export normalize, display
 
-include("types.jl")
 include("methods.jl")
+include("types.jl")
 include("utils.jl")
 include("solver.jl")
 include("normalization.jl")
+include("save.jl")
 
 @exportAll()
 

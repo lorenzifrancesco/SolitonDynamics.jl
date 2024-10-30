@@ -163,7 +163,7 @@ function makeT(X, K, T::Type{CuArray{ComplexF64}}; flags=FFTW.MEASURE)
   return GPUTransforms{T}(Txk, Txk!, Tkx, Tkx!)
 end
 
-function xspace(ϕ::AbstractArray, sim::Sim)
+function xspace(ϕ, sim)
   return sim.T.Tkx * ϕ
 end
 
@@ -184,7 +184,7 @@ function kspace!(ψ, sim)
   return nothing
 end
 
-function g2gamma(g::Float64, eq::EquationType)
+function g2gamma(g::Float64, eq)
   if eq == GPE_3D
     return -g / (4 * pi)
   else
@@ -192,7 +192,7 @@ function g2gamma(g::Float64, eq::EquationType)
   end
 end
 
-function gamma2g(gamma::Float64, eq::EquationType)
+function gamma2g(gamma::Float64, eq)
   if eq == GPE_3D
     return -gamma * (4 * pi)
   else
