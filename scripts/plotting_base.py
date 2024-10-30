@@ -12,11 +12,20 @@ def laguerre_gauss_radial(r, p, l, w0):
     return normalization * radial_term * gaussian_envelope * laguerre_poly
 
 def plot_axial():
-  data = pd.read_csv("results/data.csv")
-  x = data["x"]
-  y = data["y"]
+  print(f"Plotting from results data[1, 2 ,3].csv")
   plt.figure(figsize=(3, 2.4), dpi=300)
-  plt.plot(x, y, linestyle="-", color="blue", linewidth=1.1)
+  colors = ["r", "g", "b"]
+  styles = ["-", "--", ":"]
+  widths = [1.1, 1.1, 1.5]
+  for i in range(3):
+    data = pd.read_csv("results/data"+str(i+1)+".csv")
+    x = data["x"]
+    y = data["y"]
+    plt.plot(x, y, 
+             linestyle=styles[i], 
+             color=colors[i], 
+             linewidth=widths[i])
+    
   plt.xlabel(r'$t$')
   plt.ylabel(r'$|A|^2$')
   plt.grid(False)
