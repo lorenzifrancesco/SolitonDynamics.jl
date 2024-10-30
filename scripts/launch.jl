@@ -1,5 +1,5 @@
 using Printf
-print("\n@@@@@@@@@@@@@@@@@@@@@@@@@@@ BEGIN OF RUN @@@@@@@@@@@@@@@@@@@@@@@@@@\n")
+print("\n"*"@"^20*"BEGIN OF RUN"*"@"^20*"\n")
 cmd = `date`
 print(read(cmd, String))
 # print("NAME: ")
@@ -8,10 +8,10 @@ print(read(cmd, String))
 using CSV, DataFrames, Tables, Printf, FFTW
 using SolitonDynamics, Plots; gr()
 
-print("\n@@@ packages are loaded @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@")
+print("\n@@@ packages are loaded ")
 
 # TODO load configuration from input
-("\n=================================================================\n")
+("\n"*"="^50*"n")
 params = [(0, 1), (1, 1), (2, 1)] # (p, S)
 for (idx, par) in enumerate(params)
   N = 200
@@ -24,9 +24,9 @@ for (idx, par) in enumerate(params)
   x = LinRange(-L / 2, L / 2, N + 1)[1:end-1]
   sim.psi_0 = kspace(complex(exp.(x.^2)), sim)
   print(sol)
-  CSV.write("results/data"+string(idx)+".csv", DataFrame(x = x, y = fftshift(abs2.(xspace(sol[1].u[1], sim)))))
+  CSV.write("results/data"*string(idx)*".csv", DataFrame(x = x, y = fftshift(abs2.(xspace(sol[1].u[1], sim)))))
 end
-print("@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@")
+print("@"^50)
 cmd = `date`
 print(read(cmd, String))
-print("\n@@@@@@@@@@@@@@@@@@@@@@@@@@@ END OF RUN @@@@@@@@@@@@@@@@@@@@@@@@@@@@\n")
+print("\n"*"@"^20*"END OF RUN"*"@"^20*"\n")
