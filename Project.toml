@@ -4,7 +4,9 @@ authors = ["lorenzifrancesco <francesco.lorenzi.2@studenti.unipd.it>"]
 version = "0.2.0"
 
 [deps]
+CSV = "336ed68f-0bac-5ca0-87d4-7b16caf5d00b"
 CUDA = "052768ef-5323-5732-b1bb-66c8b64840ba"
+DataFrames = "a93c6f00-e57d-5684-b7b6-d8193f3e46c0"
 Distributed = "8ba89e20-285c-5b6f-9357-94700520ee1b"
 ExportAll = "ad2082ca-a69e-11e9-38fa-e96309a31fe4"
 FFTW = "7a1cc6ca-52ef-59f5-83cd-3a7055c09341"
