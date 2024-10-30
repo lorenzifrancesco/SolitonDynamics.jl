@@ -64,16 +64,16 @@ struct Transforms{T} <: TransformLibrary{T}
   Tkx!::AbstractFFTs.ScaledPlan{ComplexF64,FFTW.cFFTWPlan{ComplexF64,1,true,1,UnitRange{Int64}},Float64}
 end
 
-"""q
-  Storage of the precomputed direct and inverse FFT transforms in GPU 
-"""
-@with_kw mutable struct GPUTransforms{A} <: TransformLibrary{A}
-  Txk::AbstractFFTs.ScaledPlan{ComplexF64,CUDA.CUFFT.CuFFTPlan{ComplexF64,-1,false,3},Float64}
-  Txk!::AbstractFFTs.ScaledPlan{ComplexF64,CUDA.CUFFT.CuFFTPlan{ComplexF64,-1,true,3},Float64}
-  Tkx::AbstractFFTs.ScaledPlan{ComplexF64,CUDA.CUFFT.CuFFTPlan{ComplexF64,1,false,3},Float64}
-  Tkx!::AbstractFFTs.ScaledPlan{ComplexF64,CUDA.CUFFT.CuFFTPlan{ComplexF64,1,true,3},Float64}
-  #psi::ArrayPartition = crandnpartition(D,N,A)
-end
+# """q
+#   Storage of the precomputed direct and inverse FFT transforms in GPU 
+# """
+# @with_kw mutable struct GPUTransforms{A} <: TransformLibrary{A}
+#   Txk::AbstractFFTs.ScaledPlan{ComplexF64,CUDA.CUFFT.CuFFTPlan{ComplexF64,-1,false,3},Float64}
+#   Txk!::AbstractFFTs.ScaledPlan{ComplexF64,CUDA.CUFFT.CuFFTPlan{ComplexF64,-1,true,3},Float64}
+#   Tkx::AbstractFFTs.ScaledPlan{ComplexF64,CUDA.CUFFT.CuFFTPlan{ComplexF64,1,false,3},Float64}
+#   Tkx!::AbstractFFTs.ScaledPlan{ComplexF64,CUDA.CUFFT.CuFFTPlan{ComplexF64,1,true,3},Float64}
+#   #psi::ArrayPartition = crandnpartition(D,N,A)
+# end
 
 """
   Simulation type, provides:
@@ -100,17 +100,19 @@ end
   time_steps = 5000   # used in manual solvers
   # --- algorithms and numerical parameters
   alg = Tsit5() # default solver
-  iswitch::ComplexF64 = 1.0 # 1.0 for real time, -im for imaginary time
+  iswitch::ComplexF64 = -im # 1.0 for real time, -im for imaginary time
   flags::UInt32 = FFTW.MEASURE # choose a plan. PATIENT, NO_TIMELIMIT, EXHAUSTIVE
   reltol::Float64 = 1e-3  # default tolerance; may need to use 1e-7 for corner cases
   abstol::Float64 = 1e-3
   maxiters::Int64 = 5000
-  equation::EquationType = GPE_1D
-  manual::Bool = false
+  equation::EquationType = NPSE
+  manual::Bool = true
   solver::Solver = SplitStep
   graphics::Bool = false
   
   # === physical parameters
+  p::Int64 = 0 # radial mode number
+  S::Int64 = 0 # azimuthal mode number
   g::Float64 = 0.0
   gamma_damp::Float64 = 0.0
   mu::Float64 = 0.0 # fixed chemical potential for ground state solution
