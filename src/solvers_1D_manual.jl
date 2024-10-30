@@ -22,9 +22,10 @@ unpack_selection(sim, fields...) = map(x -> getfield(sim, x), fields)
   if equation == GPE_1D
     @. psi *= exp(dt_order * -im * iswitch * (V0 + g * abs2(psi)))
   elseif equation == NPSE
+    ss_buffer = sigma2.(psi)
     nonlinear =
-      g * abs2.(psi) ./ sigma2.(psi) +
-      (1 ./ (2 * sigma2.(psi)) + 1 / 2 * sigma2.(psi))
+      g * abs2.(psi) ./ ss_buffer +
+      (1 ./ (2 * ss_buffer) + 1 / 2 * ss_buffer)
     @. psi = exp(dt_order * -im * iswitch * (V0 + nonlinear)) * psi
   elseif equation == NPSE_plus
     M = N[1]
@@ -141,12 +142,12 @@ unpack_selection(sim, fields...) = map(x -> getfield(sim, x), fields)
     @. psi = exp(dt_order * -im * iswitch * (V0 + nonlinear)) * psi
   end
 
-  # if equation != GPE_1D
-  #   tmp_real1 .= abs2.(psi)
-  #   if maximum(tmp_real1) > collapse_threshold / dV
-  #     throw(Gpe3DCollapse(maximum(abs2.(psi) * dV)))
-  #   end
-  # end
+  if equation != GPE_1D
+    tmp_real1 .= abs2.(psi)
+    if maximum(tmp_real1) > collapse_threshold / dV
+      throw(Gpe3DCollapse(maximum(abs2.(psi) * dV)))
+    end
+  end
   kspace!(psi, sim)
   return nothing
 end
