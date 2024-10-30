@@ -23,10 +23,9 @@ kspace!(psi_0, sim)
 
 # Analytical solution: Gaussian
 analytical_gs = zeros(N)
-@. analytical_gs = exp(-(x^2) / 2) / (pi^(1 / 4))
+analytical_gs = gaussian(x, sim)
 
-res, err = testsim(sim)
-sol = res[1]
+sol, err = testsim(sim)
 @test err == false
 numerical_gs = xspace(sol.u[end], sim)
 @test isapprox(ns((numerical_gs - analytical_gs), sim), 0.0, atol=1e-5)
@@ -55,8 +54,7 @@ kspace!(psi_0, sim)
 analytical_gs = zeros(N)
 @. analytical_gs = sqrt(g_param / 2) * 2 / (exp(g_param * x) + exp(-x * g_param))
 @info "=== Computing 1D-GPE"
-@time res, err = testsim(sim)
-sol = res[1]
+@time sol, err = testsim(sim)
 @test err == false
 numerical_gs = xspace(sol.u[end], sim)
 @test isapprox(ns((numerical_gs - analytical_gs), sim), 0.0, atol=1e-6)
@@ -66,19 +64,19 @@ numerical_gs = xspace(sol.u[end], sim)
 equation = NPSE
 @pack_Sim! sim
 @info "=== Computing NPSE"
-@time res, err = testsim(sim)
-sol = res[1]
+@time sol, err = testsim(sim)
 @test err == false
 numerical_gs = xspace(sol.u[end], sim)
 @test isapprox(ns((numerical_gs - analytical_gs), sim), 0.0, atol=1e-2)
+@test !isapprox(ns((numerical_gs - analytical_gs), sim), 0.0, atol=1e-9)
 
 @unpack_Sim sim
 equation = NPSE_plus
 @pack_Sim! sim
 @info "=== Computing NPSE+"
-@time res, err = testsim(sim)
-sol=res[1]
+@time sol, err = testsim(sim)
 @test err == false
 numerical_gs = xspace(sol.u[end], sim)
 @test isapprox(ns((numerical_gs - analytical_gs), sim), 0.0, atol=5e-2)
+@test !isapprox(ns((numerical_gs - analytical_gs), sim), 0.0, atol=1e-9)
 @warn "We set 5% tolerance on L2 norm for NPSE+ vs 1D-GPE analytical solution."

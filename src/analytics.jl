@@ -1,11 +1,21 @@
+"""
+  Analytical solution of the transverse 2D HO
+"""
+function gaussian(x, sim; x0::Float64=0.0)
+  psi0 = exp.(-(x .^2) / 2) ./ (pi^(1 / 4))
+  return psi0 / sqrt(ns(psi0, sim))
+end
 
+"""
+  Analytical soliton solution of the 1D-GPE
+"""
 function gpe_analytical(x, gamma; x0::Float64=0.0)
   @assert gamma > 0
   return sqrt(gamma / 2) * 2 / (exp(gamma * (x - x0)) + exp(-(x - x0) * gamma))
 end
 
 """
-  Return the analytical (implicit) solution of the NPSE
+  Analytical (implicit) solution of the NPSE
 """
 function npse_implicit(gamma, N)
   mu = npse_mu_full(gamma)
@@ -21,17 +31,20 @@ function npse_implicit(gamma, N)
 end
 
 """
-  In a given NPSE ground state, we expect to have a peak value of psi given by this
+  Peak value of psi in NPSE
 """
 function max_npse_psi2(gamma)
   mu = npse_mu_full(gamma)
   return (1 - mu^2) / (2 * gamma)
 end
 
+
+"""
+  Analytical solution of the 1D-GPE chemical potential
+"""
 function gpe_mu(n, as)
   return -(n * as)^2 / 8
 end
-
 
 """
   Compute the ground state energy normalized to the harmonic energy unit
@@ -48,8 +61,13 @@ function npse_energy(n, as)
   end
   return energy * dn
 end
+
+# the value of the chemical potential including the transverse HO
 npse_mu_full(mu) = npse_mu(mu) + 1
 
+"""
+  Analytic 1D-GPE energy
+"""
 function gpe_energy(n, as)
   steps = 500
   dn = n / steps
@@ -68,7 +86,7 @@ function npse_expr(mu)
 end
 
 """
-  Compute the chemical potential
+  Numerical solution for the NPSE EoS
 """
 function npse_mu(gamma)
   a = roots(x -> npse_expr(x) + gamma, 0.5 .. 1, Newton, 1e-4)

@@ -5,7 +5,7 @@ include("solvers_1D_manual.jl")
 function manual_run(
   sim;
   info=false,
-  debug=false,
+  debug=true,
   throw_collapse=true,
   return_maximum=false)
   @unpack psi_0,
@@ -45,14 +45,9 @@ function manual_run(
     cnt = 0
     info && print("\n")
     #
-    debug && @info maxiters
     decay = 0 * 1e-5
     debug && @info "setting exp decay rate to" decay
-    if equation == NPSE_plus
-      ss_buffer = ones(N[1])
-    else
-      ss_buffer = nothing
-    end
+    ss_buffer = ones(N[1])
     #
     minimum_evolution_time = 40.0
     #
@@ -62,7 +57,7 @@ function manual_run(
     dump = Ref{Float64}(0.0)
     while cnt < maxiters &&
       (cnt * sim.dt < minimum_evolution_time || abs(cp_diff) > abstol_diff)
-      # try
+      try
       cp_diff = propagate_manual!(psi, 
                                   tmp_psi, 
                                   tmp_real1,
@@ -73,24 +68,27 @@ function manual_run(
                                   info=info, 
                                   ss_buffer=sigma)
       sim.dt *= (1 - decay)
-      info && @printf("\riter = %5i - chempot_diff = %3.2e", cnt, cp_diff)
-      # catch err
-      #     if isa(err, NpseCollapse) && !throw_collapse
-      #         showerror(stdout, err)
-      #     elseif isa(err, Gpe3DCollapse) && !throw_collapse
-      #         showerror(stdout, err)
-      #     else
-      #         throw(err)
-      #     end
-      #     return nothing
-      # end
+      info && @printf("\riter = %1.3e - chempot_diff = %3.2e", cnt, cp_diff)
+      catch err
+          if isa(err, NpseCollapse) && !throw_collapse
+              showerror(stdout, err)
+          elseif isa(err, Gpe3DCollapse) && !throw_collapse
+              showerror(stdout, err)
+          else
+              throw(err)
+          end
+          return nothing
+      end
       cnt += 1
       update!(pr, cnt)
     end
     info && print("\n")
     info && @info "Computation ended after iterations" cnt
-    sol = CustomSolution(u=[psi], t=t, cnt=cnt)
-    return sol, -1.0
+    if cnt == sim.maxiters
+      info && @warn "Maxiters reached"
+    end
+    sol = CustomSolution(u=[psi], sigma=ss_buffer,  t=t, cnt=cnt)
+    return sol
 
   #######################
   # Real time 
@@ -217,25 +215,6 @@ function runsim(sim; info=false, return_maximum=false)
   time_steps,
   manual = sim
   @assert !(!manual && return_maximum) # formal implication
-  # function savefunction(psi...)
-  #     isdir(path) || mkpath(path)
-  #     i = findfirst(x -> x == psi[2], sim.t)
-  #     padi = lpad(string(i), ndigits(length(sim.t)), "0")
-  #     info && println("⭆ Save $i at t = $(trunc(ψ[2];digits=3))")
-  #     # tofile = path*"/"*filename*padi*".jld2"
-  #     tofile = joinpath(path, filename * padi * ".jld2")
-  #     save(tofile, "ψ", psi[1], "t", psi[2])
-  # end
-
-  # savecb = FunctionCallingCallback(
-  #     savefunction;
-  #     funcat = sim.t, # times to save at
-  #     func_everystep = false,
-  #     func_start = true,
-  #     tdir = 1,
-  # )
-  @warn "ovverriding assertion"
-  psi_0 = psi_0 / sqrt(nsk(psi_0, sim))
   @assert isapprox(nsk(psi_0, sim), 1.0, rtol=1e-9)
   @assert manual == true
   if return_maximum
