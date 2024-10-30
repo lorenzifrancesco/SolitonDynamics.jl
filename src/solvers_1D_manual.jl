@@ -141,12 +141,12 @@ unpack_selection(sim, fields...) = map(x -> getfield(sim, x), fields)
     @. psi = exp(dt_order * -im * iswitch * (V0 + nonlinear)) * psi
   end
 
-  if equation != GPE_1D
-    tmp_real1 .= abs2.(psi)
-    if maximum(tmp_real1) > collapse_threshold / dV
-      throw(Gpe3DCollapse(maximum(abs2.(psi) * dV)))
-    end
-  end
+  # if equation != GPE_1D
+  #   tmp_real1 .= abs2.(psi)
+  #   if maximum(tmp_real1) > collapse_threshold / dV
+  #     throw(Gpe3DCollapse(maximum(abs2.(psi) * dV)))
+  #   end
+  # end
   kspace!(psi, sim)
   return nothing
 end
