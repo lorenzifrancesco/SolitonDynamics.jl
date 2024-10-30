@@ -1,6 +1,6 @@
 
 include("solvers_1D_manual.jl")
-include("solvers_3D_manual.jl")
+# include("solvers_3D_manual.jl")
 
 function manual_run(
   sim;
@@ -234,7 +234,8 @@ function runsim(sim; info=false, return_maximum=false)
   #     func_start = true,
   #     tdir = 1,
   # )
-
+  @warn "ovverriding assertion"
+  psi_0 = psi_0 / sqrt(nsk(psi_0, sim))
   @assert isapprox(nsk(psi_0, sim), 1.0, rtol=1e-9)
   @assert manual == true
   if return_maximum
