@@ -5,7 +5,7 @@ include("solvers_1D_manual.jl")
 function manual_run(
   sim;
   info=false,
-  debug=true,
+  debug=false,
   throw_collapse=true,
   return_maximum=false)
   @unpack psi_0,
@@ -47,7 +47,7 @@ function manual_run(
     #
     decay = 0 * 1e-5
     debug && @info "setting exp decay rate to" decay
-    ss_buffer = ones(N[1])
+    # ss_buffer = ones(N[1])
     #
     minimum_evolution_time = 40.0
     #
@@ -83,11 +83,13 @@ function manual_run(
       update!(pr, cnt)
     end
     info && print("\n")
-    info && @info "Computation ended after iterations" cnt
+    # info && @info "Computation ended after iterations" cnt
     if cnt == sim.maxiters
       info && @warn "Maxiters reached"
     end
-    sol = CustomSolution(u=[psi], sigma=ss_buffer,  t=t, cnt=cnt)
+    # print(abs2.(xspace(psi, sim)))
+    # print(sim.sigma2.(xspace(psi, sim)))
+    sol = CustomSolution(u=psi, sigma=sim.sigma2.(xspace(psi, sim)),  t=t, cnt=cnt)
     return sol
 
   #######################

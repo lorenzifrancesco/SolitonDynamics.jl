@@ -113,10 +113,11 @@ end
   # === physical parameters
   p::Int64 = 0 # radial mode number
   S::Int64 = 0 # azimuthal mode number
+  xi:: Float64 = 0.0
   g::Float64 = 0.0
   gamma_damp::Float64 = 0.0
   mu::Float64 = 0.0 # fixed chemical potential for ground state solution
-  sigma2 = init_sigma2(g)
+  sigma2::Function = init_sigma2(g)
   collapse_threshold::Float64 = 0.1
   V0::A = zeros(N)
 

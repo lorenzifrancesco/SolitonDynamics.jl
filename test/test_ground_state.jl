@@ -27,7 +27,7 @@ analytical_gs = gaussian(x, sim)
 
 sol, err = testsim(sim)
 @test err == false
-numerical_gs = xspace(sol.u[end], sim)
+numerical_gs = xspace(sol.u, sim)
 @test isapprox(ns((numerical_gs - analytical_gs), sim), 0.0, atol=1e-5)
 
 
@@ -56,7 +56,7 @@ analytical_gs = zeros(N)
 @info "=== Computing 1D-GPE"
 @time sol, err = testsim(sim)
 @test err == false
-numerical_gs = xspace(sol.u[end], sim)
+numerical_gs = xspace(sol.u, sim)
 @test isapprox(ns((numerical_gs - analytical_gs), sim), 0.0, atol=1e-6)
 
 ## We need to have loose resembling also with NPSE and  NPSE+
@@ -66,7 +66,7 @@ equation = NPSE
 @info "=== Computing NPSE"
 @time sol, err = testsim(sim)
 @test err == false
-numerical_gs = xspace(sol.u[end], sim)
+numerical_gs = xspace(sol.u, sim)
 @test isapprox(ns((numerical_gs - analytical_gs), sim), 0.0, atol=1e-2)
 @test !isapprox(ns((numerical_gs - analytical_gs), sim), 0.0, atol=1e-9)
 
@@ -76,7 +76,7 @@ equation = NPSE_plus
 @info "=== Computing NPSE+"
 @time sol, err = testsim(sim)
 @test err == false
-numerical_gs = xspace(sol.u[end], sim)
+numerical_gs = xspace(sol.u, sim)
 @test isapprox(ns((numerical_gs - analytical_gs), sim), 0.0, atol=5e-2)
 @test !isapprox(ns((numerical_gs - analytical_gs), sim), 0.0, atol=1e-9)
 @warn "We set 5% tolerance on L2 norm for NPSE+ vs 1D-GPE analytical solution."

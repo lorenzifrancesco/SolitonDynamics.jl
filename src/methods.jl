@@ -199,3 +199,18 @@ function gamma2g(gamma::Float64, eq)
     return -2 * gamma
   end
 end
+
+"""
+  NPSE-specific rescaling due to Laguerre-Gauss modes
+"""
+function gpS(g, sim)
+  p = sim.p
+  S = sim.S
+  sum = 0
+  for q in range(0, p)
+    sum += (factorial(2 * q) * factorial(2 * p - 2 * q)^2 * 
+    factorial(2 * S + 2 * q)) / (factorial(q)^2 * 
+    factorial(p - q)^4 * factorial(S + q)^2)
+  end
+  return g * sum / (sim.xi * 2^(4 * p + 2 * S))
+end
