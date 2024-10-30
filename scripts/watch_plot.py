@@ -4,7 +4,10 @@ import time
 import plotting_base
 
 def exec(path):
-  plotting_base.plot_axial()
+  try:
+    plotting_base.plot_axial()
+  except Exception as e:
+    print(e)
 
 class FileChangeHandler(FileSystemEventHandler):
     def __init__(self, callback):

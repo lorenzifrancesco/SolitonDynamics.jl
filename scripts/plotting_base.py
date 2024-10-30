@@ -9,16 +9,36 @@ def laguerre_gauss_radial(r, p, l, w0):
     radial_term = (r * np.sqrt(2) / w0) ** abs(l)
     gaussian_envelope = np.exp(-r**2 / w0**2)
     laguerre_poly = genlaguerre(p, abs(l))(2 * r**2 / w0**2)
-    return normalization * radial_term * gaussian_envelope * laguerre_poly
+    return normalization * radial_term * gaussian_envelope * laguerre_poly / w0
 
 def plot_axial():
   print(f"Plotting from results data[1, 2 ,3].csv")
-  plt.figure(figsize=(3, 2.4), dpi=300)
-  colors = ["r", "g", "b"]
+  plt.figure(figsize=(3.8, 3.2), dpi=300)
+  colors = ["r", "b", "g"]
   styles = ["-", "--", ":"]
   widths = [1.1, 1.1, 1.5]
-  for i in range(3):
-    data = pd.read_csv("results/data"+str(i+1)+".csv")
+  labels = [r'$p=0, m=1$', r'$p=1, m=1$']
+  config_number = 2
+  for i in range(config_number):
+    data = pd.read_csv("results/axial"+str(i+1)+".csv")
+    x = data["x"]
+    y = data["y"]
+    plt.plot(x, y, 
+             linestyle=styles[i], 
+             color=colors[i], 
+             linewidth=widths[i], 
+             label=labels[i])
+  # 
+  plt.xlabel(r'$t$')
+  plt.ylabel(r'$|A|^2$')
+  plt.grid(False)
+  plt.tight_layout()
+  plt.legend(loc="upper left", borderaxespad=0.5, handletextpad=0.3, labelspacing=0.3, borderpad=0.2)
+  plt.savefig("media/axial.pdf", format="pdf", dpi=300)
+  #
+  plt.figure(figsize=(2, 1.6), dpi=300)
+  for i in range(config_number):
+    data = pd.read_csv("results/sigma"+str(i+1)+".csv")
     x = data["x"]
     y = data["y"]
     plt.plot(x, y, 
@@ -27,37 +47,37 @@ def plot_axial():
              linewidth=widths[i])
     
   plt.xlabel(r'$t$')
-  plt.ylabel(r'$|A|^2$')
+  plt.ylabel(r'$\sigma$')
   plt.grid(False)
   plt.tight_layout()
-  plt.savefig("media/axial.pdf", format="pdf", dpi=300)
+  plt.savefig("media/sigma.pdf", format="pdf", dpi=300)
   
 def plot_radial():
-    # Parameters
-    l = 1        # Azimuthal index (topological charge)
-    r = np.linspace(0, 3, 500)  # Radial coordinate
-
+    l = 1        # Azimuthal index
+    r = np.linspace(0, 3, 500)
+    colors = ["r", "b", "g"]
+    styles = ["-", "--", ":"]
+    widths = [1.1, 1.1, 1.5]
+    labels = [r'$p=0, m=1$', r'$p=1, m=1$']
     p_color = ["r", "b"]
-    labels = [r'$p=0$, $m=1$', r'$p=1$, $m=1$']
-    plt.figure(figsize=(3, 2.4))
+    plt.figure(figsize=(3.8, 3.2), dpi=300)
     for p in [0, 1]:
-      # Different rescaling factors for w0
-      w0_values = [0.8, 1]
+      data = pd.read_csv("results/sigma"+str(p+1)+".csv")
+      sigma = data['y']
+      w0 = np.min(sigma)
       w0_styles = ["-", "--"]
-      for iw, w0 in enumerate(w0_values):
-          radial_profile = laguerre_gauss_radial(r, p, l, w0)
-          if iw == 0:
-            plt.plot(r, np.abs(radial_profile)**2,
-                    ls=w0_styles[iw], 
-                    color=p_color[p], 
-                    label=labels[p])
-          else:
-            plt.plot(r, np.abs(radial_profile)**2,
-                    ls=w0_styles[iw], 
-                    color=p_color[p])
+      plt.plot(r, np.abs(laguerre_gauss_radial(r, p, l, w0))**2,
+              ls="-", 
+              color=colors[p], 
+              label=labels[p], 
+              lw=widths[p])
+      plt.plot(r, np.abs(laguerre_gauss_radial(r, p, l, 1))**2,
+              ls="--", 
+              color=colors[p], 
+              lw=widths[p])
     plt.xlabel(r'$r$')
     plt.ylabel(r'$|T|^2$')
     plt.grid(False)
-    plt.legend()
+    plt.legend(borderaxespad=0.5, handletextpad=0.3, labelspacing=0.3, borderpad=0.2)
     plt.tight_layout()
     plt.savefig("media/radial.pdf", format="pdf", dpi=300)
