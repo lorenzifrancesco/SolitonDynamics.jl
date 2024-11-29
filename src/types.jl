@@ -115,6 +115,7 @@ end
   S::Int64 = 0 # azimuthal mode number
   xi:: Float64 = 0.0
   g::Float64 = 0.0
+  g5::Float64 = 0.0
   gamma_damp::Float64 = 0.0
   mu::Float64 = 0.0 # fixed chemical potential for ground state solution
   sigma2::Function = init_sigma2(g)
