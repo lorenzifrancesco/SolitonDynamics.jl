@@ -68,13 +68,14 @@ def plot_animation():
       x = space
       y = psi2_values[:, i]
       line.set_data(x, y)  # Update the line with new data
+      ax.set_title(f"Time: {time[i]:.2f} $2\pi\omega_\perp^{-1}$")
       return [line]
     
   # Create the animation
-  ani = animation.FuncAnimation(fig, update_frame, frames=len(time), interval=100, blit=True)
+  ani = animation.FuncAnimation(fig, update_frame, frames=len(time), interval=10, blit=True)
   fig.tight_layout()
   # Save the animation as a GIF
   gif_filename = "media/td_line_animation.gif"
-  ani.save(gif_filename, writer='imagemagick', dpi=300)
+  ani.save(gif_filename, writer='pillow', dpi=100)
   print(f"Animation saved as {gif_filename}")
   plt.close()

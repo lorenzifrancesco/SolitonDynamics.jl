@@ -10,3 +10,4 @@ results
 Manifest.toml
 Pipfile
 *.pyc
+input

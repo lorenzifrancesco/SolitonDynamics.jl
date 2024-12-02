@@ -25,7 +25,7 @@ unpack_selection(sim, fields...) = map(x -> getfield(sim, x), fields)
     ss_buffer = sigma2.(psi)
     nonlinear =
       sim.xi * (g * abs2.(psi) ./ ss_buffer +
-      (1 ./ (ss_buffer) + ss_buffer) / 2) + im * g5 * abs2.(psi).^2
+      (1 ./ (ss_buffer) + ss_buffer) / 2) - im * g5 * abs2.(psi).^2
     @. psi = exp(dt_order * -im * iswitch * (V0 + nonlinear)) * psi
   elseif equation == NPSE_plus
     M = N[1]
