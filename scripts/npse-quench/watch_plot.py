@@ -5,7 +5,7 @@ import plotting_base
 
 def exec(path):
   try:
-    plotting_base.plot_axial()
+    plotting_base.plot_heatmap()
   except Exception as e:
     print(e)
 
