@@ -113,7 +113,7 @@ end
   # === physical parameters
   p::Int64 = 0 # radial mode number
   S::Int64 = 0 # azimuthal mode number
-  xi:: Float64 = 0.0
+  xi:: Float64 = 1.0
   g::Float64 = 0.0
   g5::Float64 = 0.0
   gamma_damp::Float64 = 0.0

@@ -36,6 +36,7 @@ begin
   g5 = cf["l_3"]
   println(g5)
   x = LinRange(-L / 2, L / 2, N + 1)[1:end-1]
+  dx = x[2] - x[1]
   sim = init_sim((L,), (N,))
   sim.iswitch = 1.0
   y_values = []
@@ -55,17 +56,19 @@ begin
     @info "sim.g=" * string(sim.g)
     sim.reltol = 1e-9
     sim.abstol = 1e-9
-    sim.psi_0 = kspace(complex(gaussian(x / 2, sim)), sim)
+    sim.psi_0 = kspace(complex(gaussian(x / 1.8, sim)), sim)
     sim.maxiters = 1e4
     sim.Nt = 100
-    sim.tf = 2
+    sim.tf = 1
     sim.t = LinRange(sim.ti, sim.tf, sim.Nt)
     sim.time_steps = Int64(ceil((sim.tf-sim.ti)/sim.dt))
     sol = runsim(sim, info=true)
     print(sol)
 
     psi2 = Array{Float64,2}(undef, (length(sol[1].u), length(sol[1].u[1])))
+    # px_psi = Array{Float64,2}(undef, (length(sol[1].u), length(sol[1].u[1])))
     for (ix, u_t) in enumerate(sol[1].u)
+      # psi2[ix, :] = vcat(real(im * diff(xspace(u_t, sim)) / dx), 0.0)
       psi2[ix, :] = abs2.(xspace(u_t, sim))
     end
     # print(psi2)

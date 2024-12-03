@@ -57,7 +57,7 @@ def plot_animation():
   ax.set_xlabel(r'$x$')
   ax.set_ylabel(r'$|\psi|^2$')
   # ax.set_xlim(min(time), max(time))
-  ax.set_ylim(0, psi2_values.max())
+  ax.set_ylim(psi2_values.min(), psi2_values.max())
 
   # Initialize an empty line plot
   space = range(len(psi2_values[:, 1]))
@@ -72,7 +72,8 @@ def plot_animation():
       return [line]
     
   # Create the animation
-  ani = animation.FuncAnimation(fig, update_frame, frames=len(time), interval=10, blit=True)
+  decimation = 5
+  ani = animation.FuncAnimation(fig, update_frame, frames=range(0, len(time), decimation), interval=50 * decimation, blit=True)
   fig.tight_layout()
   # Save the animation as a GIF
   gif_filename = "media/td_line_animation.gif"
