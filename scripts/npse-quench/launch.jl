@@ -14,10 +14,10 @@ print("\n@@@ packages are loaded ")
 hbar_nostro = 1.0546e-34
 a_0 = 5.292e-11
 
-function optical_lattice(v0, d, space)
+function optical_lattice(v0, d, tilt, space)
   # See Eq.(3) of [PRA 75 033622 (2007)]
   # notice that the k_L is different from the one of Stratclyde
-  return -v0 * cos.(2 * pi / d * space)
+  return -v0 * cos.(2 * pi / d * space) + tilt * space
 end
 
 begin
@@ -26,42 +26,51 @@ begin
   params = [(0, 0)]
   E = 1 # pulse energy or number of particles
   l_perp = sqrt(hbar_nostro/(cf["omega_perp"]*cf["m"]))
-  @info l_perp
-  g = 4 * pi * hbar_nostro^2 * cf["a_s"] * a_0 * cf["n_atoms"] / (cf["m"] * 2 * pi * l_perp^2)
-  gamma = - cf["n_atoms"] * cf["a_s"] * a_0 / l_perp
-  @info gamma
-  g = gamma2g(gamma, sim)
+  # @info l_perp
   N = cf["n"]
   L = cf["l"]
-  g5 = cf["l_3"]
+  sim = init_sim((L,), (N,))
+  g = 4 * pi * hbar_nostro^2 * cf["a_s"] * a_0 * cf["n_atoms"] / (cf["m"] * 2 * pi * l_perp^2)
+  gamma = - cf["n_atoms"] * cf["a_s"] * a_0 / l_perp
+  # @info gamma
+  g = gamma2g(gamma, sim)
   println(g5)
   x = LinRange(-L / 2, L / 2, N + 1)[1:end-1]
   dx = x[2] - x[1]
-  sim = init_sim((L,), (N,))
-  sim.iswitch = 1.0
   y_values = []
   # params = range(-10, 10, 3)
   print("\n p  S   gpS\n")
   for (idx, par) in enumerate(params)
     sim.p = 0.0
     sim.S = 0.0
-    sim.xi = (2 * sim.p + sim.S + 1)
+    sim.xi = (2 * sim.p + sim.S + 1) # questo ha salvato la baracca
     # gamma_base_normalizzata = 4/3-0.05
     # gamma_base_normalizzata = 3.5 / 2
     sim.g = g
-    sim.g5 = g5
-    sim.V0 = optical_lattice(1.8, cf["d"]/l_perp, sim.X[1])
+    sim.g5 = 0.0
+    sim.V0 = optical_lattice(1.8, cf["d"]/l_perp, 0.0, sim.X[1])
     sim.sigma2 = init_sigma2(sim.g)
     println("::::::::::", sim.g)
-    @info "sim.g=" * string(sim.g)
+    # @info "sim.g=" * string(sim.g)
     sim.reltol = 1e-9
     sim.abstol = 1e-9
-    sim.psi_0 = kspace(complex(gaussian(x / 1.8, sim)), sim)
-    sim.maxiters = 1e4
+    sim.psi_0 = kspace(complex(gaussian(x / 1, sim)), sim)
     sim.Nt = 100
-    sim.tf = 1
+    sim.tf = 10
     sim.t = LinRange(sim.ti, sim.tf, sim.Nt)
     sim.time_steps = Int64(ceil((sim.tf-sim.ti)/sim.dt))
+    sim.iswitch = -im; 
+    
+    # Ground state finding
+    # sim.maxiters = 1e6
+    # @info "computing GS"
+    # sol = runsim(sim, info=true)
+    
+    # Computation of dynamics
+    # sim.psi_0 = sol.u;
+    sim.V0 = optical_lattice(1.8, cf["d"]/l_perp, 0.5, sim.X[1])
+    sim.iswitch = 1;
+    # sim.g5 = cf["l_3"] 
     sol = runsim(sim, info=true)
     print(sol)
 
