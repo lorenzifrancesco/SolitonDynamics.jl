@@ -54,6 +54,8 @@ def plot_heatmap():
   
   # ax2 = fig.add_subplot(gs[1], sharex=ax1)  # Share the x-axis with the heatmap
   atom_number = psi2_values.sum(axis=0) * dx
+  print(atom_number)
+  print(psi2_values[:, -1])
   # print(atom_number)
   # time_ticks = np.linspace(0, cf['t_f'], psi2_values.shape[1])  # Time values
   # ax2.plot(time_ticks*1e3, atom_number, color='blue', label=r'Atom Number ($\int |\psi|^2 \, dx$)')

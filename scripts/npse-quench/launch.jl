@@ -56,12 +56,14 @@ begin
   
   y_values = []
   for (idx, par) in enumerate(params)
+    sim.dt=1e-3
     sim.g = g
     sim.g5 = 0.0
     l_x = sqrt(hbar_nostro/(cf_pre_quench["omega_x"]*cf_pre_quench["m"])) # SI
     e_recoil = (pi * hbar / cf_pre_quench["d"])^2 / cf_pre_quench["m"]
     v_0_norm = cf_pre_quench["v_0"] * e_recoil / e_perp
     @info "v_0 norm =  " v_0_norm
+    @info "gamma = " cf_pre_quench["a_s"] * a_0 * cf_pre_quench["n_atoms"] / l_perp
     sim.V0 = optical_lattice(v_0_norm, 
                              cf_pre_quench["d"]/l_perp, 
                              0.0, 
@@ -70,7 +72,7 @@ begin
     sim.sigma2 = init_sigma2(sim.g)
     sim.reltol = 1e-9
     sim.abstol = 1e-9
-    sim.psi_0 = kspace(complex(gaussian(x, sim)), sim)
+    sim.psi_0 = kspace(complex(gaussian(x/5, sim)), sim)
     sim.iswitch = -im; 
     
     # GS finding
@@ -79,6 +81,7 @@ begin
     sol = runsim(sim, info=true)
     
     ### Computation of dynamics after the quench2
+    sim.dt = 1e-3
     sim.psi_0 = sol.u;
     gamma_post = - cf["n_atoms"] * cf["a_s"] * a_0 / l_perp
     sim.g = gamma2g(gamma_post, sim)
@@ -124,4 +127,4 @@ end
 print("@"^50)
 cmd = `date`
 print(read(cmd, String))
-print("\n" * "@"^20 * "END OF RUN" * "@"^20 * "\n")
+print("\n" * "@"^20 * "END OF RUN" * "@"^20 * "\n") 

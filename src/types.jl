@@ -44,7 +44,7 @@ struct NpseCollapse <: Exception
   var::Float64
 end
 Base.showerror(io::IO, e::NpseCollapse) =
-  print(io, "NPSE collapse detected, g * max(|f|^2) = ", e.var, "!")
+  print(io, "\nNPSE collapse detected, g * max(|f|^2) = ", e.var, "!")
   
 """
   var : value of the maximum probability per site

@@ -6,7 +6,7 @@ function manual_run(
   sim;
   info=false,
   debug=false,
-  throw_collapse=true,
+  throw_collapse=false,
   return_maximum=false)
   @unpack psi_0,
   dV,
@@ -51,7 +51,7 @@ function manual_run(
     #
     minimum_evolution_time = 40.0
     #
-    info && print("Interaction number")
+    info && print("Iteration number")
     pr = Progress(minimum([maxiters, 5000]); dt=1)
     cp_diff = 1e300
     dump = Ref{Float64}(0.0)
@@ -126,70 +126,124 @@ function manual_run(
     auxiliary = 0.0
     auxiliary2 = Ref{Float64}(0.0)
     maximum_buffer = ones(N)
+    collapse_detected = false
     for i = 1:time_steps
-      try
-        ## debug : feed ones after each repetition
-        sigma .= ones(N[1])
-        propagate_manual!(psi, 
-                          tmp_psi, 
-                          tmp_real1,
-                          tmp_real2, 
-                          sim, 
-                          time, 
-                          auxiliary2; 
-                          info=info, 
-                          ss_buffer=sigma)
-        if return_maximum
-          maximum_buffer = xspace(psi, sim)
-          candidate_maximum = maximum(abs2.(maximum_buffer))
-          if candidate_maximum > max_prob
-            max_prob = candidate_maximum
+      if !collapse_detected
+        try
+          ## debug : feed ones after each repetition
+          sigma .= ones(N[1])
+          propagate_manual!(psi, 
+                            tmp_psi, 
+                            tmp_real1,
+                            tmp_real2, 
+                            sim, 
+                            time, 
+                            auxiliary2; 
+                            info=info, 
+                            ss_buffer=sigma)
+          if return_maximum
+            maximum_buffer = xspace(psi, sim)
+            candidate_maximum = maximum(abs2.(maximum_buffer))
+            if candidate_maximum > max_prob
+              max_prob = candidate_maximum
+            end
+            if auxiliary < auxiliary2[]
+              auxiliary = auxiliary2[]
+              info && @info @sprintf("Maximum Linf error = %5.4e", auxiliary)
+            end
           end
-          if auxiliary < auxiliary2[]
-            auxiliary = auxiliary2[]
-            info && @info @sprintf("Maximum Linf error = %5.4e", auxiliary)
+        catch err
+          if isa(err, NpseCollapse) && !throw_collapse
+            showerror(stdout, err)
+            @info "Saving up to the collapse..."
+            collapse_detected = true
+          else
+            throw(err)
           end
         end
-      catch err
-        if isa(err, NpseCollapse) && !throw_collapse
-          showerror(stdout, err)
-        else
-          throw(err)
+        # print("\r", i, " - step")
+        if t[save_counter] < solve_time_axis[i]
+          if length(N) == 1
+            collection[:, save_counter] = psi
+            collection_sigma[:, save_counter] = sigma
+          else
+            collection[:, :, :, save_counter] = psi
+          end
+          save_counter += 1
         end
-        return nothing
-      end
-      # print("\r", i, " - step")
-      if t[save_counter] < solve_time_axis[i]
-        if length(N) == 1
-          collection[:, save_counter] = psi
-          collection_sigma[:, save_counter] = sigma
-        else
-          collection[:, :, :, save_counter] = psi
+        time += dt
+        if info
+          cnt += 1
+          update!(pr, cnt)
         end
-        save_counter += 1
+      else
+        if t[save_counter] < solve_time_axis[i]
+          if length(N) == 1
+            collection[:, save_counter] = complex(zeros(length(psi)))
+            collection_sigma[:, save_counter] = complex(ones(length(psi)))
+          else
+            throw("Not implemented")
+            collection[:, :, :, save_counter] = psi
+          end
+          save_counter += 1
+        end
+        time += dt
+        if info
+          cnt += 1
+          update!(pr, cnt)
+        end
       end
+    end
+
+    # save the last item
+    if !collapse_detected
+      if length(N) == 1
+        collection[:, Nt] = psi
+        collection_sigma[:, Nt] = sigma
+        sol =
+          CustomSolution(
+            u=[collection[:, k] for k = 1:Nt],
+            sigma=[collection_sigma[:, k] for k = 1:Nt],
+            t=t,
+            cnt=time_steps)
+      else
+        collection[:, :, :, Nt] = psi
+        sol =
+          CustomSolution(
+            u=[collection[:, :, :, k] for k = 1:Nt],
+            t=t,
+            cnt=time_steps)
+      end
+    else
+      if length(N) == 1
+        collection[:, save_counter] = complex(zeros(length(psi)))
+        collection_sigma[:, save_counter] = complex(ones(length(psi)))
+      else
+        throw("Not implemented")
+        collection[:, :, :, save_counter] = psi
+      end
+      save_counter += 1
       time += dt
       if info
         cnt += 1
         update!(pr, cnt)
       end
     end
-    if length(N) == 1
-      collection[:, Nt] = psi
-      collection_sigma[:, Nt] = sigma
+
+    # generate the solution
+    if  length(N) == 1  
       sol =
-        CustomSolution(
-          u=[collection[:, k] for k = 1:Nt],
-          sigma=[collection_sigma[:, k] for k = 1:Nt],
-          t=t,
-          cnt=time_steps)
-    else
-      collection[:, :, :, Nt] = psi
-      sol =
-        CustomSolution(
-          u=[collection[:, :, :, k] for k = 1:Nt],
-          t=t,
-          cnt=time_steps)
+          CustomSolution(
+            u=[collection[:, k] for k = 1:Nt],
+            sigma=[collection_sigma[:, k] for k = 1:Nt],
+            t=t,
+            cnt=time_steps)
+      else
+        sol =
+          CustomSolution(
+            u=[collection[:, :, :, k] for k = 1:Nt],
+            t=t,
+            cnt=time_steps)
     end
     return sol, max_prob * dV
   end
