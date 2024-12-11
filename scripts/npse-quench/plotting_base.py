@@ -4,32 +4,107 @@ import numpy as np
 from scipy.special import genlaguerre
 import seaborn as sns
 import matplotlib.animation as animation
+import toml
+from matplotlib.gridspec import GridSpec
+from matplotlib.colorbar import Colorbar
 
 def plot_heatmap():
   # Set up matplotlib for LaTeX-compatible fonts
   plt.rc('text', usetex=True)
   plt.rc('font', family='serif')
-
-  # Load the CSV file
-  filename = "results/experiment1.csv"  # Replace with your CSV file path
+  cf = toml.load("input/config.toml")
+  l_perp = np.sqrt(1.0546e-34/(cf['m']*cf['omega_perp']))
+  dx = cf['l']/cf['n']
+  
+  filename = "results/experiment1.csv"
   data = pd.read_csv(filename)
   time = data.iloc[0, :].values  # First column is time
+  t_min = 0.0
+  t_max = cf['t_f'] * 1e3
+  x_min = -cf['l']/2 * l_perp * 1e6
+  x_max =  -x_min
   print("\033[91mWarn:\033[0m playing sketchy stuff with data extraction")
   psi2_values = data.iloc[1:, :].values  # Remaining columns are ψ² values
+  time_points = psi2_values.shape[1]
+  space_points = psi2_values.shape[0]
+  time_ticks = np.linspace(t_min, t_max, time_points)
+
+  # # Heatmap plot
+  # # fig, ax = plt.subplots(figsize=(4, 3))
+  # fig = plt.figure(figsize=(5, 4))
+  # gs = GridSpec(2, 1, height_ratios=[5, 1], hspace=0.5)  # Adjust height and spacing
+
+  # # Heatmap plot
+  # ax1 = fig.add_subplot(gs[0])
+  # ax = ax1
+  # sns.heatmap(
+  #     psi2_values,  # Transpose so time is along y-axis
+  #     # xticklabels=np.linspace(0, cf["t_f"]*1e3, 100),  # Suppress x-ticks
+  #     # yticklabels=False,  # Suppress y-ticks
+  #     cmap="viridis",  # Choose a colormap
+  #     cbar_kws={'label': r'$|\psi|^2$'},  # LaTeX for colorbar label
+  #     ax=ax
+  # )
+  # ax.set_xticks([0, psi2_values.shape[1] - 1]) 
+  # ax.set_xticklabels([f"{0.0:.1f}", f"{cf['t_f']*1e3:.1f}"])
+  # ax.set_yticks([0, psi2_values.shape[0] - 1])
+  # ax.set_yticklabels([f"{cf['l']/2 * l_perp *1e6:.1f}", f"{-cf['l']/2 * l_perp * 1e6:.1f}"])
+  # ax.set_xlabel(r'$t \quad  [\mathrm{ms}]$')
+  # ax.set_ylabel(r'$x \quad  [\mathrm{\mu m}] $')
+  
+  # ax2 = fig.add_subplot(gs[1], sharex=ax1)  # Share the x-axis with the heatmap
+  atom_number = psi2_values.sum(axis=0) * dx
+  # print(atom_number)
+  # time_ticks = np.linspace(0, cf['t_f'], psi2_values.shape[1])  # Time values
+  # ax2.plot(time_ticks*1e3, atom_number, color='blue', label=r'Atom Number ($\int |\psi|^2 \, dx$)')
+  # ax2.set_xlabel(r'$t \quad [\mathrm{ms}]$')
+  # ax2.set_ylabel(r'$N(t)$')
+  # # axes[1].legend(loc="upper right")
+  # plt.tight_layout()
+  
+  fig = plt.figure(figsize=(4, 3.5))
+  gs = fig.add_gridspec(2, 2, width_ratios=[40, 1], height_ratios=[4, 1], wspace=0.15, hspace=0.3)
 
   # Heatmap plot
-  fig, ax = plt.subplots(figsize=(4, 3))
+  ax_heatmap = fig.add_subplot(gs[0, 0])
   sns.heatmap(
-      psi2_values,  # Transpose so time is along y-axis
-      xticklabels=False,  # Suppress x-ticks
-      yticklabels=False,  # Suppress y-ticks
-      cmap="viridis",  # Choose a colormap
-      cbar_kws={'label': r'$|\psi|^2$'},  # LaTeX for colorbar label
-      ax=ax
+      psi2_values,
+      cmap="viridis",
+      cbar=False,  # Disable the default colorbar
+      ax=ax_heatmap
   )
-  ax.set_xlabel(r'$t$')
-  ax.set_ylabel(r'$x$')
-  plt.tight_layout()
+
+  # Set heatmap ticks and labels
+  ax_heatmap.set_xticks([0, time_points - 1])  # Positions: start and end of time
+  ax_heatmap.set_xticklabels([f"{t_min:.1f}", f"{t_max:.1f}"])  # Labels: min and max time
+  ax_heatmap.set_yticks([0, space_points - 1])  # Positions: start and end of space
+  ax_heatmap.set_yticklabels([f"{x_min:.1f}", f"{x_max:.1f}"])  # Labels: min and max space
+  ax_heatmap.set_ylabel(r'$x \quad [\mu m]$')
+
+  # Add colorbar to the right of the entire plot
+  cbar_ax = fig.add_subplot(gs[:, 1])  # Colorbar spans both rows
+  norm = plt.Normalize(vmin=np.min(psi2_values), vmax=np.max(psi2_values))
+  sm = plt.cm.ScalarMappable(cmap="viridis", norm=norm)
+  cbar = Colorbar(cbar_ax, sm, orientation='vertical')
+  cbar.set_label(r'$|\psi|^2$', rotation=90)
+
+  # Line plot for atom number
+  ax_lineplot = fig.add_subplot(gs[1, 0], sharex=ax_heatmap)
+  ax_lineplot.plot(atom_number, color='blue')
+  ax_lineplot.set_xlabel(r'$t \quad [\mathrm{ms}]$')
+  ax_lineplot.set_ylabel(r'$N(t)/N_0$')
+  # ax_lineplot.text(f'{atom_number[:-1]}')
+  ax_lineplot.text(
+    0.95, 0.05,  # Position of text (relative to axes, [x, y] from bottom-left corner)
+    f'$N(t_f)/N_0 = {atom_number[-1]:.2f}$',  # Format the final value
+    transform=ax_lineplot.transAxes,  # Use axes coordinates
+    color='black', fontsize=8, ha='right', va='bottom'
+)
+
+  ax_lineplot.set_ylim((0.0, 1.1))
+  # ax_lineplot.legend(loc="upper right")
+
+  fig.subplots_adjust(left=0.2, right=0.85, top=0.9, bottom=0.15)
 
   # Save the heatmap as a PDF
   heatmap_filename = "media/td_heatmap.png"

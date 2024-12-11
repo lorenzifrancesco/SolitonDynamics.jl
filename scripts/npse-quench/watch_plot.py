@@ -6,6 +6,7 @@ import plotting_base
 def exec(path):
   try:
     plotting_base.plot_heatmap()
+    plotting_base.plot_animation()
   except Exception as e:
     print(e)
 
