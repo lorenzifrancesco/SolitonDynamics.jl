@@ -17,6 +17,7 @@ e_r = 2.1798723611030e-18
 
 function optical_lattice(v_0, d, tilt, l_x, space)
   # See Eq.(3) of [PRA 75 033622 (2007)]
+  # v_0 is in normalized units (hbar omega_perp)
   # notice that the k_L is different from the one of Stratclyde
   if l_x == 0.0
     return -v_0 * cos.(2 * pi / d * space) + tilt * space
@@ -37,8 +38,7 @@ begin
   l_perp = sqrt(hbar_nostro/(cf_pre_quench["omega_perp"]*cf_pre_quench["m"]))
   e_perp = hbar_nostro * cf_pre_quench["omega_perp"]
   t_perp = cf_pre_quench["omega_perp"]^(-1) 
-  @info e_perp
-  @info cf_pre_quench["v_0"]*e_r/e_perp
+  @info "l_perp" l_perp
   N = cf["n"]
   L = cf["l"]
   x = LinRange(-L / 2, L / 2, N + 1)[1:end-1]
@@ -59,7 +59,10 @@ begin
     sim.g = g
     sim.g5 = 0.0
     l_x = sqrt(hbar_nostro/(cf_pre_quench["omega_x"]*cf_pre_quench["m"])) # SI
-    sim.V0 = optical_lattice(cf_pre_quench["v_0"], 
+    e_recoil = (pi * hbar / cf_pre_quench["d"])^2 / cf_pre_quench["m"]
+    v_0_norm = cf_pre_quench["v_0"] * e_recoil / e_perp
+    @info "v_0 norm =  " v_0_norm
+    sim.V0 = optical_lattice(v_0_norm, 
                              cf_pre_quench["d"]/l_perp, 
                              0.0, 
                              l_x/l_perp,
@@ -80,13 +83,18 @@ begin
     gamma_post = - cf["n_atoms"] * cf["a_s"] * a_0 / l_perp
     sim.g = gamma2g(gamma_post, sim)
     sim.sigma2 = init_sigma2(sim.g)
-    sim.V0 = optical_lattice(cf["v_0"], 
+    e_recoil = (pi * hbar / cf["d"])^2 / cf["m"]
+    v_0_norm = cf["v_0"] * e_recoil / e_perp
+    l_x = sqrt(hbar_nostro/(cf["omega_x"]*cf["m"])) # SI
+    @info "v_0 norm =  " v_0_norm
+    sim.V0 = optical_lattice(v_0_norm,
                              cf["d"]/l_perp, 
-                             0.0, 
-                             0.0,
+                             cf["tilt"], # tilt
+                             l_x/l_perp,
                              sim.X[1])
     sim.iswitch = 1;
-    sim.g5 = cf["l_3"]
+    sim.g5 = cf["l_3"] / l_perp^6 * t_perp * cf["n_atoms"]^3 / (6*pi^2)
+    @info "g5, 1D" sim.g5 
     sim.Nt = cf["n_t"]
     sim.tf = cf["t_f"] / t_perp
     @info sim.tf
