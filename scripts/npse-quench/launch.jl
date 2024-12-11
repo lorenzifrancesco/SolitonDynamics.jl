@@ -13,64 +13,85 @@ print("\n@@@ packages are loaded ")
 # constants: all units are in SI
 hbar_nostro = 1.0546e-34
 a_0 = 5.292e-11
+e_r = 2.1798723611030e-18
 
-function optical_lattice(v0, d, tilt, space)
+function optical_lattice(v_0, d, tilt, l_x, space)
   # See Eq.(3) of [PRA 75 033622 (2007)]
   # notice that the k_L is different from the one of Stratclyde
-  return -v0 * cos.(2 * pi / d * space) + tilt * space
+  if l_x == 0.0
+    return -v_0 * cos.(2 * pi / d * space) + tilt * space
+  else
+    return -v_0 * cos.(2 * pi / d * space) + tilt * space + 1/2 * (space/l_x).^2
+  end
 end
 
 begin
+  cf_pre_quench = TOML.parsefile("input/config_pre_quench.toml")
   cf = TOML.parsefile("input/config.toml")
-  # params = [(0, 1), (1, 1)] # (p, S)
-  params = [(0, 0)]
-  E = 1 # pulse energy or number of particles
-  l_perp = sqrt(hbar_nostro/(cf["omega_perp"]*cf["m"]))
-  # @info l_perp
+  
+  ### enforce structural properties of the normalization
+  @assert(cf_pre_quench["omega_perp"]==cf["omega_perp"])
+  @assert(cf_pre_quench["m"]==cf["m"])
+  @assert(cf_pre_quench["n"]==cf["n"])
+  @assert(cf_pre_quench["l"]==cf["l"])
+  l_perp = sqrt(hbar_nostro/(cf_pre_quench["omega_perp"]*cf_pre_quench["m"]))
+  e_perp = hbar_nostro * cf_pre_quench["omega_perp"]
+  t_perp = cf_pre_quench["omega_perp"]^(-1) 
+  @info e_perp
+  @info cf_pre_quench["v_0"]*e_r/e_perp
   N = cf["n"]
   L = cf["l"]
-  sim = init_sim((L,), (N,))
-  g = 4 * pi * hbar_nostro^2 * cf["a_s"] * a_0 * cf["n_atoms"] / (cf["m"] * 2 * pi * l_perp^2)
-  gamma = - cf["n_atoms"] * cf["a_s"] * a_0 / l_perp
-  # @info gamma
-  g = gamma2g(gamma, sim)
-  println(g5)
   x = LinRange(-L / 2, L / 2, N + 1)[1:end-1]
   dx = x[2] - x[1]
+  sim = init_sim((L,), (N,))
+
+  params = [(0, 0)]
+
+  ### Setup of the GS initialization pre-quench2
+  # Note the parameters pre-quench2 remain fixed for
+  # each post-quench configuration
+  g = 4 * pi * hbar_nostro^2 * cf_pre_quench["a_s"] * a_0 * cf_pre_quench["n_atoms"] / (cf_pre_quench["m"] * 2 * pi * l_perp^2) # somehow not working
+  gamma = - cf_pre_quench["n_atoms"] * cf_pre_quench["a_s"] * a_0 / l_perp
+  g = gamma2g(gamma, sim)
+  
   y_values = []
-  # params = range(-10, 10, 3)
-  print("\n p  S   gpS\n")
   for (idx, par) in enumerate(params)
-    sim.p = 0.0
-    sim.S = 0.0
-    sim.xi = (2 * sim.p + sim.S + 1) # questo ha salvato la baracca
-    # gamma_base_normalizzata = 4/3-0.05
-    # gamma_base_normalizzata = 3.5 / 2
     sim.g = g
     sim.g5 = 0.0
-    sim.V0 = optical_lattice(1.8, cf["d"]/l_perp, 0.0, sim.X[1])
+    l_x = sqrt(hbar_nostro/(cf_pre_quench["omega_x"]*cf_pre_quench["m"])) # SI
+    sim.V0 = optical_lattice(cf_pre_quench["v_0"], 
+                             cf_pre_quench["d"]/l_perp, 
+                             0.0, 
+                             l_x/l_perp,
+                             sim.X[1])
     sim.sigma2 = init_sigma2(sim.g)
-    println("::::::::::", sim.g)
-    # @info "sim.g=" * string(sim.g)
     sim.reltol = 1e-9
     sim.abstol = 1e-9
-    sim.psi_0 = kspace(complex(gaussian(x / 1, sim)), sim)
-    sim.Nt = 100
-    sim.tf = 10
-    sim.t = LinRange(sim.ti, sim.tf, sim.Nt)
-    sim.time_steps = Int64(ceil((sim.tf-sim.ti)/sim.dt))
+    sim.psi_0 = kspace(complex(gaussian(x, sim)), sim)
     sim.iswitch = -im; 
     
-    # Ground state finding
-    # sim.maxiters = 1e6
-    # @info "computing GS"
-    # sol = runsim(sim, info=true)
+    # GS finding
+    sim.maxiters = 1e6
+    @info "computing GS"
+    sol = runsim(sim, info=true)
     
-    # Computation of dynamics
-    # sim.psi_0 = sol.u;
-    sim.V0 = optical_lattice(1.8, cf["d"]/l_perp, 0.5, sim.X[1])
+    ### Computation of dynamics after the quench2
+    sim.psi_0 = sol.u;
+    gamma_post = - cf["n_atoms"] * cf["a_s"] * a_0 / l_perp
+    sim.g = gamma2g(gamma_post, sim)
+    sim.sigma2 = init_sigma2(sim.g)
+    sim.V0 = optical_lattice(cf["v_0"], 
+                             cf["d"]/l_perp, 
+                             0.0, 
+                             0.0,
+                             sim.X[1])
     sim.iswitch = 1;
-    # sim.g5 = cf["l_3"] 
+    sim.g5 = cf["l_3"] 
+    sim.Nt = 100
+    sim.tf = cf["t_f"] / t_perp
+    @info sim.tf
+    sim.t = LinRange(sim.ti, sim.tf, sim.Nt)
+    sim.time_steps = Int64(ceil((sim.tf-sim.ti)/sim.dt))
     sol = runsim(sim, info=true)
     print(sol)
 
