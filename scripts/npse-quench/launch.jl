@@ -86,8 +86,8 @@ begin
                              0.0,
                              sim.X[1])
     sim.iswitch = 1;
-    sim.g5 = cf["l_3"] 
-    sim.Nt = 100
+    sim.g5 = cf["l_3"]
+    sim.Nt = cf["n_t"]
     sim.tf = cf["t_f"] / t_perp
     @info sim.tf
     sim.t = LinRange(sim.ti, sim.tf, sim.Nt)

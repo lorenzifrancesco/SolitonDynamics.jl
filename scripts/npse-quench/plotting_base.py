@@ -63,7 +63,7 @@ def plot_heatmap():
   # plt.tight_layout()
   
   fig = plt.figure(figsize=(4, 3.5))
-  gs = fig.add_gridspec(2, 2, width_ratios=[40, 1], height_ratios=[4, 1], wspace=0.15, hspace=0.3)
+  gs = fig.add_gridspec(2, 2, width_ratios=[40, 1], height_ratios=[4, 1], wspace=0.15, hspace=0.1)
 
   # Heatmap plot
   ax_heatmap = fig.add_subplot(gs[0, 0])
@@ -73,12 +73,16 @@ def plot_heatmap():
       cbar=False,  # Disable the default colorbar
       ax=ax_heatmap
   )
-
+  
   # Set heatmap ticks and labels
-  ax_heatmap.set_xticks([0, time_points - 1])  # Positions: start and end of time
-  ax_heatmap.set_xticklabels([f"{t_min:.1f}", f"{t_max:.1f}"])  # Labels: min and max time
-  ax_heatmap.set_yticks([0, space_points - 1])  # Positions: start and end of space
-  ax_heatmap.set_yticklabels([f"{x_min:.1f}", f"{x_max:.1f}"])  # Labels: min and max space
+  # ax_heatmap.set_xticklabels([f"{t_min:.1f}", f"{t_max:.1f}"])  # Labels: min and max time
+  
+  x_zoom = 20
+  lim_bottom = int(round((x_max-x_zoom)/(2*x_max) * space_points))
+  lim_top = int(round((x_max+x_zoom)/(2*x_max)* space_points))
+  ax_heatmap.set_yticks([0, lim_bottom, int(round(space_points/2)), lim_top, space_points - 1])  # Positions: start and end of space
+  ax_heatmap.set_ylim(bottom=lim_bottom, top=lim_top)
+  ax_heatmap.set_yticklabels([f"{x_min:.1f}", f"{-x_zoom:.1f}", f"{0.0:.1f}", f"{x_zoom:.1f}", f"{x_max:.1f}"])  # Labels: min and max space
   ax_heatmap.set_ylabel(r'$x \quad [\mu m]$')
 
   # Add colorbar to the right of the entire plot
@@ -93,6 +97,9 @@ def plot_heatmap():
   ax_lineplot.plot(atom_number, color='blue')
   ax_lineplot.set_xlabel(r'$t \quad [\mathrm{ms}]$')
   ax_lineplot.set_ylabel(r'$N(t)/N_0$')
+  ax_lineplot.set_xticks([0, time_points - 1])  # Positions: start and end of time
+  ax_lineplot.set_xticklabels([f"{t_min:.1f}", f"{t_max:.1f}"])  # Labels: min and max time
+  ax_heatmap.get_xaxis().set_visible(False)
   # ax_lineplot.text(f'{atom_number[:-1]}')
   ax_lineplot.text(
     0.95, 0.05,  # Position of text (relative to axes, [x, y] from bottom-left corner)
