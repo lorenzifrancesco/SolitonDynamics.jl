@@ -122,10 +122,11 @@ def generate_phase_diagram(peaks_data, a_s_values, v_0_values, output_file):
         i_idx = np.where(i_vals == ix)[0][0]
         j_idx = np.where(j_vals == iy)[0][0]
         phase_grid[i_idx, j_idx] = peaks
-        
+    print(phase_grid)
+    phase_grid[phase_grid == 0] = np.nan
     # Plot the phase diagram
     plt.figure(figsize=(4, 3.5))
-    plt.imshow(phase_grid, origin="lower", aspect="auto", cmap="viridis", 
+    plt.imshow(phase_grid.T, origin="lower", aspect="auto", cmap="viridis", 
                extent=[a_s_values[0], a_s_values[-1], v_0_values[0], v_0_values[-1]])
     plt.colorbar(label=r"$\mathrm{Number \; of \; peaks}$")
     plt.xlabel(r"$a_s \quad [a_0]$")
@@ -148,10 +149,11 @@ def fill_phase_diagram():
     # Parse the file
     parsed_data, _ = parse_file(filepath)
     a_s_values, v_0_values = read_phase_diagram_config(config_file)
+    
+    print("Running plots...")
 
     # print(parsed_data[0])
     # Process wavefunctions and compute peaks
-    print(parsed_data)
     peaks_data = {}
     for indices, data in parsed_data.items():
         save_wavefunction_plot(data, indices, output_folder)
