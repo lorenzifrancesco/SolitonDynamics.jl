@@ -206,3 +206,21 @@ def plot_animation():
   ani.save(gif_filename, writer='pillow', dpi=100)
   print(f"Animation saved as {gif_filename}")
   plt.close()
+
+def plot_widths():
+  """
+  Confrontation with the experimental data
+  """
+  # Load data from the CSV file
+  data = pd.read_csv("input/widths.csv", header=None, names=["a_s", "width"]) 
+
+  # Extract columns
+  a_s = data["a_s"]  # First column as x-axis
+  width = data["width"]  # Second column as y-axis
+  # Create the plot
+  plt.figure(figsize=(3.6, 3))
+  plt.plot(a_s, width, marker='o', linestyle='-', color='b', label='Width vs a_s')
+  plt.xlabel(r"$a_s/a_0$")
+  plt.ylabel(r"$w_z$ [sites] ")
+  plt.tight_layout()
+  plt.savefig("media/widths.pdf", dpi=300)

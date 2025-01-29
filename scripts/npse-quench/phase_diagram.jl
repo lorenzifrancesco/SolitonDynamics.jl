@@ -29,16 +29,6 @@ function optical_lattice(v_0, d, tilt, l_x, space)
   end
 end
 
-# data = readdlm("results/phase_diagram.txt", '|')
-# indices = []
-# data = data[2:end]
-# for d in data
-#   try
-#     push!(indices, map(x -> parse(Int, x), split(d, ",")))
-#   catch 
-#   end
-# end
-# println(indices)
 indices = []
 begin
   # GS phase diagram:
