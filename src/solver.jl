@@ -222,6 +222,13 @@ function manual_run(
       if length(N) == 1
         collection[:, save_counter] = complex(zeros(length(psi)))
         collection_sigma[:, save_counter] = complex(ones(length(psi)))
+        sigma_save = [collection_sigma[:, k] for k = 1:save_counter]
+        sol =
+          CustomSolution(
+            u=[collection[:, k] for k = 1:save_counter],
+            sigma=sigma_save,
+            t=t,
+            cnt=time_steps)
       else
         throw("Not implemented")
         collection[:, :, :, save_counter] = psi
