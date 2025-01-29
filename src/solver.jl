@@ -102,7 +102,7 @@ function manual_run(
     if length(N) == 1
       collection = Array{ComplexF64,2}(undef, (length(psi), Nt))
       collection = zeros((length(psi), Nt)) |> complex
-      collection_sigma = Array{ComplexF64,2}(undef, (length(psi), Nt))
+      collection_sigma = Array{Float64,2}(undef, (length(psi), Nt))
       collection[:, 1] = psi
       tmp_real1 = Array(zeros(N))
     else
@@ -166,6 +166,8 @@ function manual_run(
           if length(N) == 1
             collection[:, save_counter] = psi
             collection_sigma[:, save_counter] = sigma
+            # print(sum(sigma)/length(sigma))
+            # print("\n")
           else
             collection[:, :, :, save_counter] = psi
           end
@@ -200,10 +202,12 @@ function manual_run(
       if length(N) == 1
         collection[:, Nt] = psi
         collection_sigma[:, Nt] = sigma
+        sigma_save = [collection_sigma[:, k] for k = 1:Nt]
+        # print(sigma_save)
         sol =
           CustomSolution(
             u=[collection[:, k] for k = 1:Nt],
-            sigma=[collection_sigma[:, k] for k = 1:Nt],
+            sigma=sigma_save,
             t=t,
             cnt=time_steps)
       else
@@ -231,20 +235,20 @@ function manual_run(
     end
 
     # generate the solution
-    if  length(N) == 1  
-      sol =
-          CustomSolution(
-            u=[collection[:, k] for k = 1:Nt],
-            sigma=[collection_sigma[:, k] for k = 1:Nt],
-            t=t,
-            cnt=time_steps)
-      else
-        sol =
-          CustomSolution(
-            u=[collection[:, :, :, k] for k = 1:Nt],
-            t=t,
-            cnt=time_steps)
-    end
+    # if  length(N) == 1  
+    #   sol =
+    #       CustomSolution(
+    #         u=[collection[:, k] for k = 1:Nt],
+    #         sigma=[collection_sigma[:, k] for k = 1:Nt],
+    #         t=t,
+    #         cnt=time_steps)
+    #   else
+    #     sol =
+    #       CustomSolution(
+    #         u=[collection[:, :, :, k] for k = 1:Nt],
+    #         t=t,
+    #         cnt=time_steps)
+    # end
     return sol, max_prob * dV
   end
 end

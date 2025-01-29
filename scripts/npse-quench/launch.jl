@@ -85,6 +85,7 @@ begin
     sim.psi_0 = sol.u;
     gamma_post = - cf["n_atoms"] * cf["a_s"] * a_0 / l_perp
     sim.g = gamma2g(gamma_post, sim)
+    @info "g = " g
     sim.sigma2 = init_sigma2(sim.g)
     e_recoil = (pi * hbar / cf["d"])^2 / cf["m"]
     v_0_norm = cf["v_0"] * e_recoil / e_perp
@@ -104,18 +105,25 @@ begin
     sim.t = LinRange(sim.ti, sim.tf, sim.Nt)
     sim.time_steps = Int64(ceil((sim.tf-sim.ti)/sim.dt))
     sol = runsim(sim, info=true)
-    print(sol)
+    # print(sol)
 
+    print("\n ------------------- Plotting -------------------\n")
     psi2 = Array{Float64,2}(undef, (length(sol[1].u), length(sol[1].u[1])))
+    sigma = Array{Float64,2}(undef, (length(sol[1].sigma), length(sol[1].sigma[1])))
     # px_psi = Array{Float64,2}(undef, (length(sol[1].u), length(sol[1].u[1])))
     for (ix, u_t) in enumerate(sol[1].u)
       # psi2[ix, :] = vcat(real(im * diff(xspace(u_t, sim)) / dx), 0.0)
       psi2[ix, :] = abs2.(xspace(u_t, sim))
+      sigma[ix, :] = abs.(sim.sigma2.(xspace(u_t, sim)))
     end
     # print(psi2)
     print(size(psi2))
+    print(size(sigma))
     output = [vcat(sim.t[i], psi2[i, :]) for i in 1:size(psi2, 1)]
+    output_sigma = [vcat(sim.t[i], sigma[i, :]) for i in 1:size(sigma, 1)]
     CSV.write("results/experiment" * string(idx) * ".csv", DataFrame(output, :auto))
+    print(sum(sigma)/length(sigma))
+    CSV.write("results/experiment" * string(idx) * "_sigma.csv", DataFrame(output_sigma, :auto))
     # sigma = sqrt.(sqrt.(1 .+ sim.g*psi2))
     # CSV.write("results/sigma"*string(idx)*".csv", DataFrame(x = x, y = sigma))
   end

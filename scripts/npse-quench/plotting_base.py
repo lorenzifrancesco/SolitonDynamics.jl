@@ -119,6 +119,48 @@ def plot_heatmap():
   heatmap_filename = "media/td_heatmap.png"
   plt.savefig(heatmap_filename, dpi=300)
   plt.close()
+  
+  
+  filename = "results/experiment1_sigma.csv"
+  data = pd.read_csv(filename)
+  time = data.iloc[0, :].values  # First column is time
+  t_min = 0.0
+  t_max = cf['t_f'] * 1e3
+  x_min = -cf['l']/2 * l_perp * 1e6
+  x_max =  -x_min
+  print("\033[91mWarn:\033[0m playing sketchy stuff with data extraction")
+  psi2_values = np.sqrt(data.iloc[1:, :].values)  # Remaining columns are ψ² values
+  print(f">>min sigma: {np.min(psi2_values)}")
+  time_points = psi2_values.shape[1]
+  space_points = psi2_values.shape[0]
+  time_ticks = np.linspace(t_min, t_max, time_points)
+  
+  fig = plt.figure(figsize=(3, 2.5))
+  asx= fig.add_subplot()
+  sns.heatmap(
+      psi2_values,
+      cmap="viridis",
+      cbar=True,  # Disable the default colorbar
+      ax=asx,
+      cbar_kws={'label': r'$\sigma$'}
+  )
+  x_zoom = 20
+  lim_bottom = int(round((x_max-x_zoom)/(2*x_max) * space_points))
+  lim_top = int(round((x_max+x_zoom)/(2*x_max)* space_points))
+  # plt.colorbar(
+  asx.set_yticks([0, lim_bottom, int(round(space_points/2)), lim_top, space_points - 1])  # Positions: start and end of space
+  asx.set_xticks([0, time_points - 1])  # Positions: start and end of time
+  asx.set_xticklabels([f"{t_min:.1f}", f"{t_max:.1f}"])  # Labels: min and max time
+  asx.set_xlabel(r'$t \quad [\mathrm{ms}]$')
+
+  asx.set_ylim(bottom=lim_bottom, top=lim_top)
+  asx.set_yticklabels([f"{x_min:.1f}", f"{-x_zoom:.1f}", f"{0.0:.1f}", f"{x_zoom:.1f}", f"{x_max:.1f}"])  # Labels: min and max space
+  asx.set_ylabel(r'$x \quad [\mu m]$')
+  
+  plt.tight_layout()
+  heatmap_filename = "media/sigma_td_heatmap.png"
+  plt.savefig(heatmap_filename, dpi=300)
+  plt.close()
   print(f"Heatmap saved as {heatmap_filename}")
 
 
