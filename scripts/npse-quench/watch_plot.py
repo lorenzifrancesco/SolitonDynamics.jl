@@ -5,8 +5,9 @@ import plotting_base
 
 def exec(path):
   try:
-    plotting_base.plot_heatmap()
-    plotting_base.plot_animation()
+    # plotting_base.plot_heatmap()
+    # plotting_base.plot_animation()
+    plotting_base.plot_widths(use_simulation=True)
   except Exception as e:
     print(e)
 

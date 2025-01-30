@@ -154,8 +154,8 @@ function manual_run(
           end
         catch err
           if isa(err, NpseCollapse) && !throw_collapse
-            showerror(stdout, err)
-            @info "Saving up to the collapse..."
+            info && showerror(stdout, err)
+            info && @info "Saving up to the collapse..."
             collapse_detected = true
           else
             throw(err)

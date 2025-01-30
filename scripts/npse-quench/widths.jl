@@ -14,22 +14,9 @@ Output:  widths_experiment*.csv
 =#
 using FStrings
 using TOML
-using CSV, DataFrames
-
-
-print("\n" * "@"^20 * "BEGIN OF RUN" * "@"^20 * "\n")
-cmd = `date`
-print(read(cmd, String))
 using CSV, DataFrames, Tables, Printf, FFTW
 using SolitonDynamics, Plots;
 gr();
-print("\n@@@ packages are loaded ")
-("\n" * "="^50 * "n")
-
-# constants: all units are in SI
-hbar_nostro = 1.0546e-34
-a_0 = 5.292e-11
-e_r = 2.1798723611030e-18
 
 
 function optical_lattice(v_0, d, tilt, l_x, space)
@@ -47,20 +34,34 @@ end
 function estimate_width(z_axis, final_psi2)
   dz = z_axis[2] - z_axis[1]
   particle_fraction = sum(final_psi2) * dz
-  print(particle_fraction) # we can lose some particles
-  return sqrt(sum(z_axis .^2 .* final_psi2) - sum(z_axis .* final_psi2)^2) / particle_fraction
+  # print(particle_fraction) # we can lose some particles
+  center = sum(z_axis .* final_psi2) / particle_fraction
+  std = sqrt(sum(z_axis .^2 .* final_psi2) - sum(z_axis .* final_psi2)^2) / particle_fraction
+  print(f"\n center = {center:3.2e}, std = {std:3.2e} l_perp\n")
+  return std
 end
 
+function particle_fraction(z_axis, final_psi2)
+  dz = z_axis[2] - z_axis[1]
+  return sum(final_psi2) * dz
+end
 
-function get_widths()
+# function get_widths()
+begin
   #=
   Compute GS and post-quench dynamics for different values of a_s
   Save the final wavefunction for the state after 150ms. 
   Compute the width of the wavefunction.
   =#
+  # constants: all units are in SI
+  hbar_nostro = 1.0546e-34
+  a_0 = 5.292e-11
+  e_r = 2.1798723611030e-18
+
+  info = false
   data_widths = CSV.read("input/widths.csv", DataFrame, header=false)
   rename!(data_widths, [:a_s, :width])
-  print(data_widths.a_s)
+  # print(data_widths.a_s)
 
   cf_pre_quench = TOML.parsefile("input/config_pre_quench.toml")
   cf            = TOML.parsefile("input/config.toml")
@@ -72,7 +73,6 @@ function get_widths()
   l_perp = sqrt(hbar_nostro/(cf_pre_quench["omega_perp"]*cf_pre_quench["m"]))
   e_perp = hbar_nostro * cf_pre_quench["omega_perp"]
   t_perp = cf_pre_quench["omega_perp"]^(-1) 
-  @info "l_perp" l_perp
   N = cf["n"]
   L = cf["l"]
   x = LinRange(-L / 2, L / 2, N + 1)[1:end-1]
@@ -81,43 +81,46 @@ function get_widths()
 
   params = data_widths.a_s
   result_widths = zeros(length(params))
+  remaining_particle_fraction = zeros(length(params))
 
   ### Setup of the GS initialization pre-quench2
   # Note the parameters pre-quench2 remain fixed for
   # each post-quench configuration
-  g = 4 * pi * hbar_nostro^2 * cf_pre_quench["a_s"] * a_0 * cf_pre_quench["n_atoms"] / (cf_pre_quench["m"] * 2 * pi * l_perp^2) # somehow not working
+  # g_maybe = 2 * hbar_nostro * cf_pre_quench["a_s"] * a_0 * cf_pre_quench["n_atoms"] / (cf_pre_quench["m"] * l_perp^2) # somehow not working TODO
+  g_maybe = 2 * cf_pre_quench["a_s"] * a_0 * cf_pre_quench["n_atoms"] / (l_perp) # somehow not working TODO
   gamma = - cf_pre_quench["n_atoms"] * cf_pre_quench["a_s"] * a_0 / l_perp
   g = gamma2g(gamma, sim)
+  @assert isapprox(g, g_maybe, atol=1e-9)
+  sim.dt=1e-3
+  sim.g = g
+  sim.g5 = 0.0
+  info && print("\n ------------------- GS pre-quench -------------------\n")
+  l_x = sqrt(hbar_nostro/(cf_pre_quench["omega_x"]*cf_pre_quench["m"])) # SI
+  e_recoil = (pi * hbar / cf_pre_quench["d"])^2 / cf_pre_quench["m"]
+  v_0_norm = cf_pre_quench["v_0"] * e_recoil / e_perp
+  dL = cf_pre_quench["d"]
+  print(f"\nl_perp = {l_perp *1e6 :6.3e} microns | dL = {dL* 1e6 :6.3e} microns = {dL/l_perp:.2e} L_perp\n")
+
+  sim.V0 = optical_lattice(v_0_norm, 
+                           cf_pre_quench["d"]/l_perp, 
+                           0.0, 
+                           l_x/l_perp,
+                           sim.X[1])
+  sim.sigma2 = init_sigma2(sim.g)
+  sim.reltol = 1e-9
+  sim.abstol = 1e-9
+  sim.psi_0 = kspace(complex(gaussian(x/5, sim)), sim)
+  sim.iswitch = -im; 
   
+  #### GS finding
+  sim.maxiters = 1e6
+  sol_gs = runsim(sim, info=false)
+  print("\n")
+  print("\n ------------------- Post-quench dynamics -------------------\n")
   for (idx, par) in enumerate(params)
-    sim.dt=1e-3
-    sim.g = g
-    sim.g5 = 0.0
-    print("\n ------------------- GS pre-quench -------------------\n")
-    l_x = sqrt(hbar_nostro/(cf_pre_quench["omega_x"]*cf_pre_quench["m"])) # SI
-    e_recoil = (pi * hbar / cf_pre_quench["d"])^2 / cf_pre_quench["m"]
-    v_0_norm = cf_pre_quench["v_0"] * e_recoil / e_perp
-    # @info "v_0 norm =  " v_0_norm
-    # @info "gamma = " cf_pre_quench["a_s"] * a_0 * cf_pre_quench["n_atoms"] / l_perp
-    sim.V0 = optical_lattice(v_0_norm, 
-                             cf_pre_quench["d"]/l_perp, 
-                             0.0, 
-                             l_x/l_perp,
-                             sim.X[1])
-    sim.sigma2 = init_sigma2(sim.g)
-    sim.reltol = 1e-9
-    sim.abstol = 1e-9
-    sim.psi_0 = kspace(complex(gaussian(x/5, sim)), sim)
-    sim.iswitch = -im; 
-    
-    #### GS finding
-    sim.maxiters = 1e6
-    sol = runsim(sim, info=false)
-    
-    print("\n ------------------- Post-quench dynamics -------------------\n")
     #### Computation of dynamics after the quench2
     sim.dt = 1e-3
-    sim.psi_0 = sol.u;
+    sim.psi_0 = sol_gs.u;
     gamma_post = - cf["n_atoms"] * par * a_0 / l_perp
     sim.g = gamma2g(gamma_post, sim)
     # @info "g = " g
@@ -139,11 +142,9 @@ function get_widths()
     # @info sim.tf
     sim.t = LinRange(sim.ti, sim.tf, sim.Nt)
     sim.time_steps = Int64(ceil((sim.tf-sim.ti)/sim.dt))
-
     sol = runsim(sim, info=false)
-    # print(sol)
 
-    print("\n ------------------- Saving -------------------\n")
+    info && print("\n ------------------- Saving -------------------\n")
     psi2 = Array{Float64,2}(undef, (length(sol[1].u), length(sol[1].u[1])))
     sigma = Array{Float64,2}(undef, (length(sol[1].sigma), length(sol[1].sigma[1])))
     # px_psi = Array{Float64,2}(undef, (length(sol[1].u), length(sol[1].u[1])))
@@ -155,19 +156,18 @@ function get_widths()
     output = [vcat(sim.t[i], psi2[i, :]) for i in 1:size(psi2, 1)]
     output_sigma = [vcat(sim.t[i], sigma[i, :]) for i in 1:size(sigma, 1)]
     CSV.write("results/widths_experiment" * string(idx) * ".csv", DataFrame(output, :auto))
-    CSV.write("results/widths_experiment" * string(idx) * "_sigma.csv", DataFrame(output_sigma, :auto))
-    # sigma = sqrt.(sqrt.(1 .+ sim.g*psi2))
-    # CSV.write("results/sigma"*string(idx)*".csv", DataFrame(x = x, y = sigma))
-
+    
     if psi2[end, :] != zeros(N)
-      result_widths[idx] = estimate_width(real(sim.X[1]), psi2[end, :]) / (cf["d"]/l_perp)
+      result_widths[idx]     = estimate_width(real(sim.X[1]), psi2[end, :]) / (cf["d"]/l_perp)
+      remaining_particle_fraction[idx] = particle_fraction(real(sim.X[1]), psi2[end, :])
     else
       result_widths[idx] = NaN
+      remaining_particle_fraction[idx] = NaN
     end
-    print(f"width = {result_widths[idx]:10.3e}")
+    print(f"({idx:5d} - {length(params):5d}) | as = {par:10.3e} a0 | width = {result_widths[idx]:10.3e} dL | final_particles = {particle_fraction(real(sim.X[1]), psi2[end, :]):10.3e}\n")
   end
-  CSV.write("results/widths_final.csv", DataFrame(a_s = params, width = result_widths))
+  CSV.write("results/widths_final.csv", DataFrame(a_s = params, width = data_widths.width, width_sim = result_widths, particle_fraction = remaining_particle_fraction))
   return
 end
 
-get_widths()
+# get_widths()

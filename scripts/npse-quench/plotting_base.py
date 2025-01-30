@@ -7,8 +7,9 @@ import matplotlib.animation as animation
 import toml
 from matplotlib.gridspec import GridSpec
 from matplotlib.colorbar import Colorbar
+import re
 
-def plot_heatmap():
+def plot_heatmap(filename="results/experiment1.csv"):
   # Set up matplotlib for LaTeX-compatible fonts
   plt.rc('text', usetex=True)
   plt.rc('font', family='serif')
@@ -16,7 +17,6 @@ def plot_heatmap():
   l_perp = np.sqrt(1.0546e-34/(cf['m']*cf['omega_perp']))
   dx = cf['l']/cf['n']
   
-  filename = "results/experiment1.csv"
   data = pd.read_csv(filename)
   time = data.iloc[0, :].values  # First column is time
   t_min = 0.0
@@ -79,7 +79,7 @@ def plot_heatmap():
   # Set heatmap ticks and labels
   # ax_heatmap.set_xticklabels([f"{t_min:.1f}", f"{t_max:.1f}"])  # Labels: min and max time
   
-  x_zoom = 20
+  x_zoom = 50
   lim_bottom = int(round((x_max-x_zoom)/(2*x_max) * space_points))
   lim_top = int(round((x_max+x_zoom)/(2*x_max)* space_points))
   ax_heatmap.set_yticks([0, lim_bottom, int(round(space_points/2)), lim_top, space_points - 1])  # Positions: start and end of space
@@ -108,61 +108,63 @@ def plot_heatmap():
     f'$N(t_f)/N_0 = {atom_number[-1]:.2f}$',  # Format the final value
     transform=ax_lineplot.transAxes,  # Use axes coordinates
     color='black', fontsize=8, ha='right', va='bottom'
-)
-
+  )
   ax_lineplot.set_ylim((0.0, 1.1))
   # ax_lineplot.legend(loc="upper right")
-
   fig.subplots_adjust(left=0.2, right=0.85, top=0.9, bottom=0.15)
 
-  # Save the heatmap as a PDF
-  heatmap_filename = "media/td_heatmap.png"
+  match = re.search(r"(\d{1,2})(?=\.csv)", filename)
+  if match:
+      number = match.group(1)
+  else:
+      print("No number found before .csv")
+      number = 0
+  heatmap_filename = "media/td_heatmap_"+str(number)+".png"
   plt.savefig(heatmap_filename, dpi=300)
   plt.close()
   
+  ### SIGMA HEATMAP 
+  # filename = "results/experiment1_sigma.csv"
+  # data = pd.read_csv(filename)
+  # time = data.iloc[0, :].values  # First column is time
+  # t_min = 0.0
+  # t_max = cf['t_f'] * 1e3
+  # x_min = -cf['l']/2 * l_perp * 1e6
+  # x_max =  -x_min
+  # print("\033[91mWarn:\033[0m playing sketchy stuff with data extraction")
+  # psi2_values = np.sqrt(data.iloc[1:, :].values)  # Remaining columns are ψ² values
+  # print(f">>min sigma: {np.min(psi2_values)}")
+  # time_points = psi2_values.shape[1]
+  # space_points = psi2_values.shape[0]
+  # time_ticks = np.linspace(t_min, t_max, time_points)
   
-  filename = "results/experiment1_sigma.csv"
-  data = pd.read_csv(filename)
-  time = data.iloc[0, :].values  # First column is time
-  t_min = 0.0
-  t_max = cf['t_f'] * 1e3
-  x_min = -cf['l']/2 * l_perp * 1e6
-  x_max =  -x_min
-  print("\033[91mWarn:\033[0m playing sketchy stuff with data extraction")
-  psi2_values = np.sqrt(data.iloc[1:, :].values)  # Remaining columns are ψ² values
-  print(f">>min sigma: {np.min(psi2_values)}")
-  time_points = psi2_values.shape[1]
-  space_points = psi2_values.shape[0]
-  time_ticks = np.linspace(t_min, t_max, time_points)
-  
-  fig = plt.figure(figsize=(3, 2.5))
-  asx= fig.add_subplot()
-  sns.heatmap(
-      psi2_values,
-      cmap="viridis",
-      cbar=True,  # Disable the default colorbar
-      ax=asx,
-      cbar_kws={'label': r'$\sigma$'}
-  )
-  x_zoom = 20
-  lim_bottom = int(round((x_max-x_zoom)/(2*x_max) * space_points))
-  lim_top = int(round((x_max+x_zoom)/(2*x_max)* space_points))
-  # plt.colorbar(
-  asx.set_yticks([0, lim_bottom, int(round(space_points/2)), lim_top, space_points - 1])  # Positions: start and end of space
-  asx.set_xticks([0, time_points - 1])  # Positions: start and end of time
-  asx.set_xticklabels([f"{t_min:.1f}", f"{t_max:.1f}"])  # Labels: min and max time
-  asx.set_xlabel(r'$t \quad [\mathrm{ms}]$')
+  # fig = plt.figure(figsize=(3, 2.5))
+  # asx= fig.add_subplot()
+  # sns.heatmap(
+  #     psi2_values,
+  #     cmap="viridis",
+  #     cbar=True,  # Disable the default colorbar
+  #     ax=asx,
+  #     cbar_kws={'label': r'$\sigma$'}
+  # )
+  # x_zoom = 20
+  # lim_bottom = int(round((x_max-x_zoom)/(2*x_max) * space_points))
+  # lim_top = int(round((x_max+x_zoom)/(2*x_max)* space_points))
+  # # plt.colorbar(
+  # asx.set_yticks([0, lim_bottom, int(round(space_points/2)), lim_top, space_points - 1])  # Positions: start and end of space
+  # asx.set_xticks([0, time_points - 1])  # Positions: start and end of time
+  # asx.set_xticklabels([f"{t_min:.1f}", f"{t_max:.1f}"])  # Labels: min and max time
+  # asx.set_xlabel(r'$t \quad [\mathrm{ms}]$')
 
-  asx.set_ylim(bottom=lim_bottom, top=lim_top)
-  asx.set_yticklabels([f"{x_min:.1f}", f"{-x_zoom:.1f}", f"{0.0:.1f}", f"{x_zoom:.1f}", f"{x_max:.1f}"])  # Labels: min and max space
-  asx.set_ylabel(r'$x \quad [\mu m]$')
+  # asx.set_ylim(bottom=lim_bottom, top=lim_top)
+  # asx.set_yticklabels([f"{x_min:.1f}", f"{-x_zoom:.1f}", f"{0.0:.1f}", f"{x_zoom:.1f}", f"{x_max:.1f}"])  # Labels: min and max space
+  # asx.set_ylabel(r'$x \quad [\mu m]$')
   
-  plt.tight_layout()
-  heatmap_filename = "media/sigma_td_heatmap.png"
-  plt.savefig(heatmap_filename, dpi=300)
-  plt.close()
+  # plt.tight_layout()
+  # heatmap_filename = "media/sigma_td_heatmap.png"
+  # plt.savefig(heatmap_filename, dpi=300)
+  # plt.close()
   print(f"Heatmap saved as {heatmap_filename}")
-
 
 
 def plot_animation():
@@ -207,20 +209,79 @@ def plot_animation():
   print(f"Animation saved as {gif_filename}")
   plt.close()
 
-def plot_widths():
+
+def plot_widths(use_simulation=True):
   """
   Confrontation with the experimental data
   """
-  # Load data from the CSV file
-  data = pd.read_csv("input/widths.csv", header=None, names=["a_s", "width"]) 
-
+  if not use_simulation: 
+    data = pd.read_csv("input/widths.csv", header=None, names=["a_s", "width"]) 
+  else:
+    data = pd.read_csv("results/widths_final.csv", header=0, names=["a_s", "width", "width_sim", "particle_fraction"])
   # Extract columns
   a_s = data["a_s"]  # First column as x-axis
   width = data["width"]  # Second column as y-axis
   # Create the plot
   plt.figure(figsize=(3.6, 3))
   plt.plot(a_s, width, marker='o', linestyle='-', color='b', label='Width vs a_s')
+  if use_simulation:
+    plt.plot(a_s, data["width_sim"], marker='x', linestyle='--', color='r', label='Width vs a_s (sim)')
   plt.xlabel(r"$a_s/a_0$")
   plt.ylabel(r"$w_z$ [sites] ")
   plt.tight_layout()
   plt.savefig("media/widths.pdf", dpi=300)
+  
+  if use_simulation:
+    fraction = data["particle_fraction"]  # Second column as y-axis
+    plt.clf()
+    plt.figure(figsize=(3.6, 3))
+    plt.plot(a_s, fraction, marker='o', linestyle='-.', color='r', label='Width vs a_s (sim)')
+    plt.xlabel(r"$a_s/a_0$")
+    plt.ylabel(r"$N_{\mathrm{tot}}/N_0$")
+    plt.tight_layout()
+    plt.savefig("media/fraction.pdf", dpi=300)
+
+
+def plot_final(filename="results/experiment1.csv"):
+  # Set up matplotlib for LaTeX-compatible fonts
+  plt.rc('text', usetex=True)
+  plt.rc('font', family='serif')
+  cf = toml.load("input/config.toml")
+  l_perp = np.sqrt(1.0546e-34/(cf['m']*cf['omega_perp']))
+  dx = cf['l']/cf['n']
+  
+  data = pd.read_csv(filename)
+  time = data.iloc[0, :].values  # First column is time
+  t_min = 0.0
+  t_max = cf['t_f'] * 1e3
+  x_min = -cf['l']/2 * l_perp * 1e6
+  x_max =  -x_min
+  print("\033[91mWarn:\033[0m playing sketchy stuff with data extraction")
+  psi2_values = data.iloc[1:, :].values  # Remaining columns are ψ² values
+  time_points = psi2_values.shape[1]
+  space_points = psi2_values.shape[0]
+  space_axis = np.linspace(x_min, x_max, space_points) * l_perp / cf["d"]
+  time_ticks = np.linspace(t_min, t_max, time_points)
+
+  atom_number = psi2_values.sum(axis=0) * dx
+  print(atom_number)
+  print(psi2_values[:, -1])
+  
+  plt.figure(figsize=(3, 2.5))
+  plt.plot(space_axis, psi2_values[:, -1])
+  plt.axvline(-1, color='r', linestyle='--')
+  plt.axvline(1, color='r', linestyle='--')
+  plt.xlabel(r'sites')
+  plt.xlim([-5, 5])
+  match = re.search(r"(\d{1,2})(?=\.csv)", filename)
+  if match:
+      number = match.group(1)
+  else:
+      print("No number found before .csv")
+      number = 0
+  plot_filename = "media/final_"+str(number)+".png"
+  plt.savefig(plot_filename, dpi=300)
+  plt.tight_layout()
+  plt.close()
+
+  print(f"Final plot saved as {plot_filename}")
