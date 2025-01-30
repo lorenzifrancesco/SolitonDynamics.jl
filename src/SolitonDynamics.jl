@@ -5,7 +5,6 @@ using ExportAll, Reexport
 
 # Numerics
 using FFTW, CUDA
-using OrdinaryDiffEq
 import NonlinearSolve, LinearSolve, Interpolations
 using LinearAlgebra
 using IntervalRootFinding, IntervalArithmetic

@@ -1,6 +1,5 @@
 using SolitonDynamics
 using CUDA
-using OrdinaryDiffEq
 
 function test_transforms()
   L = (40.0,)
@@ -25,7 +24,7 @@ function test_transforms()
 
   initial_state = psi_0
 
-  alg = Tsit5()
+  # alg = Tsit5()
 
   @pack_Sim! sim
 

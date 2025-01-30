@@ -99,7 +99,7 @@ end
   dt::Float64 = 1e-3  # used in manual solvers
   time_steps = 5000   # used in manual solvers
   # --- algorithms and numerical parameters
-  alg = Tsit5() # default solver
+  # alg = Tsit5() # default solver
   iswitch::ComplexF64 = -im # 1.0 for real time, -im for imaginary time
   flags::UInt32 = FFTW.MEASURE # choose a plan. PATIENT, NO_TIMELIMIT, EXHAUSTIVE
   reltol::Float64 = 1e-3  # default tolerance; may need to use 1e-7 for corner cases
