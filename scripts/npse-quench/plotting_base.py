@@ -28,41 +28,10 @@ def plot_heatmap(filename="results/experiment1.csv"):
   time_points = psi2_values.shape[1]
   space_points = psi2_values.shape[0]
   time_ticks = np.linspace(t_min, t_max, time_points)
-
-  # # Heatmap plot
-  # # fig, ax = plt.subplots(figsize=(4, 3))
-  # fig = plt.figure(figsize=(5, 4))
-  # gs = GridSpec(2, 1, height_ratios=[5, 1], hspace=0.5)  # Adjust height and spacing
-
-  # # Heatmap plot
-  # ax1 = fig.add_subplot(gs[0])
-  # ax = ax1
-  # sns.heatmap(
-  #     psi2_values,  # Transpose so time is along y-axis
-  #     # xticklabels=np.linspace(0, cf["t_f"]*1e3, 100),  # Suppress x-ticks
-  #     # yticklabels=False,  # Suppress y-ticks
-  #     cmap="viridis",  # Choose a colormap
-  #     cbar_kws={'label': r'$|\psi|^2$'},  # LaTeX for colorbar label
-  #     ax=ax
-  # )
-  # ax.set_xticks([0, psi2_values.shape[1] - 1]) 
-  # ax.set_xticklabels([f"{0.0:.1f}", f"{cf['t_f']*1e3:.1f}"])
-  # ax.set_yticks([0, psi2_values.shape[0] - 1])
-  # ax.set_yticklabels([f"{cf['l']/2 * l_perp *1e6:.1f}", f"{-cf['l']/2 * l_perp * 1e6:.1f}"])
-  # ax.set_xlabel(r'$t \quad  [\mathrm{ms}]$')
-  # ax.set_ylabel(r'$x \quad  [\mathrm{\mu m}] $')
   
-  # ax2 = fig.add_subplot(gs[1], sharex=ax1)  # Share the x-axis with the heatmap
   atom_number = psi2_values.sum(axis=0) * dx
   print(atom_number)
   print(psi2_values[:, -1])
-  # print(atom_number)
-  # time_ticks = np.linspace(0, cf['t_f'], psi2_values.shape[1])  # Time values
-  # ax2.plot(time_ticks*1e3, atom_number, color='blue', label=r'Atom Number ($\int |\psi|^2 \, dx$)')
-  # ax2.set_xlabel(r'$t \quad [\mathrm{ms}]$')
-  # ax2.set_ylabel(r'$N(t)$')
-  # # axes[1].legend(loc="upper right")
-  # plt.tight_layout()
   
   fig = plt.figure(figsize=(4, 3.5))
   gs = fig.add_gridspec(2, 2, width_ratios=[40, 1], height_ratios=[4, 1], wspace=0.15, hspace=0.1)
@@ -76,17 +45,15 @@ def plot_heatmap(filename="results/experiment1.csv"):
       ax=ax_heatmap
   )
   
-  # Set heatmap ticks and labels
-  # ax_heatmap.set_xticklabels([f"{t_min:.1f}", f"{t_max:.1f}"])  # Labels: min and max time
-  
-  x_zoom = 50
+  x_zoom = 30
   lim_bottom = int(round((x_max-x_zoom)/(2*x_max) * space_points))
   lim_top = int(round((x_max+x_zoom)/(2*x_max)* space_points))
   ax_heatmap.set_yticks([0, lim_bottom, int(round(space_points/2)), lim_top, space_points - 1])  # Positions: start and end of space
   ax_heatmap.set_ylim(bottom=lim_bottom, top=lim_top)
   ax_heatmap.set_yticklabels([f"{x_min:.1f}", f"{-x_zoom:.1f}", f"{0.0:.1f}", f"{x_zoom:.1f}", f"{x_max:.1f}"])  # Labels: min and max space
   ax_heatmap.set_ylabel(r'$x \quad [\mu m]$')
-
+  ax_heatmap.axhline((x_max+cf["d"]/2*1e6)/(2*x_max)*space_points, color='w', linestyle='--', lw=0.5)
+  ax_heatmap.axhline((x_max-cf["d"]/2*1e6)/(2*x_max)*space_points, color='w', linestyle='--', lw=0.5)
   # Add colorbar to the right of the entire plot
   cbar_ax = fig.add_subplot(gs[:, 1])  # Colorbar spans both rows
   norm = plt.Normalize(vmin=np.min(psi2_values), vmax=np.max(psi2_values))
@@ -122,48 +89,6 @@ def plot_heatmap(filename="results/experiment1.csv"):
   heatmap_filename = "media/td_heatmap_"+str(number)+".png"
   plt.savefig(heatmap_filename, dpi=300)
   plt.close()
-  
-  ### SIGMA HEATMAP 
-  # filename = "results/experiment1_sigma.csv"
-  # data = pd.read_csv(filename)
-  # time = data.iloc[0, :].values  # First column is time
-  # t_min = 0.0
-  # t_max = cf['t_f'] * 1e3
-  # x_min = -cf['l']/2 * l_perp * 1e6
-  # x_max =  -x_min
-  # print("\033[91mWarn:\033[0m playing sketchy stuff with data extraction")
-  # psi2_values = np.sqrt(data.iloc[1:, :].values)  # Remaining columns are ψ² values
-  # print(f">>min sigma: {np.min(psi2_values)}")
-  # time_points = psi2_values.shape[1]
-  # space_points = psi2_values.shape[0]
-  # time_ticks = np.linspace(t_min, t_max, time_points)
-  
-  # fig = plt.figure(figsize=(3, 2.5))
-  # asx= fig.add_subplot()
-  # sns.heatmap(
-  #     psi2_values,
-  #     cmap="viridis",
-  #     cbar=True,  # Disable the default colorbar
-  #     ax=asx,
-  #     cbar_kws={'label': r'$\sigma$'}
-  # )
-  # x_zoom = 20
-  # lim_bottom = int(round((x_max-x_zoom)/(2*x_max) * space_points))
-  # lim_top = int(round((x_max+x_zoom)/(2*x_max)* space_points))
-  # # plt.colorbar(
-  # asx.set_yticks([0, lim_bottom, int(round(space_points/2)), lim_top, space_points - 1])  # Positions: start and end of space
-  # asx.set_xticks([0, time_points - 1])  # Positions: start and end of time
-  # asx.set_xticklabels([f"{t_min:.1f}", f"{t_max:.1f}"])  # Labels: min and max time
-  # asx.set_xlabel(r'$t \quad [\mathrm{ms}]$')
-
-  # asx.set_ylim(bottom=lim_bottom, top=lim_top)
-  # asx.set_yticklabels([f"{x_min:.1f}", f"{-x_zoom:.1f}", f"{0.0:.1f}", f"{x_zoom:.1f}", f"{x_max:.1f}"])  # Labels: min and max space
-  # asx.set_ylabel(r'$x \quad [\mu m]$')
-  
-  # plt.tight_layout()
-  # heatmap_filename = "media/sigma_td_heatmap.png"
-  # plt.savefig(heatmap_filename, dpi=300)
-  # plt.close()
   print(f"Heatmap saved as {heatmap_filename}")
 
 
@@ -268,11 +193,11 @@ def plot_final(filename="results/experiment1.csv"):
   print(psi2_values[:, -1])
   
   plt.figure(figsize=(3, 2.5))
-  plt.plot(space_axis, psi2_values[:, -1])
-  plt.axvline(-1, color='r', linestyle='--')
-  plt.axvline(1, color='r', linestyle='--')
+  plt.plot(space_axis, psi2_values[:, -1], lw=0.7)
+  plt.axvline(-1, color='r', linestyle='--', lw=0.5)
+  plt.axvline(+1, color='r', linestyle='--', lw=0.5)
   plt.xlabel(r'sites')
-  plt.xlim([-5, 5])
+  # plt.xlim([-5, 5])
   match = re.search(r"(\d{1,2})(?=\.csv)", filename)
   if match:
       number = match.group(1)

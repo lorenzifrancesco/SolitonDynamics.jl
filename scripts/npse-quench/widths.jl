@@ -36,7 +36,7 @@ function estimate_width(z_axis, final_psi2)
   particle_fraction = sum(final_psi2) * dz
   # print(particle_fraction) # we can lose some particles
   center = sum(z_axis .* final_psi2) / particle_fraction
-  std = sqrt(sum(z_axis .^2 .* final_psi2) - sum(z_axis .* final_psi2)^2) / particle_fraction
+  std = sqrt(dz * sum(z_axis .^2 .* final_psi2) - sum(z_axis .* final_psi2)^2 / particle_fraction)
   print(f"\n center = {center:3.2e}, std = {std:3.2e} l_perp\n")
   return std
 end
@@ -45,6 +45,7 @@ function particle_fraction(z_axis, final_psi2)
   dz = z_axis[2] - z_axis[1]
   return sum(final_psi2) * dz
 end
+
 
 # function get_widths()
 begin
@@ -109,12 +110,21 @@ begin
   sim.sigma2 = init_sigma2(sim.g)
   sim.reltol = 1e-9
   sim.abstol = 1e-9
-  sim.psi_0 = kspace(complex(gaussian(x/5, sim)), sim)
+  sim.psi_0 = kspace(complex(gaussian(x/(3*cf_pre_quench["d"]/l_perp), sim)), sim)
   sim.iswitch = -im; 
   
   #### GS finding
   sim.maxiters = 1e6
   sol_gs = runsim(sim, info=false)
+  
+  # save for plotting
+  psi2 = Array{Float64,2}(undef, (2, length(sol_gs.u)))
+  for ix in [1, 2]
+    psi2[ix, :] = abs2.(xspace(sol_gs.u, sim))
+  end
+  output = [vcat(sim.t[i], psi2[i, :]) for i in 1:size(psi2, 1)]
+  CSV.write("results/widths_experiment_99.csv", DataFrame(output, :auto))
+
   print("\n")
   print("\n ------------------- Post-quench dynamics -------------------\n")
   for (idx, par) in enumerate(params)
@@ -162,7 +172,7 @@ begin
       remaining_particle_fraction[idx] = particle_fraction(real(sim.X[1]), psi2[end, :])
     else
       result_widths[idx] = NaN
-      remaining_particle_fraction[idx] = NaN
+      remaining_particle_fraction[idx] = 0.0
     end
     print(f"({idx:5d} - {length(params):5d}) | as = {par:10.3e} a0 | width = {result_widths[idx]:10.3e} dL | final_particles = {particle_fraction(real(sim.X[1]), psi2[end, :]):10.3e}\n")
   end
