@@ -73,7 +73,7 @@ begin
   @assert(cf_pre_quench["l"]==cf["l"])
   l_perp = sqrt(hbar_nostro/(cf_pre_quench["omega_perp"]*cf_pre_quench["m"]))
   e_perp = hbar_nostro * cf_pre_quench["omega_perp"]
-  t_perp = cf_pre_quench["omega_perp"]^(-1) 
+  t_perp = cf_pre_quench["omega_perp"]^(-1) * 2 * pi # ATTENTION
   N = cf["n"]
   L = cf["l"]
   x = LinRange(-L / 2, L / 2, N + 1)[1:end-1]
@@ -97,7 +97,7 @@ begin
   sim.g5 = 0.0
   info && print("\n ------------------- GS pre-quench -------------------\n")
   l_x = sqrt(hbar_nostro/(cf_pre_quench["omega_x"]*cf_pre_quench["m"])) # SI
-  e_recoil = (pi * hbar / cf_pre_quench["d"])^2 / cf_pre_quench["m"]
+  e_recoil = (pi * hbar / cf_pre_quench["d"])^2 / (2*cf_pre_quench["m"]) # ATTENTION
   v_0_norm = cf_pre_quench["v_0"] * e_recoil / e_perp
   dL = cf_pre_quench["d"]
   print(f"\nl_perp = {l_perp *1e6 :6.3e} microns | dL = {dL* 1e6 :6.3e} microns = {dL/l_perp:.2e} L_perp\n")
