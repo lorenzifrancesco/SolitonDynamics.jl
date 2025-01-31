@@ -44,11 +44,12 @@ l_perp = 1.59e-6
 # Define parameter ranges
 n_points = 50
 g_values = np.linspace(-1.6, -0.2, n_points)
-kL_values = np.linspace(0, 10/(l_perp*1e6), n_points)
+dL_values = np.linspace(0, 10, n_points)
+kL_values = np.pi/(dL_values/(l_perp*1e6))
 V0 = 1.3 * 1.386 # Er for dL/l_perp = 1.887
 heatmap_data = np.zeros((len(kL_values), len(g_values)))
 
-if True:
+if False:
   # Compute number of zeros for each (g, V0) pair
   for i, kL in enumerate(kL_values):
     for j, g in enumerate(g_values):
@@ -60,13 +61,10 @@ heatmap_data = np.load("results/phase_diagram/variational_kl.npy")
 print(f"Plotting the {heatmap_data.shape} phase diagram...")
 plt.figure(figsize=(3.7, 3))
 ax = sns.heatmap(heatmap_data[::-1, :], 
-            # yticks = [0, n_points-1],
-            yticklabels=[kL_values[0], kL_values[-1]],
-            # xticks=[0, n_points-1],
-            xticklabels=[g_values[0], g_values[-1]], cmap='viridis')
-ytick_positions = [0, len(kL_values) - 1][::-1]
+            cmap='viridis')
+ytick_positions = [0, len(dL_values) - 1][::-1]
 xtick_positions = [0, len(g_values) - 1]
-ytick_labels = [round(kL_values[0], 2), round(kL_values[-1], 2)]
+ytick_labels = [round(dL_values[0], 2), round(dL_values[-1], 2)]
 xtick_labels = [round(g_values[0], 2), round(g_values[-1], 2)]
 ax.set_xticks(xtick_positions)
 ax.set_xticklabels(xtick_labels)
@@ -74,6 +72,6 @@ ax.set_yticks(ytick_positions)
 ax.set_yticklabels(ytick_labels)
 
 plt.xlabel(r'$g$')
-plt.ylabel(r'$k_L$')
+plt.ylabel(r'$d_L$ [$\mu$m]')
 plt.tight_layout()
-plt.savefig('media/variational_kl_phase_diagram.png')
+plt.savefig('media/variational_kl_phase_diagram.png', dpi=300)

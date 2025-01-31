@@ -43,10 +43,11 @@ def count_zeros(g, V0, kL, eta_min=1e-4, eta_max=15, num_points=10000):
 n_points = 50
 g_values = np.linspace(-1.6, -0.2, n_points)
 V0_values = np.linspace(0, 3, n_points)
+V0_values = V0_values * 1.386 # Er for dL/l_perp = 1.887
 kL = 2
 heatmap_data = np.zeros((len(V0_values), len(g_values)))
 
-if True:
+if False:
   # Compute number of zeros for each (g, V0) pair
   for i, V0 in enumerate(V0_values):
     for j, g in enumerate(g_values):
@@ -55,6 +56,7 @@ if True:
 
 heatmap_data = np.load("results/phase_diagram/variational_v0.npy")
 
+V0_values /= 1.386 # go back to units of Er
 print(f"Plotting the {heatmap_data.shape} phase diagram...")
 plt.figure(figsize=(3.7, 3))
 ax = sns.heatmap(heatmap_data[::-1, :], 
@@ -64,7 +66,7 @@ ax = sns.heatmap(heatmap_data[::-1, :],
             xticklabels=[g_values[0], g_values[-1]], cmap='viridis')
 ytick_positions = [0, len(V0_values) - 1]
 xtick_positions = [0, len(g_values) - 1]
-ytick_labels = [round(V0_values[0], 2), round(V0_values[-1], 2)]
+ytick_labels = [round(V0_values[0], 2), round(V0_values[-1], 2)][::-1]
 xtick_labels = [round(g_values[0], 2), round(g_values[-1], 2)]
 ax.set_xticks(xtick_positions)
 ax.set_xticklabels(xtick_labels)
@@ -72,6 +74,6 @@ ax.set_yticks(ytick_positions)
 ax.set_yticklabels(ytick_labels)
 
 plt.xlabel(r'$g$')
-plt.ylabel(r'$V_0$')
+plt.ylabel(r'$V_0$ [$E_r$]')
 plt.tight_layout()
-plt.savefig('media/variational_v0_phase_diagram.png')
+plt.savefig('media/variational_v0_phase_diagram.png', dpi=300)
