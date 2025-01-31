@@ -35,12 +35,15 @@ def count_zeros(g, V0, kL, eta_min=1e-4, eta_max=15, num_points=10000):
             except ValueError:
                 pass
     
-    return len(zero_crossings)
+    if len(zero_crossings) == 2 and zero_crossings[1]<1:
+      return 5
+    else:
+      return len(zero_crossings)
 
 l_perp = 1.59e-6
 # Define parameter ranges
 n_points = 50
-g_values = np.linspace(-1.6, 0.0, n_points)
+g_values = np.linspace(-1.6, -0.2, n_points)
 kL_values = np.linspace(0, 10/(l_perp*1e6), n_points)
 V0 = 1.3 * 1.386 # Er for dL/l_perp = 1.887
 heatmap_data = np.zeros((len(kL_values), len(g_values)))
@@ -50,7 +53,7 @@ if True:
   for i, kL in enumerate(kL_values):
     for j, g in enumerate(g_values):
       heatmap_data[i, j] = count_zeros(g, V0, kL)
-  np.save("results/phase_diagram/variational.npy", heatmap_data)
+  np.save("results/phase_diagram/variational_kl.npy", heatmap_data)
 
 heatmap_data = np.load("results/phase_diagram/variational_kl.npy")
 
