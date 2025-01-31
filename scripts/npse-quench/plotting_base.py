@@ -23,15 +23,15 @@ def plot_heatmap(filename="results/experiment1.csv"):
   t_max = cf['t_f'] * 1e3
   x_min = -cf['l']/2 * l_perp * 1e6
   x_max =  -x_min
-  print("\033[91mWarn:\033[0m playing sketchy stuff with data extraction")
+  # print("\033[91mWarn:\033[0m playing sketchy stuff with data extraction")
   psi2_values = data.iloc[1:, :].values  # Remaining columns are ψ² values
   time_points = psi2_values.shape[1]
   space_points = psi2_values.shape[0]
   time_ticks = np.linspace(t_min, t_max, time_points)
   
   atom_number = psi2_values.sum(axis=0) * dx
-  print(atom_number)
-  print(psi2_values[:, -1])
+  # print(atom_number)
+  # print(psi2_values[:, -1])
   
   fig = plt.figure(figsize=(4, 3.5))
   gs = fig.add_gridspec(2, 2, width_ratios=[40, 1], height_ratios=[4, 1], wspace=0.15, hspace=0.1)
@@ -52,8 +52,8 @@ def plot_heatmap(filename="results/experiment1.csv"):
   ax_heatmap.set_ylim(bottom=lim_bottom, top=lim_top)
   ax_heatmap.set_yticklabels([f"{x_min:.1f}", f"{-x_zoom:.1f}", f"{0.0:.1f}", f"{x_zoom:.1f}", f"{x_max:.1f}"])  # Labels: min and max space
   ax_heatmap.set_ylabel(r'$x \quad [\mu m]$')
-  ax_heatmap.axhline((x_max+cf["d"]/2*1e6)/(2*x_max)*space_points, color='w', linestyle='--', lw=0.5)
-  ax_heatmap.axhline((x_max-cf["d"]/2*1e6)/(2*x_max)*space_points, color='w', linestyle='--', lw=0.5)
+  ax_heatmap.axhline((x_max+cf["d"]/2*1e6)/(2*x_max)*space_points, color='w', linestyle='--', lw=0.2)
+  ax_heatmap.axhline((x_max-cf["d"]/2*1e6)/(2*x_max)*space_points, color='w', linestyle='--', lw=0.2)
   # Add colorbar to the right of the entire plot
   cbar_ax = fig.add_subplot(gs[:, 1])  # Colorbar spans both rows
   norm = plt.Normalize(vmin=np.min(psi2_values), vmax=np.max(psi2_values))
@@ -101,9 +101,9 @@ def plot_animation():
   filename = "results/experiment1.csv"  # Replace with your CSV file path
   data = pd.read_csv(filename)
   time = data.iloc[0, :].values  # First row is time
-  print("\033[91mWarn:\033[0m playing sketchy stuff with data extraction")
+  # print("\033[91mWarn:\033[0m playing sketchy stuff with data extraction")
   psi2_values = data.iloc[1:, :].values  # Remaining rows are ψ² values
-  print(np.shape(psi2_values))
+  # print(np.shape(psi2_values))
 
   # Set up the plot for animation
   fig, ax = plt.subplots(figsize=(4, 3))
@@ -142,7 +142,7 @@ def plot_widths(use_simulation=True):
   if not use_simulation: 
     data = pd.read_csv("input/widths.csv", header=None, names=["a_s", "width"]) 
   else:
-    data = pd.read_csv("results/widths_final.csv", header=0, names=["a_s", "width", "width_sim", "particle_fraction"])
+    data = pd.read_csv("results/widths_final.csv", header=0, names=["a_s", "width", "width_sim", "width_rough", "particle_fraction"])
   # Extract columns
   a_s = data["a_s"]  # First column as x-axis
   width = data["width"]  # Second column as y-axis
@@ -150,7 +150,9 @@ def plot_widths(use_simulation=True):
   plt.figure(figsize=(3.6, 3))
   plt.plot(a_s, width, marker='o', linestyle='-', color='b', label='Width vs a_s')
   if use_simulation:
-    plt.plot(a_s, data["width_sim"], marker='x', linestyle='--', color='r', label='Width vs a_s (sim)')
+    print("\033[91mWarn:\033[0m Adding +1")
+    plt.plot(a_s, data["width_rough"], marker='x', linestyle='--', color='r', label='Width vs a_s (sim)')
+    plt.plot(a_s, data["width_sim"], marker='.', linestyle='-.', color='orange', label='Width vs a_s (sim)')
   plt.xlabel(r"$a_s/a_0$")
   plt.ylabel(r"$w_z$ [sites] ")
   plt.tight_layout()
@@ -181,7 +183,7 @@ def plot_final(filename="results/experiment1.csv"):
   t_max = cf['t_f'] * 1e3
   x_min = -cf['l']/2 * l_perp * 1e6
   x_max =  -x_min
-  print("\033[91mWarn:\033[0m playing sketchy stuff with data extraction")
+  # print("\033[91mWarn:\033[0m playing sketchy stuff with data extraction")
   psi2_values = data.iloc[1:, :].values  # Remaining columns are ψ² values
   time_points = psi2_values.shape[1]
   space_points = psi2_values.shape[0]
@@ -189,13 +191,16 @@ def plot_final(filename="results/experiment1.csv"):
   time_ticks = np.linspace(t_min, t_max, time_points)
 
   atom_number = psi2_values.sum(axis=0) * dx
-  print(atom_number)
-  print(psi2_values[:, -1])
+  # print(atom_number)
+  # print(psi2_values[:, -1])
   
   plt.figure(figsize=(3, 2.5))
   plt.plot(space_axis, psi2_values[:, -1], lw=0.7)
-  plt.axvline(-1, color='r', linestyle='--', lw=0.5)
-  plt.axvline(+1, color='r', linestyle='--', lw=0.5)
+  vlines = [-2.5, -1.5, -0.5, 0.5, 1.5, 2.5]
+  for vline in vlines:
+    plt.axvline(vline, color='r', linestyle='--', lw=0.5)
+  # plt.axvline(-1, color='r', linestyle='--', lw=0.5)
+  # plt.axvline(+1, color='r', linestyle='--', lw=0.5)
   plt.xlabel(r'sites')
   # plt.xlim([-5, 5])
   match = re.search(r"(\d{1,2})(?=\.csv)", filename)

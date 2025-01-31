@@ -31,6 +31,24 @@ function optical_lattice(v_0, d, tilt, l_x, space)
 end
 
 
+function estimate_width_rough(z_axis, final_psi2, dL)
+  dz = z_axis[2] - z_axis[1]
+  n_boxes = Int(round((z_axis[end]-z_axis[1]) / dL))
+  box_z = LinRange(z_axis[1], z_axis[end], n_boxes)
+  prob_box = Array{Float64, 1}(undef, n_boxes)
+  for i in 1:n_boxes
+    prob_box[i] = sum(final_psi2[(i-1)*dL .< z_axis .< i*dL]) * dz
+    @info "box no. " i 
+    @info "prob_box = " prob_box[i]
+    @info "position = " box_z[i]
+
+  end
+  std = sqrt(sum(abs.(box_z) .* prob_box) / sum(prob_box))
+  # print(f"\n center = {center:3.2e}, std = {std:3.2e} l_perp\n")
+  return std
+end
+
+
 function estimate_width(z_axis, final_psi2)
   dz = z_axis[2] - z_axis[1]
   particle_fraction = sum(final_psi2) * dz
@@ -40,6 +58,7 @@ function estimate_width(z_axis, final_psi2)
   print(f"\n center = {center:3.2e}, std = {std:3.2e} l_perp\n")
   return std
 end
+
 
 function particle_fraction(z_axis, final_psi2)
   dz = z_axis[2] - z_axis[1]
@@ -82,6 +101,7 @@ begin
 
   params = data_widths.a_s
   result_widths = zeros(length(params))
+  result_widths_rough = zeros(length(params))
   remaining_particle_fraction = zeros(length(params))
 
   ### Setup of the GS initialization pre-quench2
@@ -168,16 +188,16 @@ begin
     CSV.write("results/widths_experiment" * string(idx) * ".csv", DataFrame(output, :auto))
     
     if psi2[end, :] != zeros(N)
-      result_widths[idx]     = estimate_width(real(sim.X[1]), psi2[end, :]) / (cf["d"]/l_perp)
+      result_widths[idx]       = estimate_width(real(sim.X[1]), psi2[end, :]) / (cf["d"]/l_perp)
+      result_widths_rough[idx] = estimate_width_rough(real(sim.X[1]), psi2[end, :], cf["d"]/l_perp) / (cf["d"]/l_perp)
       remaining_particle_fraction[idx] = particle_fraction(real(sim.X[1]), psi2[end, :])
     else
-      result_widths[idx] = NaN
+      result_widths[idx]               = NaN
+      result_widths_rough[idx]               = NaN
       remaining_particle_fraction[idx] = 0.0
     end
-    print(f"({idx:5d} - {length(params):5d}) | as = {par:10.3e} a0 | width = {result_widths[idx]:10.3e} dL | final_particles = {particle_fraction(real(sim.X[1]), psi2[end, :]):10.3e}\n")
+    print(f"({idx:5d} - {length(params):5d}) | as = {par:10.3e} a0 | width = {result_widths[idx]:10.3e} dL |  width_rough = {result_widths_rough[idx]:10.3e} dL | final_particles = {particle_fraction(real(sim.X[1]), psi2[end, :]):10.3e}\n")
   end
-  CSV.write("results/widths_final.csv", DataFrame(a_s = params, width = data_widths.width, width_sim = result_widths, particle_fraction = remaining_particle_fraction))
+  CSV.write("results/widths_final.csv", DataFrame(a_s = params, width = data_widths.width, width_sim = result_widths, width_rough = result_widths_rough, particle_fraction = remaining_particle_fraction))
   return
 end
-
-# get_widths()
