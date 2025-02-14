@@ -1,19 +1,9 @@
 using Printf
 using TOML
-
-print("\n" * "@"^20 * "BEGIN OF RUN" * "@"^20 * "\n")
-cmd = `date`
-print(read(cmd, String))
 using CSV, DataFrames, Tables, Printf, FFTW
 using SolitonDynamics, Plots;
 gr();
-print("\n@@@ packages are loaded ")
-("\n" * "="^50 * "n")
 
-# constants: all units are in SI
-hbar_nostro = 1.0546e-34
-a_0 = 5.292e-11
-e_r = 2.1798723611030e-18
 
 function optical_lattice(v_0, d, tilt, l_x, space)
   # See Eq.(3) of [PRA 75 033622 (2007)]
@@ -27,6 +17,10 @@ function optical_lattice(v_0, d, tilt, l_x, space)
 end
 
 begin
+  # constants: all units are in SI
+  hbar_nostro = 1.0546e-34
+  a_0 = 5.292e-11
+  e_r = 2.1798723611030e-18
   cf_pre_quench = TOML.parsefile("input/config_pre_quench.toml")
   cf = TOML.parsefile("input/config.toml")
   
@@ -37,7 +31,7 @@ begin
   @assert(cf_pre_quench["l"]==cf["l"])
   l_perp = sqrt(hbar_nostro/(cf_pre_quench["omega_perp"]*cf_pre_quench["m"]))
   e_perp = hbar_nostro * cf_pre_quench["omega_perp"]
-  t_perp = cf_pre_quench["omega_perp"]^(-1) 
+  t_perp = cf_pre_quench["omega_perp"]^(-1) * 2 * pi # ATTENTION 
   @info "l_perp" l_perp
   N = cf["n"]
   L = cf["l"]
@@ -50,7 +44,6 @@ begin
   ### Setup of the GS initialization pre-quench2
   # Note the parameters pre-quench2 remain fixed for
   # each post-quench configuration
-  g = 4 * pi * hbar_nostro^2 * cf_pre_quench["a_s"] * a_0 * cf_pre_quench["n_atoms"] / (cf_pre_quench["m"] * 2 * pi * l_perp^2) # somehow not working
   gamma = - cf_pre_quench["n_atoms"] * cf_pre_quench["a_s"] * a_0 / l_perp
   g = gamma2g(gamma, sim)
   
@@ -87,7 +80,7 @@ begin
     sim.g = gamma2g(gamma_post, sim)
     @info "g = " g
     sim.sigma2 = init_sigma2(sim.g)
-    e_recoil = (pi * hbar / cf["d"])^2 / cf["m"]
+    e_recoil = (pi * hbar / cf_pre_quench["d"])^2 / (2*cf_pre_quench["m"]) # ATTENTION
     v_0_norm = cf["v_0"] * e_recoil / e_perp
     l_x = sqrt(hbar_nostro/(cf["omega_x"]*cf["m"])) # SI
     @info "v_0 norm =  " v_0_norm
@@ -116,23 +109,9 @@ begin
       psi2[ix, :] = abs2.(xspace(u_t, sim))
       sigma[ix, :] = abs.(sim.sigma2.(xspace(u_t, sim)))
     end
-    # print(psi2)
-    print(size(psi2))
-    print(size(sigma))
     output = [vcat(sim.t[i], psi2[i, :]) for i in 1:size(psi2, 1)]
     output_sigma = [vcat(sim.t[i], sigma[i, :]) for i in 1:size(sigma, 1)]
     CSV.write("results/experiment" * string(idx) * ".csv", DataFrame(output, :auto))
     print(sum(sigma)/length(sigma))
-    CSV.write("results/experiment" * string(idx) * "_sigma.csv", DataFrame(output_sigma, :auto))
-    # sigma = sqrt.(sqrt.(1 .+ sim.g*psi2))
-    # CSV.write("results/sigma"*string(idx)*".csv", DataFrame(x = x, y = sigma))
   end
 end
-# Convert 2D array to a vector of vectors
-# y_values1 = abs2.(gpe_analytical.(x, g2gamma(-6.0, NPSE)))
-# CSV.write("results/axial3.csv", DataFrame(x = x, y = y_values1))
-
-print("@"^50)
-cmd = `date`
-print(read(cmd, String))
-print("\n" * "@"^20 * "END OF RUN" * "@"^20 * "\n") 

@@ -5,9 +5,9 @@ import plotting_base
 
 def exec(path):
   try:
-    # plotting_base.plot_heatmap()
-    # plotting_base.plot_animation()
-    plotting_base.plot_widths(use_simulation=True)
+    plotting_base.plot_heatmap()
+    plotting_base.plot_animation()
+    # plotting_base.plot_widths(use_simulation=True)
   except Exception as e:
     print(e)
 
@@ -25,6 +25,8 @@ class FileChangeHandler(FileSystemEventHandler):
 
 if __name__ == "__main__":
     exec("")
+    plotting_base.plot_heatmap()
+    plotting_base.plot_animation()
     event_handler = FileChangeHandler(exec)
     observer = Observer()
     observer.schedule(event_handler, path='/home/lorenzi/sw/SolitonDynamics.jl/results', recursive=False)

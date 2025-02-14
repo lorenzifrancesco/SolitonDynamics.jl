@@ -86,13 +86,16 @@ def plot_heatmap(filename="results/experiment1.csv"):
   else:
       print("No number found before .csv")
       number = 0
-  heatmap_filename = "media/td_heatmap_"+str(number)+".png"
+  if filename == "results/experiment1.csv":
+    heatmap_filename = "media/simple.png"
+  else: 
+    heatmap_filename = "media/td_heatmap_"+str(number)+".png"
   plt.savefig(heatmap_filename, dpi=300)
   plt.close()
   print(f"Heatmap saved as {heatmap_filename}")
 
 
-def plot_animation():
+def plot_animation(filename = "results/experiment1.csv"): 
   # Set up matplotlib for LaTeX-compatible fonts
   plt.rc('text', usetex=True)
   plt.rc('font', family='serif')
@@ -125,11 +128,15 @@ def plot_animation():
       return [line]
     
   # Create the animation
-  decimation = 5
+  decimation = 2
   ani = animation.FuncAnimation(fig, update_frame, frames=range(0, len(time), decimation), interval=50 * decimation, blit=True)
   fig.tight_layout()
   # Save the animation as a GIF
-  gif_filename = "media/td_line_animation.gif"
+  if filename == "results/experiment1.csv":
+    gif_filename = "media/simple.gif"
+  else:
+    print("\033[91mWarn:\033[0m fancy naming of animations is still to be implemented")
+    gif_filename = "media/td_line_animation.gif"
   ani.save(gif_filename, writer='pillow', dpi=100)
   print(f"Animation saved as {gif_filename}")
   plt.close()
@@ -151,7 +158,7 @@ def plot_widths(use_simulation=True):
   plt.plot(a_s, width, marker='o', linestyle='-', color='b', label='Width vs a_s')
   if use_simulation:
     print("\033[91mWarn:\033[0m Adding +1")
-    plt.plot(a_s, data["width_rough"], marker='x', linestyle='--', color='r', label='Width vs a_s (sim)')
+    # plt.plot(a_s, data["width_rough"], marker='x', linestyle='--', color='r', label='Width vs a_s (sim)')
     plt.plot(a_s, data["width_sim"], marker='.', linestyle='-.', color='orange', label='Width vs a_s (sim)')
   plt.xlabel(r"$a_s/a_0$")
   plt.ylabel(r"$w_z$ [sites] ")
