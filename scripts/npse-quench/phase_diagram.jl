@@ -1,22 +1,16 @@
+#=
+Script to obtain all the NPSE ground states for the phase diagram.
+  - Imaginary time solution for all the parameters.
+  - Catch the NPSE / 3D GPE exceptions and save zeros.
+  
+Input:  phase_diagram.toml
+Output: phase_diagram.txt (contains all the wavefunctions prob densities)
+=#
 using Printf
 using TOML
-using PyFormattedStrings
 using Base.Threads
 using DelimitedFiles
-
-print("\n" * "@"^20 * "BEGIN OF RUN" * "@"^20 * "\n")
-cmd = `date`
-print(read(cmd, String))
-using CSV, DataFrames, Tables, Printf, FFTW
-using SolitonDynamics, Plots;
-gr();
-print("\n@@@ packages are loaded ")
-("\n" * "="^50 * "n")
-
-# constants: all units are in SI
-hbar_nostro = 1.0546e-34
-a_0 = 5.292e-11
-e_r = 2.1798723611030e-18
+using SolitonDynamics
 
 function optical_lattice(v_0, d, tilt, l_x, space)
   # See Eq.(3) of [PRA 75 033622 (2007)]
@@ -29,13 +23,16 @@ function optical_lattice(v_0, d, tilt, l_x, space)
   end
 end
 
-indices = []
 begin
+  # constants: all units are in SI
+  hbar = 1.0546e-34
+  a_0 = 5.292e-11
+  # e_r = 2.1798723611030e-18
+  indices = []
   # GS phase diagram:
   cf = TOML.parsefile("input/phase_diagram.toml")
-  e_recoil = (pi * hbar / cf["d"])^2 / (2 * cf["m"])
-  l_perp = sqrt(hbar_nostro / (cf["omega_perp"] * cf["m"]))
-  e_perp = hbar_nostro * cf["omega_perp"]
+  e_recoil = (pi * hbar / cf["d"])^2 / (2 * cf["m"]) # ATTENTION using the notation of Strath
+  l_perp = sqrt(hbar / (cf["omega_perp"] * cf["m"]))
   t_perp = cf["omega_perp"]^(-1)
   @info "l_perp" l_perp
   N = cf["n"]
@@ -49,53 +46,57 @@ begin
   sim.maxiters = 1e6
   sim.g5 = 0.0
   sim.dt = 1e-3
-  # Phase diagram setup
+  sim.iswitch = -im
 
-  a_s_list = LinRange(cf["a_s_min"] * a_0,      cf["a_s_max"] * a_0,      cf["n_a_s"])
-  v_0_list = LinRange(cf["v_0_min"] * e_recoil, cf["v_0_max"] * e_recoil, cf["n_v_0"])
+  g_list   = LinRange(cf["g_min"] ,
+                      cf["g_max"],
+                      cf["n_g"])
+  v_0_list = LinRange(cf["v_0_min"] * e_recoil / (hbar * cf["omega_perp"]), 
+                      cf["v_0_max"] * e_recoil / (hbar * cf["omega_perp"]), 
+                      cf["n_v_0"])
   v_0_min = cf["v_0_min"]
   v_0_max = cf["v_0_max"]
-  a_s_min = cf["a_s_min"]
-  a_s_max = cf["a_s_max"]
-  print(a_s_list)
+  g_min = cf["g_min"]
+  g_max = cf["g_max"]
   print(v_0_list)
-  open("results/phase_diagram.txt", "a") do file
+  open("results/phase_diagram.txt", "w") do file
     first_flag = true
     for (iv, v_0) in enumerate(v_0_list)
-      for (ia, a_s) in enumerate(a_s_list)
-        if !([ia, iv] in indices) 
-          write(file, f" {ia:4d}, {iv:4d} |")
-          v_0_norm = v_0 / e_perp
-          gamma = - a_s * cf["n_atoms"] / (l_perp)
-          sim.g = gamma2g(gamma / 2, sim)
+      for (ig, g) in enumerate(g_list)
+        if !([ig, iv] in indices) 
+          write(file, @sprintf(" %4d, %4d |", ig, iv))
+          # gamma = - a_s * cf["n_atoms"] / (l_perp) #
+          gamma = abs(g)/2 # ATTENTION, using the notaiton of Strath
+          sim.g = gamma2g(gamma, sim)
           sim.sigma2 = init_sigma2(sim.g)
-          println(f">{ia:4d}, {iv:4d} | gamma = {gamma:.3e}, g = {sim.g:.3e}")
-          sim.V0 = optical_lattice(v_0_norm,
+          @printf(">%4d, %4d | gamma = %.3e, g = %.3e\n", ig, iv, gamma, sim.g)
+          sim.V0 = optical_lattice(v_0,
             cf["d"] / l_perp,
             0.0,
             0.0,
             sim.X[1])
           if first_flag == true
-            sim.psi_0 = kspace(complex(gaussian(x / 3, sim)), sim)
+            print("RESETTING OF THE WF\n")
+            sim.psi_0 = kspace(complex(gaussian(x/10, sim)), sim)
             first_flag = false
           end
-          sim.iswitch = -im
-
+          @warn( 1 + sim.g *  maximum(abs2.(xspace(sim.psi_0, sim))))
+          @assert(1 + sim.g * maximum(abs2.(xspace(sim.psi_0, sim))) > 0)
+          # print(sim)
           # GS finding
-          sol = runsim(sim, info=true)
           psi2 = zeros(cf["n"])
           try
+            sol = runsim(sim, info=false)
             sim.psi_0 = sol.u
-
-            psi2 = abs2.(xspace(sol.u, sim))
-          catch
-            print("miss! printing zeros")
-            sim.psi_0 = kspace(complex(gaussian(x / 3, sim)), sim)
+            psi2 = abs2.(xspace(sim.psi_0, sim))
+          catch e
+            print("failed! ", e )
+            first_flag = true
           end
           for i in psi2
-            write(file, f" {i:10.9f}")
+            write(file, @sprintf(" %10.9f", i)) 
           end
-          write(file, f"\n")
+          write(file, "\n")
           flush(file)
         else
           print("Skipping...")
@@ -104,8 +105,3 @@ begin
     end
   end
 end
-
-print("@"^50)
-cmd = `date`
-print(read(cmd, String))
-print("\n" * "@"^20 * "END OF RUN" * "@"^20 * "\n")

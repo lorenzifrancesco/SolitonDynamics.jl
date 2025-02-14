@@ -16,7 +16,7 @@ g_values = np.linspace(-1.7, -0.2, n_points)
 V0_values = np.linspace(0, 3, n_points)
 V0_values = V0_values * Er # Er for dL/l_perp = 1.887
 dL = dL0
-kL = (2 * np.pi / dL) * l_perp
+kL = (np.pi / dL) * l_perp
 print()
 heatmap_data = np.zeros((len(V0_values), len(g_values)))
 

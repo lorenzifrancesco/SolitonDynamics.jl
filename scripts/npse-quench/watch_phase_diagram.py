@@ -5,7 +5,7 @@ import phase_diagram
 
 def exec(path):
   try:
-    phase_diagram.fill_phase_diagram()
+    phase_diagram.fill_phase_diagram() 
   except Exception as e:
     print(e)
 
@@ -23,6 +23,7 @@ class FileChangeHandler(FileSystemEventHandler):
 
 if __name__ == "__main__":
     exec("")
+    phase_diagram.fill_phase_diagram()
     event_handler = FileChangeHandler(exec)
     observer = Observer()
     observer.schedule(event_handler, path='/home/lorenzi/sw/SolitonDynamics.jl/results', recursive=False)

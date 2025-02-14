@@ -54,17 +54,17 @@ def read_phase_diagram_config(config_path):
     """
     config = toml.load(config_path)
 
-    a_s_min = config["a_s_min"]
-    a_s_max = config["a_s_max"]
-    n_a_s = config["n_a_s"]
+    g_min = config["g_min"]
+    g_max = config["g_max"]
+    n_g = config["n_g"]
     v_0_min = config["v_0_min"]
     v_0_max = config["v_0_max"]
     n_v_0 = config["n_v_0"]
 
-    a_s_values = np.linspace(a_s_min, a_s_max, n_a_s)
+    g_values = np.linspace(g_min, g_max, n_g)
     v_0_values = np.linspace(v_0_min, v_0_max, n_v_0)
 
-    return a_s_values, v_0_values
+    return g_values, v_0_values
 
 def save_wavefunction_plot(data, indices, output_folder):
     """
@@ -87,6 +87,9 @@ def save_wavefunction_plot(data, indices, output_folder):
     plt.savefig(filename, dpi=300)
     plt.close()
 
+def compute_widths(data):
+    return np.std(data)
+
 def compute_peaks(data):
     """
     Computes the number of peaks in the wavefunction data.
@@ -100,7 +103,7 @@ def compute_peaks(data):
     peaks, _ = find_peaks(data)
     return len(peaks)
 
-def generate_phase_diagram(peaks_data, a_s_values, v_0_values, output_file):
+def generate_phase_diagram(peaks_data, g_values, v_0_values, output_file, n_g, n_v_0):
     """
     Generates and saves a phase diagram based on the number of peaks.
 
@@ -114,9 +117,9 @@ def generate_phase_diagram(peaks_data, a_s_values, v_0_values, output_file):
 
     i_vals = np.unique(indices[:, 0])
     j_vals = np.unique(indices[:, 1])
-
+    
     # Create a grid for the phase diagram
-    phase_grid = np.zeros((len(i_vals), len(j_vals)))
+    phase_grid = np.zeros((n_g,  n_v_0))
 
     for (ix, iy), peaks in peaks_data.items():
         i_idx = np.where(i_vals == ix)[0][0]
@@ -127,7 +130,17 @@ def generate_phase_diagram(peaks_data, a_s_values, v_0_values, output_file):
     # Plot the phase diagram
     plt.figure(figsize=(4, 3.5))
     plt.imshow(phase_grid.T, origin="lower", aspect="auto", cmap="viridis", 
-               extent=[a_s_values[0], a_s_values[-1], v_0_values[0], v_0_values[-1]])
+               extent=[g_values[0], g_values[-1], v_0_values[0], v_0_values[-1]])
+    coordinates = [
+        (-1.5356888459195894, 0.0003600062491648792),
+        (-1.3002692122202875, 0.24040945616414477),
+        (-1.2059865190112733, 0.556060218403791),
+        (-1.0839267398603898, 2.9953878444682434),
+        (-0.8800065208679094, 2.992806667587437),
+        (-0.15484253688931982, 0.8689260266404628)
+    ]
+    data = np.array(coordinates)
+    plt.scatter(data[:, 0], data[:, 1], color='black', s=70, marker='x')
     plt.colorbar(label=r"$\mathrm{Number \; of \; peaks}$")
     plt.xlabel(r"$a_s \quad [a_0]$")
     plt.ylabel(r"$V_0 \quad [E_r]$")
@@ -141,28 +154,45 @@ def fill_phase_diagram():
     filepath = "results/phase_diagram.txt"
     config_file = "input/phase_diagram.toml"
     output_folder = "media/gs"
-    phase_diagram_file = os.path.join(output_folder, "phase_diagram.png")
+    peaks_diagram_file = os.path.join(output_folder, "pd_peaks.png")
+    width_diagram_file = os.path.join(output_folder, "pd_width.png")
 
     # Ensure output folder exists
     os.makedirs(output_folder, exist_ok=True)
 
-    # Parse the file
-    parsed_data, _ = parse_file(filepath)
-    a_s_values, v_0_values = read_phase_diagram_config(config_file)
     
-    print("Running plots...")
-
-    # print(parsed_data[0])
-    # Process wavefunctions and compute peaks
-    peaks_data = {}
+    parsed_data, _ = parse_file(filepath)
+    g_values, v_0_values = read_phase_diagram_config(config_file)
+    cf = toml.load(config_file)
+    
+    print("Parsed data from the file.")
+    print("The data contains the following indices:")
+    print("\n".join(str(indices) for indices in parsed_data.keys()))
+    
+    skipping = 100
+    print(f"Plotting sampled ground states with skipping {skipping}...")
     for indices, data in parsed_data.items():
+        if indices[0] % skipping != 0 or indices[1] % skipping != 0:
+            continue
         save_wavefunction_plot(data, indices, output_folder)
+    peaks_data = {}
+    width_data = {}
+        
+    for indices, data in parsed_data.items():
+        # peaks_count = compute_widths(data)
         peaks_count = compute_peaks(data)
-        print(f"Found {peaks_count:5d} peaks")
+        width = compute_widths(data)
+        print(f"{indices} >> Found {peaks_count:5.4f} peaks with width {width:5.4f}.")
         peaks_data[indices] = peaks_count
+        width_data[indices] = width
 
+    print("Plotting the phase diagrams...")
     # Generate and save the phase diagram
-    generate_phase_diagram(peaks_data, a_s_values, v_0_values, phase_diagram_file)
-
+    generate_phase_diagram(peaks_data, g_values, v_0_values, peaks_diagram_file, cf["n_g"], cf["n_v_0"])
+    generate_phase_diagram(width_data, g_values, v_0_values, width_diagram_file, cf["n_g"], cf["n_v_0"])
+    print("Done.")
+    
 if __name__ == "__main__":
     fill_phase_diagram()
+    skipping = 10
+    print("Plotting sampled ground states...")

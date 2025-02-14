@@ -7,7 +7,6 @@ Script to reproduce the experiment for the width:
 Expected results:
   - region of collapse and explosion
   - region of stable shrinking
-  - region of  
 
 Input:   widths.csv, config.toml, config_pre_quench.toml
 Output:  widths_experiment*.csv
