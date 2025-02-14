@@ -4,6 +4,8 @@ import matplotlib.pyplot as plt
 from scipy.signal import find_peaks
 import re
 import toml
+from matplotlib.colors import Normalize
+
 
 def parse_file(filepath):
     """
@@ -88,7 +90,11 @@ def save_wavefunction_plot(data, indices, output_folder):
     plt.close()
 
 def compute_widths(data):
-    return np.std(data)
+    indexes = np.arange(len(data))
+    norm = np.sum(data)
+    mean = np.sum(indexes * data)/norm
+    variance = np.sum(data * (indexes - mean)**2)
+    return np.sqrt(variance) /norm
 
 def compute_peaks(data):
     """
@@ -103,7 +109,7 @@ def compute_peaks(data):
     peaks, _ = find_peaks(data)
     return len(peaks)
 
-def generate_phase_diagram(peaks_data, g_values, v_0_values, output_file, n_g, n_v_0):
+def generate_phase_diagram(peaks_data, g_values, v_0_values, output_file, n_g, n_v_0, z_label):
     """
     Generates and saves a phase diagram based on the number of peaks.
 
@@ -129,8 +135,14 @@ def generate_phase_diagram(peaks_data, g_values, v_0_values, output_file, n_g, n
     phase_grid[phase_grid == 0] = np.nan
     # Plot the phase diagram
     plt.figure(figsize=(4, 3.5))
-    plt.imshow(phase_grid.T, origin="lower", aspect="auto", cmap="viridis", 
-               extent=[g_values[0], g_values[-1], v_0_values[0], v_0_values[-1]])
+    norm = Normalize(vmin=np.nanmin(phase_grid), vmax=np.nanmax(phase_grid))
+  
+    im  = plt.imshow(phase_grid.T, 
+               origin="lower", 
+               aspect="auto", 
+               cmap="viridis",
+               extent=[g_values[0], g_values[-1], v_0_values[0], v_0_values[-1]], 
+               norm=norm)
     coordinates = [
         (-1.5356888459195894, 0.0003600062491648792),
         (-1.3002692122202875, 0.24040945616414477),
@@ -141,7 +153,14 @@ def generate_phase_diagram(peaks_data, g_values, v_0_values, output_file, n_g, n
     ]
     data = np.array(coordinates)
     plt.scatter(data[:, 0], data[:, 1], color='black', s=70, marker='x')
-    plt.colorbar(label=r"$\mathrm{Number \; of \; peaks}$")
+    cbar = plt.colorbar(im)
+    cbar.set_label(z_label)
+    # Set custom ticks and labels
+    cbar_ticks = np.linspace(np.nanmin(phase_grid), np.nanmax(phase_grid), 5)  # Custom ticks
+    cbar.set_ticks(cbar_ticks)
+    cbar.set_ticklabels([rf'{tick:.3f}' for tick in cbar_ticks])
+    
+    # plt.colorbar(label=z_label)
     plt.xlabel(r"$a_s \quad [a_0]$")
     plt.ylabel(r"$V_0 \quad [E_r]$")
     # plt.title("Phase Diagram of Peaks")
@@ -169,7 +188,7 @@ def fill_phase_diagram():
     print("The data contains the following indices:")
     print("\n".join(str(indices) for indices in parsed_data.keys()))
     
-    skipping = 100
+    skipping = 9
     print(f"Plotting sampled ground states with skipping {skipping}...")
     for indices, data in parsed_data.items():
         if indices[0] % skipping != 0 or indices[1] % skipping != 0:
@@ -177,19 +196,21 @@ def fill_phase_diagram():
         save_wavefunction_plot(data, indices, output_folder)
     peaks_data = {}
     width_data = {}
-        
+    
+    dx = cf["l"] / cf["n"]
+    print("diocane :",  dx)
     for indices, data in parsed_data.items():
         # peaks_count = compute_widths(data)
         peaks_count = compute_peaks(data)
-        width = compute_widths(data)
-        print(f"{indices} >> Found {peaks_count:5.4f} peaks with width {width:5.4f}.")
+        width = compute_widths(data) * dx
+        print(f"({indices[0]:>5d}, {indices[1]:>5d}) >> n_peaks: {peaks_count:>5.3e}, width: {width:>5.3e}.")
         peaks_data[indices] = peaks_count
         width_data[indices] = width
 
     print("Plotting the phase diagrams...")
     # Generate and save the phase diagram
-    generate_phase_diagram(peaks_data, g_values, v_0_values, peaks_diagram_file, cf["n_g"], cf["n_v_0"])
-    generate_phase_diagram(width_data, g_values, v_0_values, width_diagram_file, cf["n_g"], cf["n_v_0"])
+    generate_phase_diagram(peaks_data, g_values, v_0_values, peaks_diagram_file, cf["n_g"], cf["n_v_0"], z_label=r"$\mathrm{Number \; of \; peaks}$")
+    generate_phase_diagram(width_data, g_values, v_0_values, width_diagram_file, cf["n_g"], cf["n_v_0"], z_label=r"$w \; [\ell_\perp]$")
     print("Done.")
     
 if __name__ == "__main__":

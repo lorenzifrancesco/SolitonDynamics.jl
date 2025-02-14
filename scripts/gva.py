@@ -72,7 +72,7 @@ def count_zeros(foo1, foo2, g, V0, kL,
 
     print(minima)
     value = len(minima)
-    if len(minima)>0 and minima[0]<1:
+    if len(minima)>0 and minima[0]<single_site_length:
       value *= -1
     for i, zz in enumerate(minima):
       print(f"{zz:>7.1e}", end="")

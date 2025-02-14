@@ -19,7 +19,7 @@ kL_values = np.pi/(dL_values/(l_perp*1e6))
 V0 = 1.3 * Er # Er for dL/l_perp = 1.887
 heatmap_data = np.zeros((len(kL_values), len(g_values)))
 
-if False:
+if True:
   # Compute number of zeros for each (g, V0) pair
   for i, kL in enumerate(kL_values):
     print(f"row index : {i:>10}")
