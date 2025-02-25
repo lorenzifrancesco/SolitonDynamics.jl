@@ -198,7 +198,6 @@ def fill_phase_diagram():
     width_data = {}
     
     dx = cf["l"] / cf["n"]
-    print("diocane :",  dx)
     for indices, data in parsed_data.items():
         # peaks_count = compute_widths(data)
         peaks_count = compute_peaks(data)
