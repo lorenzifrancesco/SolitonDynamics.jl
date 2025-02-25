@@ -20,7 +20,7 @@ kL = (np.pi / dL) * l_perp
 print()
 heatmap_data = np.zeros((len(V0_values), len(g_values)))
 
-if True:
+if False:
   # Compute number of zeros for each (g, V0) pair
   for i, V0 in enumerate(V0_values):
     print(f"row index : {i:>10}")
@@ -31,7 +31,7 @@ if True:
   np.save("results/phase_diagram/variational_v0.npy", heatmap_data)
 
 heatmap_data = np.load("results/phase_diagram/variational_v0.npy")
-
+heatmap_data = np.clip(heatmap_data, -2, 1)
 V0_values /= Er # go back to units of Er
 print(f"Plotting the {heatmap_data.shape} phase diagram...")
 plt.figure(figsize=(3.7, 3))

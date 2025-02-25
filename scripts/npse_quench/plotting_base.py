@@ -141,8 +141,10 @@ def plot_animation(filename = "results/experiment1.csv"):
   print(f"Animation saved as {gif_filename}")
   plt.close()
 
+def apply_noise_to_widths(w, l, noise_atoms, n_atoms):
+  return (w*n_atoms+1/12*l**2*noise_atoms)/(n_atoms+noise_atoms)
 
-def plot_widths(use_simulation=True):
+def plot_widths(use_simulation=True, noise=0.0):
   """
   Confrontation with the experimental data
   """
@@ -156,15 +158,23 @@ def plot_widths(use_simulation=True):
   # Create the plot
   plt.figure(figsize=(3.6, 3))
   plt.plot(a_s, width, marker='o', linestyle='-', color='b', label='Width vs a_s')
+  cf = toml.load("input/config.toml")
+  n_atoms = cf["n_atoms"]
+  print("applying the noise")
+  noise_atoms = n_atoms * 0.23 # guess
+  l = 8 # lattice sites
+  width = data["width_sim"]
+  print("before ", width)
+  width = apply_noise_to_widths(width, l, noise_atoms, n_atoms)
+  print("after ", width)
   if use_simulation:
     print("\033[91mWarn:\033[0m Adding +1")
     # plt.plot(a_s, data["width_rough"], marker='x', linestyle='--', color='r', label='Width vs a_s (sim)')
-    plt.plot(a_s, data["width_sim"], marker='.', linestyle='-.', color='orange', label='Width vs a_s (sim)')
+    plt.plot(a_s, width, marker='.', linestyle='-.', color='orange', label='Width vs a_s (sim)')
   plt.xlabel(r"$a_s/a_0$")
   plt.ylabel(r"$w_z$ [sites] ")
   plt.tight_layout()
   plt.savefig("media/widths.pdf", dpi=300)
-  
   if use_simulation:
     fraction = data["particle_fraction"]  # Second column as y-axis
     plt.clf()

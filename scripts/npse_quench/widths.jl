@@ -14,8 +14,7 @@ Output:  widths_experiment*.csv
 using FStrings
 using TOML
 using CSV, DataFrames, Tables, Printf, FFTW
-using SolitonDynamics, Plots;
-gr();
+using SolitonDynamics
 
 
 function optical_lattice(v_0, d, tilt, l_x, space)
@@ -130,7 +129,9 @@ begin
   sim.reltol = 1e-9
   sim.abstol = 1e-9
   sim.psi_0 = kspace(complex(gaussian(x/(3*cf_pre_quench["d"]/l_perp), sim)), sim)
-  sim.iswitch = -im; 
+  sim.iswitch = -im;
+  print(sim.equation)
+  exit() 
   
   #### GS finding
   sim.maxiters = 1e6

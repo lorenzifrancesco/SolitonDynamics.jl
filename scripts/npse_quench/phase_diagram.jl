@@ -33,7 +33,6 @@ begin
   cf = TOML.parsefile("input/phase_diagram.toml")
   e_recoil = (pi * hbar / cf["d"])^2 / (2 * cf["m"]) # ATTENTION using the notation of Strath
   l_perp = sqrt(hbar / (cf["omega_perp"] * cf["m"]))
-  t_perp = cf["omega_perp"]^(-1)
   @info "l_perp" l_perp
   N = cf["n"]
   L = cf["l"]
@@ -45,7 +44,7 @@ begin
   sim.abstol = 1e-6
   sim.maxiters = 1e6
   sim.g5 = 0.0
-  sim.dt = 1e-3
+  sim.dt = 1e-4
   sim.iswitch = -im
 
   g_list   = LinRange(cf["g_min"] ,
